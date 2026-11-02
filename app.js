@@ -507,11 +507,16 @@ function authAktiv() {
 
 function mangel(c) {
   var m = [];
+  var neu = String(c.id || "").indexOf("eigen-") === 0;
   if (!c.niveau) m.push("Niveaustufe fehlt. Genau eine Stufe ist Pflicht.");
   if (!c.felder || !c.felder.length) m.push("Anwendungsfeld fehlt.");
   if (!c.dauerMin) m.push("Dauer fehlt.");
-  else if (c.dauerMin > 10) m.push("Umfang über dem Richtwert von 10 Minuten.");
+  else if (neu && c.formatKey !== "live" && c.dauerMin > 10) m.push("Umfang über dem Richtwert von 10 Minuten.");
   if (!c.ergebnis) m.push("Ergebnis fehlt. Dauer und Ergebnis stehen vor Beginn am Inhalt.");
+  if (c.formatKey === "live") {
+    if (!c.liveDatum || !c.liveZeit) m.push("Termin fehlt. Datum und Uhrzeit gehören an die Session.");
+    return m;
+  }
   if (!c.glossarOk) m.push("Fachbegriffe und Anglizismen sind nicht als erklärt gekennzeichnet.");
   if (c.anwendungsbezogen !== false) {
     var p = c.praxis || {};
@@ -519,7 +524,19 @@ function mangel(c) {
       m.push("Praxisbeispiel unvollständig. Es braucht Rolle, Tätigkeit, Nutzen und Grenze.");
     }
   }
+  var schritte = c.schritte || [];
+  if (!schritte.some(function (s) { return s && s.t && s.d; })) m.push("Ein Schritt mit sichtbarem Ergebnis fehlt.");
   return m;
+}
+
+function stiftSvg() {
+  return "<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z\"/></svg>";
+}
+
+function stiftKnopf(id, mitText) {
+  var klasse = mitText ? "btn-line stift" : "stift";
+  var text = mitText ? "<span>Bearbeiten</span>" : "";
+  return "<button type=\"button\" class=\"" + klasse + "\" data-action=\"bearbeiten\" data-id=\"" + esc(id) + "\" aria-label=\"Bearbeiten\">" + stiftSvg() + text + "</button>";
 }
 
 function ueberfaellig(c) {
@@ -936,6 +953,9 @@ function renderPlayer() {
       }).join("") + "</div><p id=\"h5p-hinweis\" class=\"stage-note\" hidden></p>"
       : "<p>" + mitBegriffen(c.teaser) + "</p>";
     stage = "<div class=\"stage h5p\"><p class=\"entry-kicker\">H5P-Datei</p><p><strong>" + esc(h5pDatei) + "</strong></p>" + h5pInhalt + "</div>";
+  } else if (c.formatKey === "live") {
+    var termin = (c.liveDatum ? datum(c.liveDatum) : "Termin offen") + (c.liveZeit ? " · " + c.liveZeit : "");
+    stage = "<div class=\"stage\"><p class=\"entry-kicker\">Live-Session</p><p><strong>" + esc(termin) + "</strong></p><p>" + mitBegriffen(c.text || c.teaser) + "</p><p class=\"meta-line\">Die Teilnahme lässt sich hier nicht buchen.</p></div>";
   } else {
     stage = "<div class=\"stage\"><p class=\"entry-kicker\">Strukturierter Text</p><p>" + mitBegriffen(c.text || c.teaser) + "</p></div>";
   }
@@ -953,12 +973,10 @@ function renderPlayer() {
   var pflicht = c.pflicht ? "<span class=\"lvl impulstag\">Vor der Nutzung</span>" : "";
   var kanon = c.grundlagen ? "<span class=\"lvl basis\">Grundlagenkanon</span>" : "";
   var status = c.status !== "veroeffentlicht" ? "<span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span>" : "";
-  var bearbeiten = kannBearbeitenInhalt(c)
-    ? "<button type=\"button\" class=\"btn-line\" data-action=\"bearbeiten\" data-id=\"" + esc(c.id) + "\">Bearbeiten</button>"
-    : "";
+  var bearbeiten = istEigen(c) ? stiftKnopf(c.id, true) : "";
   root.innerHTML = krumenHtml(c.titel)
     + "<div class=\"badges\">" + status + (c.niveau ? "<span class=\"lvl " + esc(c.niveau) + "\">" + esc(c.niveauLabel) + "</span>" : "") + kanon + pflicht + "<span class=\"dur\">" + esc(c.format) + " · " + esc(c.dauer) + "</span></div>"
-    + "<h1>" + esc(c.titel) + "</h1>"
+    + "<div class=\"titelzeile\"><h1>" + esc(c.titel) + "</h1>" + bearbeiten + "</div>"
     + "<p class=\"ergebnis-zeile\"><strong>Ergebnis:</strong> " + esc(c.ergebnis || "noch nicht benannt") + "</p>"
     + (c.dauerMin > 10 ? "<p class=\"banner\">Dieser Bestandseintrag ist länger als zehn Minuten und folgt der bisherigen Kachel. Neu eingereichte Einheiten gibt die Moderation nur bis zu diesem Richtwert frei.</p>" : "")
     + "<div class=\"form-card\"><h2>Einordnung</h2><dl class=\"gloss\">"
@@ -974,7 +992,7 @@ function renderPlayer() {
     + praxis
     + fehler
     + moderationKasten(c)
-    + "<div class=\"button-row\"><button type=\"button\" class=\"btn-line\" data-action=\"zum-kommentar\">Zum Kommentar</button>" + bearbeiten + "</div>"
+    + "<div class=\"button-row\"><button type=\"button\" class=\"btn-line\" data-action=\"zum-kommentar\">Zum Kommentar</button></div>"
     + kommentarBlock(c);
 }
 
@@ -1024,26 +1042,88 @@ function renderProfil() {
     + "<div class=\"ausbau-box\"><h2>Ansprechbarkeit und Personensuche</h2><p>Die freiwillige Kennzeichnung, zu welchen Themen Sie ansprechbar sind, und die Suche nach Personen folgen mit den Foren in der späteren Ausbaustufe.</p><button type=\"button\" class=\"btn-line\" disabled>Themen kennzeichnen</button></div>";
 }
 
+function schrittFeld(i, s) {
+  s = s || { t: "", d: "" };
+  return "<div class=\"schritt-feld\"><label class=\"field\"><span>Schritt " + (i + 1) + "</span><input name=\"schrittTitel\" value=\"" + esc(s.t || "") + "\"></label>"
+    + "<label class=\"field\"><span>Was danach sichtbar ist</span><textarea name=\"schrittText\" rows=\"2\">" + esc(s.d || "") + "</textarea></label></div>";
+}
+
+function anlageArt(c) {
+  if (c) {
+    if (c.impuls || c.formatKey === "impuls") return "impuls";
+    if (c.formatKey === "live" && c.medien !== "iframe" && c.medien !== "poltube" && c.medien !== "h5p") return "live";
+    return "inhalt";
+  }
+  if (editorVorgabe === "impuls" || editorVorgabe === "live") return editorVorgabe;
+  return "inhalt";
+}
+
 function renderEditor(root) {
   var c = editorId ? byId(editorId) : null;
   root = root || document.getElementById("view-editor");
   if (!root) return;
-  var v = c || { titel: "", formatKey: editorVorgabe || "lernmodul", niveau: "basis", felder: [], werkzeugKey: "sprachmodell", dauerMin: 8, ergebnis: "", lernziel: "", praxis: { rolle: "", taetigkeit: "", nutzen: "", grenze: "" }, glossarOk: false, glossar: [], medien: "text", anwendungsbezogen: true, iframe: "", text: "", dateiname: "" };
+  var art = anlageArt(c);
+  var v = c || { titel: "", niveau: "basis", felder: [], werkzeugKey: "sprachmodell", dauerMin: "", ergebnis: "", lernziel: "", praxis: { rolle: "", taetigkeit: "", nutzen: "", grenze: "" }, glossarOk: false, glossar: [], medien: "text", iframe: "", text: "", dateiname: "", schritte: [], liveDatum: "", liveZeit: "" };
   editorVorgabe = "";
   if (v.medien === "poltube") v.medien = "iframe";
+  if (art === "impuls" || art === "live") v.medien = "text";
+  if (v.medien !== "h5p" && v.medien !== "iframe") v.medien = "text";
   var p = v.praxis || { rolle: "", taetigkeit: "", nutzen: "", grenze: "" };
   function sel(name, wert, opts) {
     return "<label class=\"field\"><span>" + name + "</span><select name=\"" + wert + "\">" + opts.map(function (o) {
       return "<option value=\"" + o[0] + "\"" + (String(v[wert] || "") === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
     }).join("") + "</select></label>";
   }
-  root.innerHTML = krumenHtml(c ? "Inhalt bearbeiten" : "Inhalt anlegen")
-    + "<p class=\"eyebrow\">Dieselbe Sicht, nur die Felder</p><h1>" + (c ? "Inhalt bearbeiten" : "Neuen Inhalt anlegen") + "</h1>"
-    + "<p>Speichern legt die Fassung ab. Zur Prüfung geben legt den Inhalt in die Freigabeliste. Nach der Freigabe ist er unter Allgemeine Inhalte sichtbar.</p>"
+  var ueberschrift = art === "impuls"
+    ? (c ? "Impuls bearbeiten" : "Neuen Impuls erstellen")
+    : art === "live"
+      ? (c ? "Live-Session bearbeiten" : "Neue Live-Session starten")
+      : (c ? "Inhalt bearbeiten" : "Neuen Inhalt anlegen");
+  var einleitung = art === "impuls"
+    ? "Ein Impuls ist Ihre Erfahrung aus dem Alltag, als Text. Nach der Freigabe sehen ihn die anderen unter Impulse. Bei Ihnen bleibt er unter Meine Inhalte."
+    : art === "live"
+      ? "Sie legen Thema und Termin an. Teilnehmende können die Session in dieser Fassung noch nicht buchen. Nach der Freigabe bleibt der Termin bei Ihren Live-Sessions."
+      : "Eine Form genügt. Text schreiben Sie hier, H5P ist eine Datei, Video nur die Adresse eines iFrames. Nach der Freigabe liegt der Inhalt unter Allgemeine Inhalte.";
+  var medienBlock = art === "inhalt"
+    ? "<fieldset class=\"niveaus\"><legend>Was legen Sie an?</legend>"
+      + "<label><input type=\"radio\" name=\"medien\" value=\"text\"" + (v.medien === "text" ? " checked" : "") + "><strong>Strukturierter Text</strong><span>Für Begriffe, Regeln und kurze Abläufe. Sie schreiben den Text in das Feld darunter.</span></label>"
+      + "<label><input type=\"radio\" name=\"medien\" value=\"h5p\"" + (v.medien === "h5p" ? " checked" : "") + "><strong>H5P-Datei</strong><span>Sie wählen eine Datei. Der Prototyp merkt sich den Namen und führt die Datei nicht aus.</span></label>"
+      + "<label><input type=\"radio\" name=\"medien\" value=\"iframe\"" + (v.medien === "iframe" ? " checked" : "") + "><strong>Video als iFrame</strong><span>Sie setzen die Adresse ein. Eine Videodatei liegt nicht in der Werkstatt.</span></label>"
+      + "</fieldset>"
+      + "<div id=\"medien-text\"><label class=\"field\"><span>Text</span><textarea name=\"text\" rows=\"8\">" + esc(v.text || "") + "</textarea></label></div>"
+      + "<div id=\"medien-h5p\"><label class=\"field\"><span>H5P-Datei</span><input name=\"datei\" type=\"file\" accept=\".h5p,application/zip\"><span class=\"hint\">Es bleibt der Dateiname. Eine laufende H5P-Aufgabe entsteht hier nicht.</span></label><p id=\"dateiname\" class=\"meta-line\" data-datei=\"" + esc(v.dateiname || "") + "\">" + esc(v.dateiname || "Noch keine Datei gewählt.") + "</p></div>"
+      + "<div id=\"medien-video\"><label class=\"field\"><span>Adresse des iFrames</span><input name=\"iframe\" type=\"url\" value=\"" + esc(v.iframe || "") + "\" placeholder=\"https://…\"><span class=\"hint\">Das ist die einzige Video-Form.</span></label></div>"
+    : art === "impuls"
+      ? "<input type=\"hidden\" name=\"medien\" value=\"text\"><label class=\"field\"><span>Ihr Beitrag</span><textarea name=\"text\" rows=\"8\" placeholder=\"Was haben Sie gemacht, was ist misslungen, was machen Sie beim nächsten Mal anders?\">" + esc(v.text || "") + "</textarea></label>"
+      : "<input type=\"hidden\" name=\"medien\" value=\"text\"><div class=\"field-row\">"
+        + "<label class=\"field\"><span>Datum</span><input name=\"liveDatum\" type=\"date\" value=\"" + esc(v.liveDatum || "") + "\"></label>"
+        + "<label class=\"field\"><span>Uhrzeit</span><input name=\"liveZeit\" type=\"time\" value=\"" + esc(v.liveZeit || "") + "\"></label></div>"
+        + "<label class=\"field\"><span>Worum es geht</span><textarea name=\"text\" rows=\"5\">" + esc(v.text || "") + "</textarea></label>";
+  var praxisBlock = art === "live" ? ""
+    : "<h2>Praxisbeispiel</h2><p class=\"meta-line\">Vier Angaben, sonst gibt es keine Freigabe: Rolle, Tätigkeit, Nutzen und Grenze.</p>"
+      + "<label class=\"field\"><span>Rolle</span><input name=\"rolle\" value=\"" + esc(p.rolle || "") + "\"></label>"
+      + "<label class=\"field\"><span>Tätigkeit</span><input name=\"taetigkeit\" value=\"" + esc(p.taetigkeit || "") + "\"></label>"
+      + "<label class=\"field\"><span>Nutzen</span><input name=\"nutzen\" value=\"" + esc(p.nutzen || "") + "\"></label>"
+      + "<label class=\"field\"><span>Grenze</span><input name=\"grenze\" value=\"" + esc(p.grenze || "") + "\"></label>";
+  var schrittBlock = art === "live" ? ""
+    : "<h2>Ein Schritt mit sichtbarem Ergebnis</h2><p class=\"meta-line\">Was kann jemand in wenigen Minuten selbst sehen?</p><div id=\"schritt-liste\">"
+      + ((v.schritte && v.schritte.length) ? v.schritte : [{ t: "", d: "" }]).map(function (s, i) { return schrittFeld(i, s); }).join("")
+      + "</div><button type=\"button\" class=\"btn-line\" data-action=\"schritt-hinzu\">Weiteren Schritt</button>";
+  var glossarBlock = art === "live" ? ""
+    : "<h2>Begriffe</h2><label class=\"checkline\"><input type=\"checkbox\" name=\"glossarOk\"" + (v.glossarOk ? " checked" : "") + "> Alle Fachbegriffe und Anglizismen sind erklärt</label>"
+      + "<label class=\"field\"><span>Begriffe, kommagetrennt</span><input name=\"glossar\" value=\"" + esc((v.glossar || []).join(", ")) + "\"></label>";
+  var pruefHinweis = art === "live"
+    ? "<h2>Bevor Sie zur Prüfung geben</h2><ul class=\"summary-list\"><li>Genau eine Stufe und mindestens ein Anwendungsfeld.</li><li>Dauer und das Ergebnis, das vor Beginn sichtbar ist.</li><li>Datum und Uhrzeit.</li></ul>"
+    : "<h2>Bevor Sie zur Prüfung geben</h2><ul class=\"summary-list\"><li>Genau eine Stufe und mindestens ein Anwendungsfeld.</li><li>Neue Einheiten höchstens 10 Minuten, dazu das Ergebnis vor Beginn.</li><li>Praxisbeispiel mit Rolle, Tätigkeit, Nutzen und Grenze.</li><li>Fachbegriffe als erklärt gekennzeichnet.</li><li>Ein Schritt, dessen Ergebnis sichtbar ist.</li></ul>";
+  root.innerHTML = krumenHtml(ueberschrift)
+    + "<p class=\"eyebrow\">Dieselbe Prüfung für jeden Weg</p><h1>" + ueberschrift + "</h1>"
+    + "<p>" + einleitung + "</p>"
     + "<form id=\"editor-form\" class=\"form-card\">"
+    + "<input type=\"hidden\" name=\"art\" value=\"" + art + "\">"
     + "<label class=\"field\"><span>Titel</span><input name=\"titel\" required value=\"" + esc(v.titel || "") + "\"></label>"
-    + sel("Format", "formatKey", [["lernmodul", "Lernmodul"], ["artikel", "Wissensartikel"], ["impuls", "Praxisimpuls"], ["video", "Video"]])
-    + "<fieldset class=\"niveaus\"><legend>Niveaustufe — genau eine, Einordnungshilfe</legend>"
+    + medienBlock
+    + "<h2>Einordnung</h2>"
+    + "<fieldset class=\"niveaus\"><legend>Niveaustufe — genau eine</legend>"
     + ["basis", "aufbau", "spezial"].map(function (n) {
       var label = n === "basis" ? "Basis" : n === "aufbau" ? "Aufbau" : "Spezial";
       var hilfe = n === "basis" ? "Ohne Vorwissen verständlich. Entspricht der Stufe Anfänger." : n === "aufbau" ? "Für Menschen, die KI bereits nutzen. Entspricht Fortgeschritten." : "Vertieft ein Einsatzfeld, bleibt aber frei wählbar. Entspricht Experte. Keine Zugangssperre.";
@@ -1056,22 +1136,16 @@ function renderEditor(root) {
     + sel("Werkzeug", "werkzeugKey", [["sprachmodell", "Sprachmodell"], ["transkription", "Transkription"], ["auswertung", "Auswertung"], ["keins", "Keins"]])
     + "<label class=\"field\"><span>Dauer in Minuten</span><input name=\"dauerMin\" type=\"number\" min=\"1\" max=\"60\" value=\"" + esc(v.dauerMin || "") + "\"><span class=\"hint\">Richtwert für neue Einheiten: höchstens 10 Minuten.</span></label>"
     + "<label class=\"field\"><span>Ergebnis, das vor Beginn sichtbar ist</span><input name=\"ergebnis\" value=\"" + esc(v.ergebnis || "") + "\"></label>"
-    + "<label class=\"field\"><span>Lernziel</span><input name=\"lernziel\" value=\"" + esc(v.lernziel || "") + "\"></label>"
-    + "<h2>Praxisbeispiel</h2>"
-    + "<label class=\"field\"><span>Rolle</span><input name=\"rolle\" value=\"" + esc(p.rolle || "") + "\"></label>"
-    + "<label class=\"field\"><span>Tätigkeit</span><input name=\"taetigkeit\" value=\"" + esc(p.taetigkeit || "") + "\"></label>"
-    + "<label class=\"field\"><span>Nutzen</span><input name=\"nutzen\" value=\"" + esc(p.nutzen || "") + "\"></label>"
-    + "<label class=\"field\"><span>Grenze</span><input name=\"grenze\" value=\"" + esc(p.grenze || "") + "\"></label>"
-    + "<label class=\"checkline\"><input type=\"checkbox\" name=\"glossarOk\"" + (v.glossarOk ? " checked" : "") + "> Alle Fachbegriffe und Anglizismen sind im Glossar erklärt</label>"
-    + "<label class=\"field\"><span>Begriffe, kommagetrennt</span><input name=\"glossar\" value=\"" + esc((v.glossar || []).join(", ")) + "\"></label>"
-    + sel("Medienbaustein", "medien", [["text", "Strukturierter Text"], ["h5p", "H5P-Datei"], ["iframe", "Video als iFrame"]])
-    + "<div id=\"medien-text\"><label class=\"field\"><span>Text</span><textarea name=\"text\" rows=\"8\">" + esc(v.text || "") + "</textarea></label></div>"
-    + "<div id=\"medien-h5p\"><label class=\"field\"><span>H5P-Datei</span><input name=\"datei\" type=\"file\" accept=\".h5p,application/zip\"><span class=\"hint\">Die Datei wird im Prototyp nicht übertragen. Es bleibt der Dateiname.</span></label><p id=\"dateiname\" class=\"meta-line\">" + esc(v.dateiname || "") + "</p></div>"
-    + "<div id=\"medien-video\"><label class=\"field\"><span>Adresse des iFrames</span><input name=\"iframe\" type=\"url\" value=\"" + esc(v.iframe || "") + "\" placeholder=\"https://…\"><span class=\"hint\">Im MVP ist das die einzige Video-Option.</span></label></div>"
+    + "<label class=\"field\"><span>Lernziel, freiwillig</span><input name=\"lernziel\" value=\"" + esc(v.lernziel || "") + "\"></label>"
+    + praxisBlock
+    + schrittBlock
+    + glossarBlock
+    + pruefHinweis
     + "<div class=\"button-row\"><button class=\"btn-line\" type=\"submit\" name=\"ziel\" value=\"entwurf\">Entwurf speichern</button><button class=\"btn-solid\" type=\"submit\" name=\"ziel\" value=\"review\">Zur Prüfung geben</button></div>"
     + "</form>";
   function zeigeMedien() {
-    var wert = (root.querySelector("[name=medien]") || {}).value || "text";
+    var gewaehlt = root.querySelector("[name=medien]:checked") || root.querySelector("[name=medien]");
+    var wert = gewaehlt ? gewaehlt.value : "text";
     var text = root.querySelector("#medien-text");
     var h5p = root.querySelector("#medien-h5p");
     var video = root.querySelector("#medien-video");
@@ -1079,36 +1153,74 @@ function renderEditor(root) {
     if (h5p) h5p.hidden = wert !== "h5p";
     if (video) video.hidden = wert !== "iframe";
   }
-  var medienWahl = root.querySelector("[name=medien]");
-  if (medienWahl) medienWahl.addEventListener("change", zeigeMedien);
+  root.querySelectorAll("[name=medien]").forEach(function (el) {
+    el.addEventListener("change", zeigeMedien);
+  });
   zeigeMedien();
 }
 
 function leseEditor(form, ziel) {
   var data = new FormData(form);
+  var alt = editorId ? byId(editorId) : null;
+  var art = String(data.get("art") || "inhalt");
   var felder = data.getAll("feld");
   var id = editorId || ("eigen-" + Date.now());
-  var formatKey = data.get("formatKey");
-  var format = { lernmodul: "Lernmodul", artikel: "Wissensartikel", impuls: "Impuls", video: "Video" }[formatKey] || "Lernmodul";
-  var werkzeugKey = data.get("werkzeugKey");
+  var medien = String(data.get("medien") || "text");
+  if (medien === "poltube") medien = "iframe";
+  var formatKey = "artikel";
+  var format = "Strukturierter Text";
+  var impuls = false;
+  var anwendungsbezogen = true;
+  if (art === "impuls") {
+    formatKey = "impuls";
+    format = "Impuls";
+    impuls = true;
+    medien = "text";
+  } else if (art === "live") {
+    formatKey = "live";
+    format = "Live-Session";
+    medien = "text";
+    anwendungsbezogen = false;
+  } else if (medien === "h5p") {
+    formatKey = "lernmodul";
+    format = "H5P";
+  } else if (medien === "iframe") {
+    formatKey = "video";
+    format = "Video";
+  } else if (alt && (alt.formatKey === "lernmodul" || alt.formatKey === "artikel")) {
+    formatKey = alt.formatKey;
+    format = alt.format || "Strukturierter Text";
+  }
+  var werkzeugKey = data.get("werkzeugKey") || "sprachmodell";
   var werkzeug = { sprachmodell: "Sprachmodell", transkription: "Transkription", auswertung: "Auswertung", keins: "Keins" }[werkzeugKey] || "Sprachmodell";
+  var titelSchritte = data.getAll("schrittTitel");
+  var textSchritte = data.getAll("schrittText");
+  var schritte = [];
+  for (var i = 0; i < titelSchritte.length; i++) {
+    var st = String(titelSchritte[i] || "").trim();
+    var sd = String(textSchritte[i] || "").trim();
+    if (st || sd) schritte.push({ t: st, d: sd });
+  }
+  var text = String(data.get("text") || "").trim();
+  var ergebnis = String(data.get("ergebnis") || "").trim();
   var obj = {
     id: id,
     titel: String(data.get("titel") || "").trim(),
-    teaser: "Von Ihnen angelegte Lerneinheit im Prototyp.",
+    teaser: (text || ergebnis || "Eigener Entwurf").slice(0, 180),
     format: format,
     formatKey: formatKey,
+    impuls: impuls,
     niveau: data.get("niveau") || "",
     dauerMin: Number(data.get("dauerMin") || 0),
-    ergebnis: String(data.get("ergebnis") || "").trim(),
+    ergebnis: ergebnis,
     lernziel: String(data.get("lernziel") || "").trim(),
     felder: felder,
     werkzeug: werkzeug,
     werkzeugKey: werkzeugKey,
-    thema: ["grundlagen"],
+    thema: (alt && alt.thema) || ["grundlagen"],
     ziel: felder.map(function (f) { return f === "Ermittlung" ? "ermittlung" : f === "Führung" ? "fuehrung" : "verwaltung"; }),
-    medien: (function () { var m = data.get("medien"); return m === "poltube" ? "iframe" : m; })(),
-    anwendungsbezogen: true,
+    medien: medien,
+    anwendungsbezogen: anwendungsbezogen,
     praxis: {
       rolle: String(data.get("rolle") || "").trim(),
       taetigkeit: String(data.get("taetigkeit") || "").trim(),
@@ -1117,25 +1229,28 @@ function leseEditor(form, ziel) {
     },
     glossarOk: data.get("glossarOk") === "on",
     glossar: String(data.get("glossar") || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean),
-    text: String(data.get("text") || "").trim(),
+    text: text,
     iframe: String(data.get("iframe") || "").trim(),
+    liveDatum: String(data.get("liveDatum") || "").trim(),
+    liveZeit: String(data.get("liveZeit") || "").trim(),
     dateiname: (function () {
       var anzeige = document.getElementById("dateiname");
       if (anzeige && anzeige.dataset.datei) return anzeige.dataset.datei;
-      var alt = editorId ? byId(editorId) : null;
       return (alt && alt.dateiname) || "";
     })(),
-    schritte: [{ t: "Erster Schritt aus Ihrem Entwurf", d: "Die Redaktion prüft Vollständigkeit, Niveau und Umfang." }],
-    kern: ["Entwurf aus der Rolle Teilnehmende mit Erstellen."],
-    autor: "Henning Beckmann",
-    autorRolle: "creator",
+    schritte: schritte.length ? schritte : ((alt && alt.schritte) || []),
+    kern: (alt && alt.kern && alt.kern.length) ? alt.kern : ["Entwurf aus der Rolle Teilnehmende mit Erstellen."],
+    fehler: alt ? alt.fehler : null,
+    verwandt: (alt && alt.verwandt) || [],
+    autor: (alt && alt.autor) || "Henning Beckmann",
+    autorRolle: (alt && alt.autorRolle) || "creator",
     status: ziel,
-    fassung: "1",
-    geprueft: "",
-    kommentare: []
+    fassung: (alt && alt.fassung) || "1",
+    geprueft: (alt && ziel !== "review" && alt.geprueft) || "",
+    kommentare: (alt && alt.kommentare) || []
   };
   if (obj.medien === "h5p") {
-    obj.h5p = {
+    obj.h5p = (alt && alt.h5p) || {
       frage: "Haben Sie das Ergebnis gegen die Quelle gehalten?",
       optionen: [
         { t: "Ja. Der Prüfschritt gehört zum Ergebnis.", ok: true },
@@ -1187,6 +1302,7 @@ function kachelMarkup(c) {
   var ziel = (c.ziel || []).join(" ");
   var geliked = state.feedback[c.id] === "up";
   return "<article class=\"tile " + farbe + "\" tabindex=\"0\" data-id=\"" + esc(c.id) + "\" data-werkzeug=\"" + esc(c.werkzeugKey || "") + "\" data-thema=\"" + esc(thema) + "\" data-format=\"" + esc(c.formatKey || "") + "\" data-niveau=\"" + esc(c.niveau || "") + "\" data-zielgruppe=\"" + esc(ziel) + "\">"
+    + (istEigen(c) ? stiftKnopf(c.id, false) : "")
     + "<div class=\"thumb\"><span class=\"fmt\">" + esc(c.format || "Inhalt") + " · " + esc(c.dauer) + "</span></div>"
     + "<div class=\"tile-body\"><div class=\"badges\"><span class=\"lvl " + esc(c.niveau || "basis") + "\">" + esc(c.niveauLabel) + "</span><span class=\"st " + esc(c.status) + "\">" + esc(meinArt(c)) + "</span></div>"
     + "<h3>" + esc(c.titel) + "</h3><p>" + esc(c.teaser || "") + "</p>"
@@ -1230,11 +1346,16 @@ function renderEigene() {
   function treffer(c) {
     return !q || (c.titel + " " + (c.teaser || "")).toLowerCase().indexOf(q) >= 0;
   }
+  function istImpuls(c) { return !!(c.impuls || c.formatKey === "impuls"); }
+  function istLiveSession(c) { return c.formatKey === "live" && !istImpuls(c) && c.medien !== "iframe" && c.medien !== "poltube" && c.medien !== "h5p"; }
   var inhalte = alle().filter(function (c) {
-    return istEigen(c) && !c.impuls && c.formatKey !== "impuls";
+    return istEigen(c) && !istImpuls(c) && !istLiveSession(c);
   }).filter(treffer);
   var impulse = alle().filter(function (c) {
-    return istEigen(c) && (c.impuls || c.formatKey === "impuls");
+    return istEigen(c) && istImpuls(c);
+  }).filter(treffer);
+  var sessions = alle().filter(function (c) {
+    return istEigen(c) && istLiveSession(c);
   }).filter(treffer);
   var box = document.getElementById("inhalte-eigene");
   if (box) {
@@ -1244,8 +1365,11 @@ function renderEigene() {
   }
   var ibox = document.getElementById("impulse-eigene");
   if (ibox) {
-    ibox.classList.add("grid");
-    ibox.innerHTML = impulse.length ? impulse.map(kachelMarkup).join("") : "<p class=\"meta-line\">Noch keine eigenen Impulse.</p>";
+    ibox.innerHTML = impulse.length ? impulse.map(kachelMarkup).join("") : "<p class=\"meta-line\">Noch kein eigener Impuls. Oben können Sie einen erstellen.</p>";
+  }
+  var lbox = document.getElementById("live-eigene");
+  if (lbox) {
+    lbox.innerHTML = sessions.length ? sessions.map(kachelMarkup).join("") : "<p class=\"meta-line\">Noch keine eigene Live-Session.</p>";
   }
   document.querySelectorAll("#impulse-alle [data-open]").forEach(function (b) {
     var c = byId(b.dataset.open);
@@ -1860,7 +1984,7 @@ function init() {
   });
   document.querySelectorAll(".grid").forEach(function (grid) {
     grid.addEventListener("click", function (e) {
-      if (e.target.closest(".likebtn, .kommentar-link, [data-bewerten], [data-kommentar]")) return;
+      if (e.target.closest(".likebtn, .kommentar-link, .stift, [data-action], [data-bewerten], [data-kommentar]")) return;
       var tile = e.target.closest(".tile");
       if (!tile || !tile.dataset.id) return;
       oeffneInhalt(tile.dataset.id, false, "", tile);
@@ -1927,7 +2051,21 @@ function init() {
         if (eingabe) eingabe.focus();
       }
     }
-    if (action === "neu") { editorId = null; editorVorgabe = ""; detailModus = "bearbeiten"; herkunftSetzen("meine"); showView("player"); }
+    if (action === "neu") {
+      editorId = null;
+      editorVorgabe = act.dataset.art || "inhalt";
+      detailModus = "bearbeiten";
+      herkunftSetzen(editorVorgabe === "impuls" && act.id === "impuls-anbieten" ? "impulse" : "meine");
+      showView("player");
+    }
+    if (action === "schritt-hinzu") {
+      var liste = document.getElementById("schritt-liste");
+      if (liste) {
+        var anzahl = liste.querySelectorAll(".schritt-feld").length;
+        if (anzahl >= 6) toast("Sechs Schritte reichen für eine kurze Einheit.");
+        else liste.insertAdjacentHTML("beforeend", schrittFeld(anzahl, { t: "", d: "" }));
+      }
+    }
     if (action === "bearbeiten") { editorId = act.dataset.id; editorVorgabe = ""; detailModus = "bearbeiten"; aktuell = editorId; showView("player"); }
     if (action === "review") { aktuell = act.dataset.id; detailModus = "lesen"; oeffneInhalt(act.dataset.id); }
     if (action === "passwort") {

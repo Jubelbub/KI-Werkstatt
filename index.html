@@ -363,9 +363,19 @@
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
   .tile{
     background:var(--bg-card);border:1px solid var(--line);border-radius:10px;
-    overflow:hidden;display:flex;flex-direction:column;
+    overflow:hidden;display:flex;flex-direction:column;position:relative;
     transition:transform .15s, border-color .15s;
   }
+  .stift{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    width:44px;height:44px;border-radius:8px;border:1px solid var(--line);
+    background:var(--bg-card);color:var(--blue-light);cursor:pointer;padding:0;
+  }
+  .tile > .stift{position:absolute;top:8px;right:8px;z-index:2;}
+  .stift:hover{border-color:var(--accent);background:var(--bg-card-hover);}
+  .btn-line.stift{width:auto;height:auto;min-height:44px;padding:8px 16px;}
+  .titelzeile{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
+  .titelzeile h1{flex:1;}
   .tile:hover{transform:translateY(-3px);border-color:rgba(201,224,238,0.3);}
   .thumb{
     height:120px;position:relative;
@@ -608,6 +618,7 @@
     border-radius:12px;padding:28px 28px 18px;margin:8px 0 28px;
   }
   .anlegen h2{color:var(--text-title);font-size:28px;margin:0 0 8px;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .anlegen p{font-size:17px;max-width:66ch;}
   .view > .backlink{margin-top:28px;}
 
@@ -1323,13 +1334,12 @@
     </div>
 
     <h3 class="bereich-titel">Für alle</h3>
+    <p class="meta-line">Nur veröffentlichte Impulse, die nicht zu Ihren eigenen Inhalten gehören.</p>
     <ul class="happen" id="impulse-alle">
       <li><button type="button" data-open="impuls-auswertung">Wie wir im Ermittlungsteam die Auswertung umgestellt haben<span>45 Min.</span></button></li>
       <li><button type="button" data-open="skeptikerin">Ich war die Skeptikerin im Team<span>18 Min.</span></button></li>
       <li><button type="button" data-open="berichte">Berichte zusammenfassen: mein Vorgehen Schritt für Schritt<span>9 Min.</span></button></li>
     </ul>
-    <h3 class="bereich-titel">Eigene Impulse</h3>
-    <div id="impulse-eigene" class="eigenliste"></div>
 
     <div class="impulse-cta">
       <div>
@@ -1526,13 +1536,21 @@
     <p class="meta-line">Erstellt, bereitgestellt oder begonnen. Dieselben Kacheln wie beim Entdecken, klar von den allgemeinen Inhalten getrennt.</p>
     <section class="anlegen" aria-labelledby="anlegen-titel">
       <h2 id="anlegen-titel">Inhalt erstellen</h2>
-      <p>Legen Sie einen neuen Inhalt an: strukturierter Text, eine H5P-Datei oder ein Video als iFrame. Der Entwurf bleibt bei Ihnen, bis Sie ihn zur Freigabe geben.</p>
+      <p>Inhalt, Impuls oder Live-Session. Der Entwurf bleibt bei Ihnen, bis Sie ihn zur Freigabe geben. Ein Stift an der Kachel und in der Ansicht bedeutet: das können Sie bearbeiten.</p>
       <div class="button-row">
-        <button type="button" class="btn-solid" data-action="neu">Neuen Inhalt anlegen</button>
+        <button type="button" class="btn-solid" data-action="neu" data-art="inhalt">Neuen Inhalt anlegen</button>
+        <button type="button" class="btn-line" data-action="neu" data-art="impuls">Neuen Impuls erstellen</button>
+        <button type="button" class="btn-line" data-action="neu" data-art="live">Neue Live-Session starten</button>
         <button type="button" class="btn-line" data-view-jump="leitfaden">Leitfaden öffnen</button>
       </div>
     </section>
     <div id="inhalte-eigene" class="grid"></div>
+    <h2 id="eigene-impulse-titel">Eigene Impulse</h2>
+    <p class="meta-line">Ihre Praxisbeiträge. Unter Impulse stehen nur die veröffentlichten Beiträge, die nicht Ihnen gehören.</p>
+    <div id="impulse-eigene" class="grid"></div>
+    <h2 id="eigene-live-titel">Eigene Live-Sessions</h2>
+    <p class="meta-line">Termine, die Sie anlegen. Die Teilnahme selbst folgt später.</p>
+    <div id="live-eigene" class="grid"></div>
   </div>
   <div id="view-editor" class="view" hidden></div>
   <div id="view-leitfaden" class="view" hidden>
