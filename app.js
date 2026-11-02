@@ -674,7 +674,7 @@ function markNav(name, anker) {
   });
   var btn = document.getElementById("nav-inhalte-btn");
   if (btn) {
-    var inhaltAktiv = (bereich === "inhalte" || bereich === "meine") && anker !== "live-titel" && anker !== "community-titel";
+    var inhaltAktiv = bereich === "inhalte" || bereich === "meine";
     if (inhaltAktiv) btn.setAttribute("aria-current", "page");
     else btn.removeAttribute("aria-current");
   }
@@ -712,12 +712,12 @@ function renderNav() {
       "<a href=\"#meine-inhalte\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"eigene-inhalte-titel\">Meine Inhalte</a>" +
       "<a href=\"#allgemeine-inhalte\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"allgemeine-inhalte-titel\">Allgemeine Inhalte</a>" +
       "<a href=\"#impulse\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"impulse-titel\">Impulse</a>" +
-    "</div></div>" +
-    "<a href=\"#live\" data-nav=\"live\" data-view=\"inhalte\" data-anker=\"live-titel\">Live-Sessions</a>" +
-    "<a href=\"#community\" data-nav=\"community\" data-view=\"inhalte\" data-anker=\"community-titel\">Community</a>" +
-    "<a href=\"#faq\" data-nav=\"faq\" data-view=\"faq\">FAQ</a>";
+      "<a href=\"#live\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"live-titel\">Live-Sessions</a>" +
+      "<a href=\"#community\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"community-titel\">Community</a>" +
+    "</div></div>";
   if (darfFreigeben()) html += "<a href=\"#redaktion\" data-nav=\"redaktion\" data-view=\"redaktion\">Moderation</a>";
   if (state.rolle === "admin") html += "<a href=\"#admin\" data-nav=\"admin\" data-view=\"admin\">Administration</a>";
+  html += "<a href=\"#faq\" data-nav=\"faq\" data-view=\"faq\">FAQ</a>";
   nav.innerHTML = html;
 }
 
