@@ -247,7 +247,7 @@
   /* Filterstatus und Leerzustand */
   .filter-status{
     display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
-    margin:-14px 0 22px;
+    margin:0 0 18px;
   }
   .fcount{font-size:13.5px;color:var(--text-muted);}
   .fcount strong{color:var(--text-title);}
@@ -313,19 +313,26 @@
 
   /* Filterleiste */
   .filters{
-    display:flex;flex-wrap:wrap;gap:22px;row-gap:14px;
-    padding:18px 20px;background:var(--bg-card);
+    display:flex;flex-direction:column;align-items:stretch;gap:0;
+    padding:8px 12px 16px;background:var(--bg-card);
     border:1px solid var(--line);border-radius:10px;margin-bottom:28px;
   }
-  .fgroup{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .filter-lead{
+    margin:14px 8px 4px;max-width:70ch;font-size:15px;color:var(--text-body);
+  }
+  .filters .filter-status{margin:0 8px 8px;}
+  .fgroup{
+    display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;
+    padding:12px 8px;border-top:1px solid var(--line);
+  }
   .fgroup .flabel{
-    font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
-    color:var(--text-muted);margin-right:2px;
+    flex:0 0 8.5rem;font-size:14px;letter-spacing:0.04em;text-transform:uppercase;
+    font-weight:bold;color:var(--text-title);
   }
   .chip{
     background:transparent;border:1px solid #8FB0C6;border-radius:999px;
-    color:var(--text-body);font-family:inherit;font-size:13px;
-    padding:5px 14px;cursor:pointer;
+    color:var(--text-body);font-family:inherit;font-size:15px;
+    min-height:44px;padding:8px 16px;cursor:pointer;
     transition:all .12s;
   }
   .chip:hover{border-color:var(--blue-light);color:var(--text-title);}
@@ -409,7 +416,7 @@
     display:flex;align-items:baseline;justify-content:space-between;
     margin-bottom:16px;gap:16px;flex-wrap:wrap;
   }
-  .detail-right .dhead h4{color:var(--text-title);font-size:15px;letter-spacing:0.3px;}
+  .detail-right .dhead h2,.detail-right .dhead h4{color:var(--text-title);font-size:18px;letter-spacing:0.3px;margin:0;}
   .detail-right .dhead span{font-size:13px;color:var(--text-muted);}
   .comment{
     display:flex;gap:12px;padding:13px 0;border-top:1px solid var(--line);
@@ -532,14 +539,29 @@
   }
   .footer-inner .disclaimer{font-style:italic;}
 
+  .hub{padding-bottom:64px;}
+  .hub-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px;}
+  .hub-tile{
+    text-align:left;background:var(--bg-card);border:1px solid var(--line);border-radius:10px;
+    padding:22px 22px 18px;min-height:168px;cursor:pointer;color:inherit;font-family:inherit;
+    display:flex;flex-direction:column;align-items:flex-start;
+    transition:background .15s, transform .15s, border-color .15s;
+  }
+  .hub-tile:hover{background:var(--bg-card-hover);transform:translateY(-3px);border-color:rgba(201,224,238,0.3);}
+  .hub-tile .hub-titel{color:var(--text-title);font-size:20px;font-weight:bold;line-height:1.3;margin-bottom:8px;}
+  .hub-tile .hub-text{font-size:15px;color:var(--text-body);flex:1;}
+  .hub-tile .go{display:inline-block;margin-top:16px;font-size:14px;color:var(--blue-light);font-weight:bold;}
+  .view > .backlink{margin-top:28px;}
+
   @media (max-width:980px){
-    .grid,.paths{grid-template-columns:1fr 1fr;}
+    .grid,.paths,.hub-grid{grid-template-columns:1fr 1fr;}
     .detail{grid-template-columns:1fr;}
     .community-wrap{grid-template-columns:1fr;}
     nav{display:none;}
   }
   @media (max-width:640px){
-    .grid,.paths,.impulse-grid{grid-template-columns:1fr;}
+    .grid,.paths,.impulse-grid,.hub-grid{grid-template-columns:1fr;}
+    .fgroup .flabel{flex-basis:100%;}
     .p-tip{width:min(330px,88vw);left:0;right:auto;}
     .p-tip[data-align="right"]{left:0;right:auto;}
     .pmode-btn{display:none;}
@@ -720,8 +742,8 @@
     </div>
     <nav aria-label="Bereiche">
       <a href="#faq" data-nav="faq" data-view="faq">FAQ</a>
-      <a href="#inhalte" data-nav="inhalte" data-view="home" data-anker="inhalte">Inhalte</a>
-      <a href="#impulse" data-nav="impulse" data-view="home" data-anker="impulse">Impulse</a>
+      <a href="#inhalte" data-nav="inhalte" data-view="inhalte">Inhalte</a>
+      <a href="#impulse" data-nav="impulse" data-view="impulse">Impulse</a>
     </nav>
     <div class="search kopf-suche" role="search">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
@@ -772,12 +794,9 @@
 
   <div id="view-home" class="view">
 
-  <!-- HERO -->
-  <div class="hero">
+  <div class="hero hub">
     <p class="hello" id="hello" hidden data-einfach="Guten Tag. Sie müssen die KI-Werkstatt nicht nutzen. Das ist freiwillig.">Guten Tag, Henning Beckmann. Die Nutzung ist freiwillig.</p>
-    <div class="eyebrow">Lernen · Wissen · Austausch</div>
-    <h1>KI verstehen und sicher anwenden — direkt aus dem Arbeitsalltag heraus.</h1>
-    <p class="sub">Die KI-Werkstatt ergänzt die bestehende Fortbildung um eine jederzeit verfügbare Lern- und Wissensumgebung: kurze Einheiten, verlässliche Antworten, kollegialer Austausch und Impulse aus der Praxis.</p>
+    <h1>Was möchten Sie öffnen?</h1>
 
     <div class="search" role="search">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
@@ -785,6 +804,12 @@
       <button type="button" id="suche-btn">Suchen</button>
     </div>
 
+    <div class="hub-grid" id="hub-kacheln"></div>
+  </div>
+
+  </div><!-- view-home -->
+
+  <div id="lager" hidden>
     <div class="paths prinzip">
       <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 2: Lernwege statt Kursräume">2</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 2</span><span class="p-title">Lernwege statt Kursräume</span><span class="p-text">Der Einstieg erfolgt nicht über einen Kurskatalog, sondern über die eigene Ausgangslage. Dahinter stehen kurze Einheiten, die einzeln aktualisiert werden können, gebündelt zu Lernwegen nach Rolle und Vorwissen. Der Pflichtanteil bleibt auf das rechtlich Erforderliche nach der EU-KI-Verordnung begrenzt.</span><span class="p-src">Feinkonzept 5.4.2 · Belegdichte: <b>breit getragen</b></span></span>
       <div class="path" tabindex="0" data-pfad="anfang">
@@ -843,10 +868,22 @@
         </div>
       </article>
     </div>
-  </div>
+  </div><!-- lager: bisherige Einstiegskarten, damit die vorhandenen Schalter weiter ansprechbar sind -->
 
-  <!-- INHALTE -->
+  <div id="view-inhalte" class="view" hidden>
+  <button type="button" class="backlink" data-view-jump="home">Zurück</button>
   <section id="inhalte">
+    <h1>Inhalte</h1>
+    <div class="search bereich-suche" role="search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+      <input id="suche-inhalte" type="search" placeholder="Wonach suchen Sie? z. B. Transkription, Prompt, EU-KI-Verordnung …" aria-label="Suche in den Inhalten">
+      <button type="button" id="suche-inhalte-btn">Suchen</button>
+    </div>
+    <div id="suchpanel" hidden></div>
+
+    <h2 class="bereich-titel" id="eigene-inhalte-titel">Eigene Inhalte</h2>
+    <div id="inhalte-eigene" class="eigenliste"></div>
+
     <div class="section-head">
       <h2>Inhalte entdecken</h2>
       <span class="hint prinzip">
@@ -855,14 +892,14 @@
       </span>
     </div>
 
-    <div class="search bereich-suche" role="search">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-      <input id="suche-inhalte" type="search" placeholder="Wonach suchen Sie? z. B. Transkription, Prompt, EU-KI-Verordnung …" aria-label="Suche in den Inhalten">
-      <button type="button" id="suche-inhalte-btn">Suchen</button>
-    </div>
-    <h3 class="bereich-titel">Für alle</h3>
+    <p class="banner" id="pfadhinweis" hidden></p>
     <div class="filters prinzip" aria-label="Inhalte filtern">
       <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 3: Auffindbar nach Rolle und Vorwissen">3</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 3</span><span class="p-title">Auffindbar nach Rolle und Vorwissen</span><span class="p-text">Dieselbe Sammlung, vier Zugänge: Thema, Format, Niveau und Zielgruppe. Wer nur zehn Minuten hat, findet ebenso etwas wie jemand, der ein Thema vertiefen will. Filterkombinationen ohne Treffer sind kein Fehler, sondern ein Hinweis an die Redaktion, wo das Angebot noch Lücken hat.</span><span class="p-src">Feinkonzept 5.4.1 und 5.4.2 · operative Ziele HF 6.2</span></span>
+      <p class="filter-lead">Grenzen Sie die allgemeinen Inhalte ein. Die Kacheln darunter bleiben dieselben.</p>
+      <div class="filter-status">
+        <span class="fcount" id="fcount" role="status" aria-live="polite">Alle 10 Inhalte werden angezeigt.</span>
+        <button class="freset" id="freset" hidden>Filter zurücksetzen</button>
+      </div>
       <div class="fgroup" role="group" aria-label="Thema">
         <span class="flabel">Thema</span>
         <button class="chip active" data-group="thema" data-value="alle" aria-pressed="true">Alle</button>
@@ -902,14 +939,6 @@
         <button class="chip" data-group="werkzeug" data-value="auswertung" aria-pressed="false">Auswertung</button>
         <button class="chip" data-group="werkzeug" data-value="keins" aria-pressed="false">Ohne Werkzeug</button>
       </div>
-    </div>
-
-    <p class="banner" id="pfadhinweis" hidden></p>
-    <div id="suchpanel" hidden></div>
-
-    <div class="filter-status">
-      <span class="fcount" id="fcount" role="status" aria-live="polite">Alle 10 Inhalte werden angezeigt.</span>
-      <button class="freset" id="freset" hidden>Filter zurücksetzen</button>
     </div>
 
     <div class="grid">
@@ -1181,9 +1210,6 @@
       <button class="btn-line" id="empty-reset">Filter zurücksetzen</button>
     </div>
 
-    <h3 class="bereich-titel" id="eigene-inhalte-titel">Eigene Inhalte</h3>
-    <div id="inhalte-eigene" class="eigenliste"></div>
-
     <!-- Detailkarte mit Kommentaren -->
     <div class="prinzip p-wrap">
       <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 5: Lernen im Austausch">5</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 5</span><span class="p-title">Lernen im Austausch</span><span class="p-text">Der Inhalt endet nicht mit dem Video. Kommentare, Rückfragen und Erfahrungsberichte gehören zum Lerngegenstand. Dass Lernen vor allem im Austausch untereinander gelingt, ist mit neun Quellen der am breitesten getragene Befund des gesamten Feinkonzepts.</span><span class="p-src">Feinkonzept 5.4.3 · Belegdichte: <b>breit getragen (neun Quellen)</b></span></span>
@@ -1232,7 +1258,10 @@
       </div>
     </div>
   </section>
+  </div><!-- view-inhalte -->
 
+  <div id="view-impulse" class="view" hidden>
+  <button type="button" class="backlink" data-view-jump="home">Zurück</button>
   <!-- IMPULSE AUS DER PRAXIS -->
   <section id="impulse">
     <div class="section-head">
@@ -1262,7 +1291,10 @@
       <button class="btn-solid" type="button" id="impuls-anbieten">Impuls anbieten</button>
     </div>
   </section>
+  </div><!-- view-impulse -->
 
+  <div id="view-community" class="view" hidden>
+  <button type="button" class="backlink" data-view-jump="home">Zurück</button>
   <!-- COMMUNITY -->
   <section id="community">
     <div class="section-head">
@@ -1320,7 +1352,10 @@
       </aside>
     </div>
   </section>
+  </div><!-- view-community -->
 
+  <div id="view-live" class="view" hidden>
+  <button type="button" class="backlink" data-view-jump="home">Zurück</button>
   <!-- LIVE -->
   <section id="live">
     <div class="prinzip p-wrap">
@@ -1340,8 +1375,7 @@
       </div>
     </div>
   </section>
-
-  </div><!-- view-home -->
+  </div><!-- view-live -->
 
   <div id="view-faq" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="home">Zurück</button>

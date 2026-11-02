@@ -629,11 +629,30 @@ function markNav(name, anker) {
   });
 }
 
+function renderHub() {
+  var box = document.getElementById("hub-kacheln");
+  if (!box) return;
+  var kacheln = [
+    ["inhalte", "eigene-inhalte-titel", "Meine Inhalte", "Ihre eigenen Beiträge stehen im Bereich Inhalte an erster Stelle."],
+    ["inhalte", "", "Allgemeine Inhalte", "Inhalte entdecken, mit Filtern und derselben Kachelansicht."],
+    ["impulse", "", "Impulse aus der Praxis", "Kurze Beiträge aus dem Dienstalltag, jeder für sich."],
+    ["faq", "", "Häufige Fragen", "Verlässliche Antworten zum Einstieg, getrennt von den Inhalten."],
+    ["community", "", "Aus der Community", "Vorschau auf den späteren Austausch. Am einzelnen Inhalt können Sie schon kommentieren."],
+    ["live", "", "Live-Session", "Offenes Format. Die Teilnahme selbst folgt später."]
+  ];
+  if (darfFreigeben()) kacheln.push(["redaktion", "", "Freigabe", "Beiträge, die auf eine Entscheidung warten."]);
+  if (state.rolle === "admin") kacheln.push(["admin", "", "Verwaltung", "Rollen, Anbindung und Betrieb."]);
+  box.innerHTML = kacheln.map(function (k) {
+    var anker = k[1] ? " data-anker=\"" + k[1] + "\"" : "";
+    return "<button type=\"button\" class=\"hub-tile\" data-view-jump=\"" + k[0] + "\"" + anker + "><span class=\"hub-titel\">" + k[2] + "</span><span class=\"hub-text\">" + k[3] + "</span><span class=\"go\">Öffnen</span></button>";
+  }).join("");
+}
+
 function renderNav() {
   var items = [
     ["faq", "FAQ", "faq", ""],
-    ["inhalte", "Inhalte", "home", "inhalte"],
-    ["impulse", "Impulse", "home", "impulse"]
+    ["inhalte", "Inhalte", "inhalte", ""],
+    ["impulse", "Impulse", "impulse", ""]
   ];
   if (darfBearbeiten()) items.push(["bearbeiten", "Bearbeiten", "meine", ""]);
   if (darfFreigeben()) items.push(["freigabe", "Freigabe", "redaktion", ""]);
@@ -700,13 +719,16 @@ function oeffneAusbau(titel, text) {
   });
 }
 
-function oeffneInhalt(id) {
+var playerKurz = false;
+
+function oeffneInhalt(id, kurz) {
   var c = byId(id);
   if (!c || c.status !== "veroeffentlicht") {
     toast("Dieser Inhalt ist noch nicht veröffentlicht.");
     return;
   }
   aktuell = id;
+  playerKurz = !!kurz;
   selbstGeprueft = false;
   bumpInhalt(id);
   showView("player");
@@ -746,8 +768,8 @@ function renderPlayer() {
     var loesch = k.eigen ? "<button type=\"button\" class=\"textbtn\" data-action=\"kommentar-loeschen\" data-index=\"" + i + "\">Löschen</button>" : "";
     return "<div class=\"comment\"><div class=\"c-av a\">" + esc((k.name || "?").slice(0, 1)) + "</div><div class=\"c-body\"><div class=\"c-name\">" + esc(k.name) + " <span>" + esc(k.meta || "gerade eben") + "</span></div><div class=\"c-text\">" + esc(k.text) + "</div><div class=\"c-actions\">" + loesch + "</div></div></div>";
   }).join("");
-  if (c.impuls || c.formatKey === "impuls") {
-    root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"home\" data-anker=\"impulse\">Zurück</button>"
+  if (playerKurz && (c.impuls || c.formatKey === "impuls")) {
+    root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"impulse\">Zurück</button>"
       + "<p class=\"meta-line\">" + esc(c.dauer) + "</p>"
       + "<h1>" + esc(c.titel) + "</h1>"
       + "<p>" + mitBegriffen(c.teaser) + "</p>"
@@ -773,7 +795,7 @@ function renderPlayer() {
     + fehler
     + "<label class=\"checkline\"><input type=\"checkbox\" id=\"selbstcheck\"> Ich habe das Ergebnis selbst geprüft. Das ist der Schritt, den ich in wenigen Minuten sehe.</label>"
     + "<div class=\"button-row\"><button type=\"button\" class=\"btn-solid\" data-action=\"abschliessen\">Einheit abschließen</button><button type=\"button\" class=\"btn-line\" data-action=\"melden\" data-ziel=\"" + esc(c.id) + "\">Inhalt melden</button></div>"
-    + "<div class=\"detail-right\"><div class=\"dhead\"><h2>Austausch zu diesem Inhalt</h2><span>" + kommentareVon(c).length + " Beiträge</span></div>"
+    + "<div class=\"detail-right\"><div class=\"dhead\"><h2>Kommentar zu diesem Inhalt</h2><span>" + kommentareVon(c).length + " Beiträge</span></div>"
     + kommentare
     + "<form class=\"comment-form\" id=\"kommentar-form\"><label class=\"field\"><span>Rückfrage unter Ihrem Namen</span><textarea name=\"text\" required rows=\"3\" placeholder=\"Was ist unklar geblieben?\"></textarea></label><button class=\"btn-solid\" type=\"submit\">Kommentar senden</button></form></div>";
 }
@@ -1174,7 +1196,7 @@ function setzePfad(name) {
     if (suche2) suche2.focus();
     return;
   }
-  showView("home", { anker: "inhalte", leise: true });
+  showView("inhalte", { leise: true });
 }
 
 function hinweis(text) {
@@ -1296,8 +1318,10 @@ function initFilter() {
   });
   function zuruecksetzen() {
     suchtext = "";
-    var suche = document.getElementById("suche");
-    if (suche) suche.value = "";
+    ["suche", "suche-kopf", "suche-inhalte"].forEach(function (id) {
+      var feld = document.getElementById(id);
+      if (feld) feld.value = "";
+    });
     document.getElementById("suchpanel").hidden = true;
     document.getElementById("pfadhinweis").hidden = true;
     chips.forEach(function (c) {
@@ -1374,6 +1398,7 @@ function meldungOeffnen(ziel) {
 
 function init() {
   renderNav();
+  renderHub();
   renderProfilKnopf();
   wendeEinfach();
   initFaq();
@@ -1435,6 +1460,7 @@ function init() {
       state.rolle = b.dataset.rolle;
       sichern();
       renderNav();
+      renderHub();
       renderProfilKnopf();
       pmenu.hidden = true;
       var ziel = { creator: "home", redaktion: "redaktion", admin: "admin", beschaeftigte: "home" }[state.rolle];
@@ -1462,7 +1488,7 @@ function init() {
       if (feld && feld.value !== suchtext) feld.value = suchtext;
     });
     if (!authAktiv()) { showView("sso"); return; }
-    showView("home", { anker: "inhalte", leise: true });
+    showView("inhalte", { leise: true });
     window.filtern();
     sucheAktualisieren();
   }
@@ -1496,7 +1522,7 @@ function init() {
 
   document.getElementById("sofort-btn").addEventListener("click", function (e) {
     e.stopPropagation();
-    oeffneInhalt(document.getElementById("sofort-btn").dataset.sofort || "berichte");
+    oeffneInhalt(document.getElementById("sofort-btn").dataset.sofort || "berichte", true);
   });
   document.querySelector(".grid").addEventListener("click", function (e) {
     if (e.target.closest(".likebtn")) return;
@@ -1515,7 +1541,7 @@ function init() {
     if (e.target.closest(".likebtn")) return;
     var open = e.target.closest("[data-open]");
     if (open && !e.target.closest("a")) {
-      oeffneInhalt(open.dataset.open);
+      oeffneInhalt(open.dataset.open, !!open.closest("#view-impulse"));
       return;
     }
     var jump = e.target.closest("[data-view-jump]");
@@ -1523,7 +1549,7 @@ function init() {
     var act = e.target.closest("[data-action]");
     if (act) {
     var action = act.dataset.action;
-    if (action === "zur-lernansicht") showView("home", { anker: "inhalte" });
+    if (action === "zur-lernansicht") showView("inhalte");
     if (action === "zurueck-inhalt") showView("player");
     if (action === "abschliessen") {
       selbstGeprueft = !!(document.getElementById("selbstcheck") && document.getElementById("selbstcheck").checked);
