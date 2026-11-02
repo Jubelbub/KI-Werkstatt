@@ -337,7 +337,7 @@ var INHALTE = [
     praxis: { rolle: "Teammitglied", taetigkeit: "Den ersten Einsatz im Team begleiten", nutzen: "Vorbehalte werden besprechbar", grenze: "Offene Fragen bleiben offen. Der Beitrag beantwortet sie nicht mit einer Parole." },
     schritte: [
       { t: "Die berechtigten Vorbehalte von den unbelegten trennen", d: "Beides kommt im Beitrag vor." },
-      { t: "Eine offene Frage für die FAQ notieren", d: "Wenn sie wiederkehrt, verdichtet die Redaktion sie später. Ein Forum ist dafür im MVP nicht da." }
+      { t: "Eine offene Frage notieren", d: "Wenn sie wiederkehrt, merkt sich die Redaktion sie. Ein Austausch dazu kommt später." }
     ],
     fehler: null,
     kern: ["Skepsis ist ein normaler Einstieg.", "Berechtigte Vorbehalte bleiben sichtbar.", "Offene Fragen werden nicht glattgezogen."],
@@ -557,7 +557,44 @@ function mitBegriffen(text) {
 }
 
 function rolleLabel(r) {
-  return { beschaeftigte: "Beschäftigte/r", creator: "Content Creator", redaktion: "Redaktion", admin: "Administration" }[r] || r;
+  return { beschaeftigte: "Lernen", creator: "Einreichen", redaktion: "Freigeben", admin: "Verwaltung" }[r] || "Lernen";
+}
+
+function rolleErklaerung(r) {
+  return {
+    beschaeftigte: "Sie sehen einen Beitrag und schließen ihn ab.",
+    creator: "Sie schicken einen eigenen Beitrag zur Prüfung.",
+    redaktion: "Sie prüfen einen Beitrag und geben ihn frei.",
+    admin: "Sie sehen, wer was darf. Der Lernweg bleibt."
+  }[r] || "";
+}
+
+function schrittVon(name) {
+  if (name === "sso" || name === "anmelden") return "anmelden";
+  if (name === "editor" || name === "meine" || name === "leitfaden") return "einreichen";
+  if (name === "redaktion" || name === "review" || name === "statistik") return "freigeben";
+  if (name === "admin") return "";
+  return "lernen";
+}
+
+function gehSchritt(name) {
+  if (name === "anmelden") {
+    showView(authAktiv() ? "anmelden" : "sso");
+    return;
+  }
+  if (!authAktiv()) {
+    showView("sso");
+    return;
+  }
+  if (name === "lernen") state.rolle = "beschaeftigte";
+  else if (name === "einreichen") {
+    state.rolle = "creator";
+    editorId = null;
+  } else if (name === "freigeben") state.rolle = "redaktion";
+  else return;
+  sichern();
+  renderProfilKnopf();
+  showView({ lernen: "home", einreichen: "editor", freigeben: "redaktion" }[name]);
 }
 
 function showView(name, opt) {
@@ -593,43 +630,29 @@ function showView(name, opt) {
   }
 }
 
-function markNav(name, anker) {
+function markNav(name) {
+  var current = schrittVon(name);
+  var order = ["anmelden", "lernen", "einreichen", "freigeben"];
+  var idx = order.indexOf(current);
   document.querySelectorAll("header nav a").forEach(function (a) {
-    var an = (name === "home" && a.dataset.nav === anker) || a.dataset.nav === name;
-    if (an) a.setAttribute("aria-current", "page");
+    var i = order.indexOf(a.dataset.nav);
+    if (a.dataset.nav === current) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
+    a.classList.toggle("erledigt", idx > -1 && i > -1 && i < idx);
   });
 }
 
 function renderNav() {
-  var sets = {
-    beschaeftigte: [
-      ["inhalte", "Inhalte", "home", "inhalte"],
-      ["impulse", "Impulse aus der Praxis", "home", "impulse"],
-      ["faq", "FAQ", "home", "faq"],
-      ["glossar", "Glossar", "glossar", ""],
-      ["community", "Community", "home", "community"]
-    ],
-    creator: [
-      ["meine", "Meine Inhalte", "meine", ""],
-      ["editor", "Neue Lerneinheit", "editor", ""],
-      ["leitfaden", "Leitfaden", "leitfaden", ""],
-      ["inhalte", "Lernansicht", "home", "inhalte"]
-    ],
-    redaktion: [
-      ["redaktion", "Dashboard", "redaktion", ""],
-      ["statistik", "Aufrufzahlen", "statistik", ""],
-      ["inhalte", "Lernansicht", "home", "inhalte"]
-    ],
-    admin: [
-      ["admin", "Rollen und Betrieb", "admin", ""],
-      ["inhalte", "Lernansicht", "home", "inhalte"]
-    ]
-  };
-  var items = sets[state.rolle] || sets.beschaeftigte;
+  var items = [
+    ["anmelden", "Anmelden"],
+    ["lernen", "Lernen"],
+    ["einreichen", "Einreichen"],
+    ["freigeben", "Freigeben"]
+  ];
   var nav = document.querySelector("header nav");
+  nav.setAttribute("aria-label", "Schritte");
   nav.innerHTML = items.map(function (it) {
-    return "<a href=\"#" + it[0] + "\" data-nav=\"" + it[0] + "\" data-view=\"" + it[2] + "\" data-anker=\"" + it[3] + "\">" + it[1] + "</a>";
+    return "<a href=\"#" + it[0] + "\" data-nav=\"" + it[0] + "\" data-schritt=\"" + it[0] + "\">" + it[1] + "</a>";
   }).join("");
 }
 
@@ -639,6 +662,9 @@ function renderProfilKnopf() {
   document.getElementById("einfach-toggle").setAttribute("aria-pressed", state.einfach ? "true" : "false");
   document.getElementById("einfach-toggle").classList.toggle("active", !!state.einfach);
   document.body.classList.toggle("einfach", !!state.einfach);
+  document.querySelectorAll("[data-rolle]").forEach(function (b) {
+    b.classList.toggle("active", b.dataset.rolle === state.rolle);
+  });
 }
 
 function wendeEinfach() {
@@ -682,7 +708,7 @@ function dialogZu() {
 function oeffneAusbau(titel, text) {
   dialog({
     titel: titel,
-    html: "<p>" + text + "</p><p class=\"modal-note\">Im MVP-Entwurf ausdrücklich der späteren Ausbaustufe zugeordnet. Der Prototyp zeigt die Stelle, führt die Funktion aber nicht aus.</p>",
+    html: "<p>" + text + "</p><p class=\"modal-note\">Das kommt später. Hier ist es nur ein Hinweis.</p>",
     aktionen: [{ label: "Schließen", zweite: true }]
   });
 }
@@ -707,12 +733,11 @@ function renderPlayer() {
   var c = byId(aktuell);
   var root = document.getElementById("view-player");
   if (!c) { root.innerHTML = "<p>Inhalt nicht gefunden.</p>"; return; }
-  var felder = (c.felder || []).join(", ") || "nicht gesetzt";
   var stage = "";
   if (c.medien === "poltube") {
-    stage = "<div class=\"stage\"><div class=\"video-fake\"><div class=\"playbig\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\"><polygon points=\"9 6 19 12 9 18\" fill=\"#fff\"/></svg></div><p class=\"video-caption\">PolTube · " + esc(c.titel) + "</p></div><p class=\"stage-note\">Eingebettete Wiedergabe. Die Datei liegt in PolTube, nicht in der KI-Werkstatt. Zum Prototyp gehört eine Textfassung, damit der Inhalt ohne Ton nutzbar ist.</p><div class=\"transcript\"><h3>Textfassung</h3><p>" + mitBegriffen(c.teaser) + "</p></div></div>";
+    stage = "<div class=\"stage\"><div class=\"video-fake\"><div class=\"playbig\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\"><polygon points=\"9 6 19 12 9 18\" fill=\"#fff\"/></svg></div><p class=\"video-caption\">Video</p></div><div class=\"transcript\"><h3>Derselbe Text</h3><p>" + mitBegriffen(c.teaser) + "</p></div></div>";
   } else if (c.medien === "h5p" && c.h5p) {
-    stage = "<div class=\"stage h5p\"><p class=\"entry-kicker\">Interaktives Element · H5P · Typ Frage</p><h3 id=\"h5p-frage\">" + esc(c.h5p.frage) + "</h3><div class=\"h5p-options\">" + c.h5p.optionen.map(function (o, i) {
+    stage = "<div class=\"stage h5p\"><h3 id=\"h5p-frage\">" + esc(c.h5p.frage) + "</h3><div class=\"h5p-options\">" + c.h5p.optionen.map(function (o, i) {
       return "<button type=\"button\" class=\"h5p-opt\" data-h5p=\"" + i + "\">" + esc(o.t) + "</button>";
     }).join("") + "</div><p id=\"h5p-hinweis\" class=\"stage-note\" hidden></p></div>";
   } else {
@@ -733,53 +758,38 @@ function renderPlayer() {
     var loesch = k.eigen ? "<button type=\"button\" class=\"textbtn\" data-action=\"kommentar-loeschen\" data-index=\"" + i + "\">Löschen</button>" : "";
     return "<div class=\"comment\"><div class=\"c-av a\">" + esc((k.name || "?").slice(0, 1)) + "</div><div class=\"c-body\"><div class=\"c-name\">" + esc(k.name) + " <span>" + esc(k.meta || "gerade eben") + "</span></div><div class=\"c-text\">" + esc(k.text) + "</div><div class=\"c-actions\">" + loesch + "</div></div></div>";
   }).join("");
-  var pflicht = c.pflicht ? "<span class=\"lvl impulstag\">Vor der Nutzung</span>" : "";
-  var kanon = c.grundlagen ? "<span class=\"lvl basis\">Grundlagenkanon</span>" : "";
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-action=\"zur-lernansicht\">← Zurück zu den Inhalten</button>"
-    + "<div class=\"badges\">" + (c.niveau ? "<span class=\"lvl " + esc(c.niveau) + "\">" + esc(c.niveauLabel) + "</span>" : "") + kanon + pflicht + "<span class=\"dur\">" + esc(c.format) + " · " + esc(c.dauer) + "</span></div>"
+  root.innerHTML = "<button type=\"button\" class=\"zurueck\" data-action=\"zur-lernansicht\">Zurück</button>"
     + "<h1>" + esc(c.titel) + "</h1>"
-    + "<p class=\"ergebnis-zeile\"><strong>Ergebnis:</strong> " + esc(c.ergebnis || "noch nicht benannt") + "</p>"
-    + (c.dauerMin > 10 ? "<p class=\"meta-line\">Dieser Bestandseintrag ist länger als zehn Minuten und folgt der bisherigen Kachel. Neu eingereichte Einheiten gibt die Redaktion nur bis zu diesem Richtwert frei.</p>" : "")
-    + "<p class=\"meta-line\">Anwendungsfeld: " + esc(felder) + " · Werkzeug: " + esc(c.werkzeug || "—") + " · Fassung " + esc(c.fassung || "1") + " · Geprüft am " + esc(datum(c.geprueft)) + "</p>"
-    + (c.lernziel ? "<p class=\"meta-line\">Lernziel: " + esc(c.lernziel) + "</p>" : "")
-    + (c.geltungsbereich ? "<p class=\"meta-line\">Geltungsbereich: " + esc(c.geltungsbereich) + "</p>" : "")
+    + "<p>" + esc(c.ergebnis || c.teaser) + "</p>"
+    + "<p>" + esc(c.dauer) + "</p>"
     + stage
     + (schritte ? "<ol class=\"steps\">" + schritte + "</ol>" : "")
     + praxis
     + fehler
-    + "<label class=\"checkline\"><input type=\"checkbox\" id=\"selbstcheck\"> Ich habe das Ergebnis selbst geprüft. Das ist der Schritt, den ich in wenigen Minuten sehe.</label>"
-    + "<div class=\"button-row\"><button type=\"button\" class=\"btn-solid\" data-action=\"abschliessen\">Einheit abschließen</button><button type=\"button\" class=\"btn-line\" data-action=\"melden\" data-ziel=\"" + esc(c.id) + "\">Inhalt melden</button></div>"
-    + "<div class=\"detail-right\"><div class=\"dhead\"><h2>Rückfragen zu diesem Inhalt</h2><span>" + kommentareVon(c).length + " Beiträge</span></div>"
+    + "<div class=\"button-row\"><button type=\"button\" class=\"btn-solid btn-gross\" data-action=\"abschliessen\">Fertig</button></div>"
+    + "<details class=\"weiteres\"><summary>Rückfrage</summary>"
     + kommentare
-    + "<form class=\"comment-form\" id=\"kommentar-form\"><label class=\"field\"><span>Rückfrage unter Ihrem Namen</span><textarea name=\"text\" required rows=\"3\" placeholder=\"Was ist unklar geblieben?\"></textarea></label><button class=\"btn-solid\" type=\"submit\">Kommentar senden</button></form></div>";
+    + "<form class=\"comment-form\" id=\"kommentar-form\"><label class=\"field\"><span>Ihre Frage</span><textarea name=\"text\" required rows=\"3\"></textarea></label><button class=\"btn-solid\" type=\"submit\">Senden</button></form>"
+    + "<button type=\"button\" class=\"textbtn\" data-action=\"melden\" data-ziel=\"" + esc(c.id) + "\">Melden</button></details>";
 }
 
 function renderSummary() {
   var c = byId(aktuell);
   var root = document.getElementById("view-summary");
   if (!c) { root.innerHTML = ""; return; }
-  var kern = (c.kern || []).map(function (k) { return "<li>" + esc(k) + "</li>"; }).join("");
-  var verwandt = (c.verwandt || []).map(byId).filter(Boolean).filter(function (v) { return v.status === "veroeffentlicht"; }).map(function (v) {
-    return "<button type=\"button\" class=\"rowitem\" data-open=\"" + esc(v.id) + "\"><strong>" + esc(v.titel) + "</strong><span>" + esc(v.dauer) + " · " + esc(v.niveauLabel) + "</span></button>";
-  }).join("");
-  var nachweis = c.grundlagen ? "<div class=\"ausbau-box\"><h3>Qualifizierungsnachweis</h3><p>Grundlagenmodule sind mit Lernziel, Geltungsbereich und Fassungsstand anschlussfähig. Ein Zertifikat über Moodle und Badges gehören zur späteren Ausbaustufe.</p><button type=\"button\" class=\"btn-line\" disabled>Zertifikat abrufen</button></div>" : "";
   var fb = state.feedback[c.id];
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-action=\"zurueck-inhalt\">← Zurück zum Inhalt</button>"
-    + "<p class=\"eyebrow\">Abschluss</p><h1>Das bleibt hängen</h1>"
-    + "<p>" + esc(c.titel) + "</p>"
-    + "<ul class=\"summary-list\">" + kern + "</ul>"
-    + "<p class=\"meta-line\">" + (selbstGeprueft ? "Sie haben den Prüfschritt markiert." : "Der Prüfschritt ist noch offen. Sie können ihn im Inhalt nachholen.") + "</p>"
-    + "<h2>War das brauchbar?</h2><p class=\"meta-line\">Eine Rückmeldung, ein Klick, ohne Freitext. Die Redaktion sieht nur die Summe.</p>"
-    + "<div class=\"facebtns\"><button type=\"button\" class=\"facebtn" + (fb === "up" ? " active" : "") + "\" data-fb=\"up\"><span aria-hidden=\"true\">☺</span> Hat mir weitergeholfen</button><button type=\"button\" class=\"facebtn" + (fb === "down" ? " active" : "") + "\" data-fb=\"down\"><span aria-hidden=\"true\">☹</span> Hat mir nicht weitergeholfen</button></div>"
-    + (verwandt ? "<h2>Dazu passt</h2><div class=\"rowlist\">" + verwandt + "</div>" : "")
-    + nachweis;
+  root.innerHTML = "<button type=\"button\" class=\"zurueck\" data-action=\"zurueck-inhalt\">Zurück</button>"
+    + "<h1>War das brauchbar?</h1>"
+    + "<div class=\"facebtns\"><button type=\"button\" class=\"facebtn" + (fb === "up" ? " active" : "") + "\" data-fb=\"up\">Hat mir weitergeholfen</button><button type=\"button\" class=\"facebtn" + (fb === "down" ? " active" : "") + "\" data-fb=\"down\">Hat mir nicht weitergeholfen</button></div>"
+    + "<button type=\"button\" class=\"btn-solid btn-gross\" data-action=\"zum-einreichen\">Jetzt etwas einreichen</button>"
+    + "<aside class=\"randhinweis\"><p>Nachweise kommen später.</p></aside>";
 }
 
 function renderGlossar() {
   var root = document.getElementById("view-glossar");
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-action=\"zur-lernansicht\">← Zur Lernansicht</button>"
-    + "<p class=\"eyebrow\">Lernoberfläche</p><h1>Glossar</h1>"
-    + "<p>Fremdwörter, Abkürzungen und Anglizismen, die in den Inhalten vorkommen. Dieselben Erklärungen liegen an den Begriffen im Text.</p>"
+  root.innerHTML = "<button type=\"button\" class=\"zurueck\" data-action=\"zur-lernansicht\">Zurück</button>"
+    + "<h1>Begriffe</h1>"
+    + "<p>Kurze Erklärungen. Dieselben Hinweise liegen auch im Text.</p>"
     + "<dl class=\"gloss\">" + GLOSSAR.map(function (g) {
       return "<div><dt>" + esc(g.begriff) + "</dt><dd>" + esc(g.text) + "</dd></div>";
     }).join("") + "</dl>";
@@ -787,61 +797,76 @@ function renderGlossar() {
 
 function renderProfil() {
   var root = document.getElementById("view-profil");
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-action=\"zur-lernansicht\">← Zur Lernansicht</button>"
-    + "<p class=\"eyebrow\">Profil aus dem Behördenkonto</p><h1>Henning Beckmann</h1>"
-    + "<p>Name und Konto kommen aus dem Active Directory. Die KI-Werkstatt legt kein zweites Konto an.</p>"
+  root.innerHTML = "<button type=\"button\" class=\"zurueck\" data-action=\"zur-lernansicht\">Zurück</button>"
+    + "<h1>Henning Beckmann</h1>"
+    + "<p>Name und Konto kommen mit. Ein zweites Konto gibt es hier nicht.</p>"
     + "<form id=\"profil-form\" class=\"form-card\">"
-    + "<label class=\"field\"><span>Behörde, von Ihnen pflegbar</span><input name=\"behoerde\" value=\"" + esc(state.behoerde) + "\" required></label>"
-    + "<label class=\"field\"><span>Oberflächensprache</span><input value=\"Deutsch\" readonly><span class=\"hint\">Die Sprache bleibt im Profil gespeichert. Weitere Sprachen sind in diesem Prototyp nicht hinterlegt.</span></label>"
-    + "<label class=\"checkline\"><input type=\"checkbox\" name=\"einfach\" " + (state.einfach ? "checked" : "") + "> Einfache Sprache für die hinterlegten Kurztexte</label>"
-    + "<p class=\"hint\">Die automatische Übersetzung in Einfache Sprache per KI gehört zur späteren Ausbaustufe. Hier schalten Sie nur die bereits geschriebenen kurzen Fassungen um.</p>"
-    + "<div class=\"button-row\"><button class=\"btn-solid\" type=\"submit\">Angaben speichern</button><button type=\"button\" class=\"btn-line\" data-action=\"passwort\">Zugang zum Behördenkonto</button></div>"
+    + "<label class=\"field\"><span>Behörde</span><input name=\"behoerde\" value=\"" + esc(state.behoerde) + "\" required></label>"
+    + "<label class=\"field\"><span>Sprache</span><input value=\"Deutsch\" readonly></label>"
+    + "<label class=\"checkline\"><input type=\"checkbox\" name=\"einfach\" " + (state.einfach ? "checked" : "") + "> Kurze Sätze</label>"
+    + "<div class=\"button-row\"><button class=\"btn-solid\" type=\"submit\">Speichern</button></div>"
     + "</form>"
-    + "<div class=\"ausbau-box\"><h2>Ansprechbarkeit und Personensuche</h2><p>Die freiwillige Kennzeichnung, zu welchen Themen Sie ansprechbar sind, und die Suche nach Personen folgen mit den Foren in der späteren Ausbaustufe.</p><button type=\"button\" class=\"btn-line\" disabled>Themen kennzeichnen</button></div>";
+    + "<aside class=\"randhinweis\"><p>Eine Suche nach Personen kommt später.</p></aside>";
 }
 
 function renderEditor() {
   var c = editorId ? byId(editorId) : null;
   var root = document.getElementById("view-editor");
-  var v = c || { titel: "", formatKey: "lernmodul", niveau: "basis", felder: [], werkzeugKey: "sprachmodell", dauerMin: 8, ergebnis: "", lernziel: "", praxis: { rolle: "", taetigkeit: "", nutzen: "", grenze: "" }, glossarOk: false, glossar: [], medien: "text", anwendungsbezogen: true, poltube: "" };
+  var v = c || {
+    titel: "Protokoll kürzen",
+    formatKey: "lernmodul",
+    niveau: "basis",
+    felder: ["Verwaltung"],
+    werkzeugKey: "sprachmodell",
+    dauerMin: 8,
+    ergebnis: "Ein kürzerer Absatz und ein Satz, was geprüft wurde.",
+    lernziel: "Einen Text kürzen und selbst prüfen.",
+    praxis: { rolle: "Sachbearbeitung", taetigkeit: "Einen Text für die Akte kürzen", nutzen: "Der Entwurf ist kürzer", grenze: "Die Sachaussage bleibt bei der Person" },
+    glossarOk: true,
+    glossar: [],
+    medien: "text",
+    anwendungsbezogen: true,
+    poltube: ""
+  };
   var p = v.praxis || { rolle: "", taetigkeit: "", nutzen: "", grenze: "" };
   function sel(name, wert, opts) {
     return "<label class=\"field\"><span>" + name + "</span><select name=\"" + wert + "\">" + opts.map(function (o) {
       return "<option value=\"" + o[0] + "\"" + (String(v[wert] || "") === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
     }).join("") + "</select></label>";
   }
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"meine\">← Meine Inhalte</button>"
-    + "<p class=\"eyebrow\">Erstellen im Browser</p><h1>" + (c ? "Lerneinheit bearbeiten" : "Neue Lerneinheit") + "</h1>"
-    + "<p>Entwurf, Prüfung, Freigabe, Veröffentlichung. Speichern legt die Fassung ab. Einreichen setzt den Status auf Review.</p>"
+  root.innerHTML = "<button type=\"button\" class=\"zurueck\" data-view-jump=\"home\">Zurück</button>"
+    + "<h1>" + (c ? "Beitrag ändern" : "Etwas einreichen") + "</h1>"
+    + "<p>Sie schicken einen eigenen Beitrag zur Prüfung.</p>"
     + "<form id=\"editor-form\" class=\"form-card\">"
-    + "<label class=\"field\"><span>Titel</span><input name=\"titel\" required value=\"" + esc(v.titel || "") + "\"></label>"
-    + sel("Format", "formatKey", [["lernmodul", "Lernmodul"], ["artikel", "Wissensartikel"], ["impuls", "Praxisimpuls"], ["video", "Video"]])
-    + "<fieldset class=\"niveaus\"><legend>Niveaustufe — genau eine, Einordnungshilfe</legend>"
+    + "<label class=\"field\"><span>Wie heißt der Beitrag?</span><input name=\"titel\" required value=\"" + esc(v.titel || "") + "\"></label>"
+    + "<label class=\"field\"><span>Was kann die Person danach?</span><input name=\"ergebnis\" required value=\"" + esc(v.ergebnis || "") + "\"></label>"
+    + "<label class=\"checkline\"><input type=\"checkbox\" name=\"glossarOk\"" + (v.glossarOk ? " checked" : "") + "> Schwierige Wörter sind erklärt</label>"
+    + "<details class=\"weiteres\"><summary>Mehr angeben</summary>"
+    + sel("Art", "formatKey", [["lernmodul", "Kurzer Beitrag"], ["artikel", "Text"], ["impuls", "Beispiel aus dem Alltag"], ["video", "Video"]])
+    + "<fieldset class=\"niveaus\"><legend>Wie leicht ist der Beitrag?</legend>"
     + ["basis", "aufbau", "spezial"].map(function (n) {
-      var label = n === "basis" ? "Basis" : n === "aufbau" ? "Aufbau" : "Spezial";
-      var hilfe = n === "basis" ? "Ohne Vorwissen verständlich. Entspricht der Stufe Anfänger." : n === "aufbau" ? "Für Menschen, die KI bereits nutzen. Entspricht Fortgeschritten." : "Vertieft ein Einsatzfeld, bleibt aber frei wählbar. Entspricht Experte. Keine Zugangssperre.";
-      return "<label><input type=\"radio\" name=\"niveau\" value=\"" + n + "\"" + (v.niveau === n ? " checked" : "") + "><strong>" + label + "</strong><span>" + hilfe + "</span></label>";
+      var label = n === "basis" ? "Leicht" : n === "aufbau" ? "Mittel" : "Vertieft";
+      return "<label><input type=\"radio\" name=\"niveau\" value=\"" + n + "\"" + (v.niveau === n ? " checked" : "") + "><strong>" + label + "</strong></label>";
     }).join("") + "</fieldset>"
-    + "<fieldset class=\"field\"><legend>Anwendungsfeld</legend>"
+    + "<fieldset class=\"field\"><legend>Wobei?</legend>"
     + ["Ermittlung", "Führung", "Verwaltung"].map(function (f) {
       return "<label class=\"checkline\"><input type=\"checkbox\" name=\"feld\" value=\"" + f + "\"" + ((v.felder || []).indexOf(f) >= 0 ? " checked" : "") + "> " + f + "</label>";
     }).join("") + "</fieldset>"
     + sel("Werkzeug", "werkzeugKey", [["sprachmodell", "Sprachmodell"], ["transkription", "Transkription"], ["auswertung", "Auswertung"], ["keins", "Keins"]])
-    + "<label class=\"field\"><span>Dauer in Minuten</span><input name=\"dauerMin\" type=\"number\" min=\"1\" max=\"60\" value=\"" + esc(v.dauerMin || "") + "\"><span class=\"hint\">Richtwert für neue Einheiten: höchstens 10 Minuten.</span></label>"
-    + "<label class=\"field\"><span>Ergebnis, das vor Beginn sichtbar ist</span><input name=\"ergebnis\" value=\"" + esc(v.ergebnis || "") + "\"></label>"
-    + "<label class=\"field\"><span>Lernziel</span><input name=\"lernziel\" value=\"" + esc(v.lernziel || "") + "\"></label>"
-    + "<h2>Praxisbeispiel</h2>"
-    + "<label class=\"field\"><span>Rolle</span><input name=\"rolle\" value=\"" + esc(p.rolle || "") + "\"></label>"
-    + "<label class=\"field\"><span>Tätigkeit</span><input name=\"taetigkeit\" value=\"" + esc(p.taetigkeit || "") + "\"></label>"
+    + "<label class=\"field\"><span>Minuten</span><input name=\"dauerMin\" type=\"number\" min=\"1\" max=\"60\" value=\"" + esc(v.dauerMin || 8) + "\"></label>"
+    + "<label class=\"field\"><span>Wer</span><input name=\"rolle\" value=\"" + esc(p.rolle || "") + "\"></label>"
+    + "<label class=\"field\"><span>Was</span><input name=\"taetigkeit\" value=\"" + esc(p.taetigkeit || "") + "\"></label>"
     + "<label class=\"field\"><span>Nutzen</span><input name=\"nutzen\" value=\"" + esc(p.nutzen || "") + "\"></label>"
     + "<label class=\"field\"><span>Grenze</span><input name=\"grenze\" value=\"" + esc(p.grenze || "") + "\"></label>"
-    + "<label class=\"checkline\"><input type=\"checkbox\" name=\"glossarOk\"" + (v.glossarOk ? " checked" : "") + "> Alle Fachbegriffe und Anglizismen sind im Glossar erklärt</label>"
-    + "<label class=\"field\"><span>Begriffe, kommagetrennt</span><input name=\"glossar\" value=\"" + esc((v.glossar || []).join(", ")) + "\"></label>"
-    + sel("Medienbaustein", "medien", [["text", "Strukturierter Text"], ["h5p", "H5P-Frage im System"], ["poltube", "Video aus PolTube"]])
-    + "<div id=\"upload-block\"><label class=\"field\"><span>Datei zuordnen</span><input name=\"datei\" type=\"file\" accept=\"video/*,application/pdf\"><span class=\"hint\">Im Prototyp wird die Datei nicht übertragen. In der Umsetzung liegt sie in PolTube; hier bleibt nur der Dateiname als Zuordnung.</span></label>"
-    + "<label class=\"field\"><span>PolTube-Kennung</span><input name=\"poltube\" value=\"" + esc(v.poltube || "") + "\" placeholder=\"z. B. pt-2041\"></label></div>"
+    + "<label class=\"field\"><span>Begriffe</span><input name=\"glossar\" value=\"" + esc((v.glossar || []).join(", ")) + "\"></label>"
+    + "<label class=\"field\"><span>Lernziel</span><input name=\"lernziel\" value=\"" + esc(v.lernziel || "") + "\"></label>"
+    + sel("Darstellung", "medien", [["text", "Text"], ["h5p", "Kurze Frage"], ["poltube", "Video"]])
+    + "<div id=\"upload-block\"><label class=\"field\"><span>Datei</span><input name=\"datei\" type=\"file\" accept=\"video/*,application/pdf\"><span class=\"hint\">Die Datei bleibt hier nur als Name. Abgespielt wird sie an anderer Stelle.</span></label>"
+    + "<label class=\"field\"><span>Video-Nummer</span><input name=\"poltube\" value=\"" + esc(v.poltube || "") + "\"></label></div>"
     + "<p id=\"dateiname\" class=\"meta-line\"></p>"
-    + "<div class=\"button-row\"><button class=\"btn-line\" type=\"submit\" name=\"ziel\" value=\"entwurf\">Entwurf speichern</button><button class=\"btn-solid\" type=\"submit\" name=\"ziel\" value=\"review\">Zur Prüfung geben</button></div>"
+    + "<p><button type=\"button\" class=\"textbtn\" data-view-jump=\"leitfaden\">Worauf die Prüfung achtet</button></p>"
+    + "</details>"
+    + "<div class=\"button-row\"><button class=\"btn-solid btn-gross\" type=\"submit\" name=\"ziel\" value=\"review\">Zur Prüfung schicken</button><button class=\"btn-line\" type=\"submit\" name=\"ziel\" value=\"entwurf\">Entwurf speichern</button></div>"
     + "</form>";
 }
 
@@ -856,7 +881,7 @@ function leseEditor(form, ziel) {
   var obj = {
     id: id,
     titel: String(data.get("titel") || "").trim(),
-    teaser: "Von Ihnen angelegte Lerneinheit im Prototyp.",
+    teaser: "Ihr eigener Beitrag.",
     format: format,
     formatKey: formatKey,
     niveau: data.get("niveau") || "",
@@ -880,7 +905,7 @@ function leseEditor(form, ziel) {
     glossar: String(data.get("glossar") || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean),
     poltube: String(data.get("poltube") || "").trim(),
     schritte: [{ t: "Erster Schritt aus Ihrem Entwurf", d: "Die Redaktion prüft Vollständigkeit, Niveau und Umfang." }],
-    kern: ["Entwurf aus der Rolle Content Creator."],
+    kern: ["Eigener Beitrag."],
     autor: "Henning Beckmann",
     autorRolle: "creator",
     status: ziel,
@@ -919,15 +944,18 @@ function speichereInhalt(obj) {
 
 function renderMeine() {
   var root = document.getElementById("view-meine");
+  var zuletzt = editorId ? byId(editorId) : null;
+  var geschickt = zuletzt && zuletzt.status === "review";
   var liste = alle().filter(function (c) { return c.autorRolle === "creator" || (state.eigene || []).some(function (e) { return e.id === c.id; }); });
   var rows = liste.map(function (c) {
     var fb = feedbackSumme(c.id);
-    return "<div class=\"listrow\"><div><strong>" + esc(c.titel) + "</strong><div class=\"meta-line\">Fassung " + esc(c.fassung || "1") + " · " + esc(c.dauer) + "</div></div><div><span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span></div><div class=\"meta-line\">" + fb.up + " weitergeholfen · " + fb.down + " nicht · " + aufrufeInhalt(c) + " Aufrufe</div><button type=\"button\" class=\"btn-line\" data-action=\"bearbeiten\" data-id=\"" + esc(c.id) + "\">Bearbeiten</button></div>";
+    return "<div class=\"listrow\"><div><strong>" + esc(c.titel) + "</strong><div class=\"meta-line\">" + esc(statusLabel(c.status)) + " · " + fb.up + " hilfreich · " + aufrufeInhalt(c) + " Aufrufe</div></div><button type=\"button\" class=\"btn-line\" data-action=\"bearbeiten\" data-id=\"" + esc(c.id) + "\">Ändern</button></div>";
   }).join("");
-  root.innerHTML = "<p class=\"eyebrow\">Content Creator</p><h1>Meine Inhalte</h1>"
-    + "<p>Rückmeldung zu Aufrufen und Ein-Klick-Feedback steht hier, nicht in einer separaten Mail. Eine Mail würde in der Umsetzung denselben Stand spiegeln.</p>"
-    + "<div class=\"list\">" + (rows || "<p>Noch keine eigenen Inhalte.</p>") + "</div>"
-    + "<div class=\"button-row\"><button type=\"button\" class=\"btn-solid\" data-action=\"neu\">Neue Lerneinheit</button><button type=\"button\" class=\"btn-line\" data-view-jump=\"leitfaden\">Leitfaden öffnen</button></div>";
+  root.innerHTML = "<button type=\"button\" class=\"zurueck\" data-view-jump=\"editor\">Zurück</button>"
+    + "<h1>" + (geschickt ? "Zur Prüfung geschickt" : "Gespeichert") + "</h1>"
+    + "<p>" + (geschickt ? "Als Nächstes kann dieser Beitrag freigegeben werden." : "Der Entwurf liegt bereit. Sie können ihn noch ändern.") + "</p>"
+    + (geschickt ? "<button type=\"button\" class=\"btn-solid btn-gross\" data-action=\"zum-freigeben\">Jetzt freigeben</button>" : "<button type=\"button\" class=\"btn-solid btn-gross\" data-action=\"neu\">Weiter ausfüllen</button>")
+    + "<details class=\"weiteres\"><summary>Weitere eigene Beiträge</summary><div class=\"list\">" + (rows || "<p>Noch keine.</p>") + "</div></details>";
 }
 
 function feedbackSumme(id) {
@@ -939,37 +967,44 @@ function feedbackSumme(id) {
 }
 
 function statusLabel(s) {
-  return { entwurf: "Entwurf", review: "Review", freigabe: "Freigabe", veroeffentlicht: "Veröffentlichung" }[s] || s;
+  return { entwurf: "Entwurf", review: "In Prüfung", freigabe: "Freigegeben", veroeffentlicht: "Veröffentlicht" }[s] || s;
 }
 
 function renderRedaktion() {
   var root = document.getElementById("view-redaktion");
-  var liste = alle().filter(function (c) { return c.status !== "veroeffentlicht" || c.autorRolle === "creator"; });
   var wartend = alle().filter(function (c) { return c.status === "review" || c.status === "freigabe" || c.status === "entwurf"; });
-  var rows = wartend.map(function (c) {
-    return "<button type=\"button\" class=\"rowitem\" data-action=\"review\" data-id=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong><span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span><span>" + esc(c.autor || "") + "</span></button>";
+  var eigene = (state.eigene || []).map(function (e) { return e.id; });
+  var zuerst = null;
+  wartend.forEach(function (c) {
+    if (!zuerst && eigene.indexOf(c.id) >= 0 && c.status === "review" && !mangel(c).length) zuerst = c;
+  });
+  if (!zuerst) wartend.forEach(function (c) { if (!zuerst && c.id === "review-offen") zuerst = c; });
+  if (!zuerst) zuerst = wartend[0] || null;
+  var rest = wartend.filter(function (c) { return !zuerst || c.id !== zuerst.id; }).map(function (c) {
+    return "<button type=\"button\" class=\"rowitem\" data-action=\"review\" data-id=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong><span>" + esc(statusLabel(c.status)) + "</span></button>";
   }).join("");
   var faellig = alle().filter(ueberfaellig).map(function (c) {
     return "<button type=\"button\" class=\"rowitem\" data-open=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong><span>Geprüft am " + esc(datum(c.geprueft)) + "</span></button>";
   }).join("");
   var meldungen = (state.meldungen || []).slice().reverse().map(function (m) {
-    return "<div class=\"listrow\"><div><strong>" + esc(m.art) + "</strong><div class=\"meta-line\">" + esc(m.ziel) + " · " + esc(m.zeit) + "</div></div><div>" + esc(m.text || "") + "</div></div>";
+    return "<div class=\"listrow\"><div><strong>" + esc(m.art) + "</strong><div class=\"meta-line\">" + esc(m.ziel) + "</div></div></div>";
   }).join("");
   var impulse = alle().filter(function (c) { return c.impuls && c.status === "veroeffentlicht"; });
-  var stufen = { basis: 0, aufbau: 0, spezial: 0 };
-  alle().forEach(function (c) { if (c.status === "veroeffentlicht" && stufen[c.niveau] !== undefined) stufen[c.niveau]++; });
-  root.innerHTML = "<p class=\"eyebrow\">Redaktion</p><h1>Dashboard</h1>"
-    + "<p class=\"banner\">Neue Prüfaufträge gehen in der Umsetzung zusätzlich per E-Mail. Hier sehen Sie dieselbe Liste.</p>"
-    + "<h2>Inhalte nach Status</h2><div class=\"rowlist\">" + (rows || "<p>Keine offenen Inhalte.</p>") + "</div>"
-    + "<h2>Überfällige Prüfdaten</h2><div class=\"rowlist\">" + (faellig || "<p>Kein Prüfdatum ist älter als ein halbes Jahr.</p>") + "</div>"
-    + "<h2>Neue Rückmeldungen</h2><div class=\"list\">" + (meldungen || "<p>Noch keine Meldung in dieser Sitzung. Meldungen aus FAQ und Inhalten erscheinen hier und gehen in die Quartalsprüfung ein.</p>") + "</div>"
-    + "<h2>Einstiegsseite</h2><form id=\"pin-form\" class=\"form-card\"><label class=\"field\"><span>Praxisimpuls ohne weitere Klickstrecke</span><select name=\"pin\">" + impulse.map(function (c) {
+  var haupt = zuerst
+    ? "<h1>" + esc(zuerst.titel) + "</h1><p>Sie geben diesen Beitrag frei.</p><button type=\"button\" class=\"btn-solid btn-gross\" data-action=\"review\" data-id=\"" + esc(zuerst.id) + "\">Diesen Beitrag prüfen</button>"
+    : "<h1>Nichts zu prüfen</h1><p>Es liegt kein Beitrag vor.</p>";
+  root.innerHTML = "<button type=\"button\" class=\"zurueck\" data-schritt=\"einreichen\">Zurück</button>"
+    + haupt
+    + "<details class=\"weiteres\"><summary>Weitere Beiträge</summary>"
+    + "<div class=\"rowlist\">" + (rest || "<p>Keine weiteren.</p>") + "</div>"
+    + "<h2>Schon länger her</h2><div class=\"rowlist\">" + (faellig || "<p>Nichts ist überfällig.</p>") + "</div>"
+    + "<h2>Meldungen</h2><div class=\"list\">" + (meldungen || "<p>Keine Meldung.</p>") + "</div>"
+    + "<form id=\"pin-form\" class=\"form-card\"><label class=\"field\"><span>Was steht auf der Startseite?</span><select name=\"pin\">" + impulse.map(function (c) {
       return "<option value=\"" + esc(c.id) + "\"" + (state.prominent === c.id ? " selected" : "") + ">" + esc(c.titel) + "</option>";
-    }).join("") + "</select></label><button class=\"btn-solid\" type=\"submit\">Auf der Einstiegsseite platzieren</button></form>"
-    + "<h2>Stufenverteilung</h2><p class=\"meta-line\">Basis " + stufen.basis + " · Aufbau " + stufen.aufbau + " · Spezial " + stufen.spezial + ". Stichprobe: etwa jeder achte Inhalt, zusätzlich der erste Inhalt einer neuen Anwendung.</p>"
-    + "<div class=\"form-card\"><p><strong>Stichprobe offen:</strong> Halluzinationen erkennen</p><button type=\"button\" class=\"btn-line\" data-action=\"stichprobe\">Als nachgeprüft markieren</button><p class=\"meta-line\">" + (state.stichprobe.halluzinationen ? "Nachgeprüft in diesem Prototyp." : "Noch offen.") + "</p></div>"
-    + "<div class=\"ausbau-box\"><h2>KI-Unterstützung der Moderation</h2><p>Nicht Teil der ersten Iteration.</p><button type=\"button\" class=\"btn-line\" disabled>Vorschläge ansehen</button></div>";
-  void liste;
+    }).join("") + "</select></label><button class=\"btn-solid\" type=\"submit\">Auf die Startseite legen</button></form>"
+    + "<p><button type=\"button\" class=\"textbtn\" data-view-jump=\"statistik\">Aufrufe ansehen</button></p>"
+    + "<p class=\"randhinweis\">Hilfe beim Moderieren kommt später.</p>"
+    + "</details>";
 }
 
 function renderReview() {
@@ -977,20 +1012,18 @@ function renderReview() {
   var root = document.getElementById("view-review");
   if (!c) { root.innerHTML = "<p>Kein Inhalt gewählt.</p>"; return; }
   var punkte = mangel(c);
-  var lis = punkte.length ? punkte.map(function (p) { return "<li class=\"bad\">" + esc(p) + "</li>"; }).join("") : "<li class=\"ok\">Pflichtmerkmale vollständig. Freigabe ist möglich.</li>";
+  var lis = punkte.length ? punkte.map(function (p) { return "<li class=\"bad\">" + esc(p) + "</li>"; }).join("") : "<li class=\"ok\">Alles Nötige ist da.</li>";
   var gesperrt = punkte.length > 0;
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"redaktion\">← Dashboard</button>"
-    + "<p class=\"eyebrow\">Qualitätsprüfung</p><h1>" + esc(c.titel) + "</h1>"
-    + "<p><span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span> · Fassung " + esc(c.fassung || "1") + " · " + esc(c.autor || "") + "</p>"
-    + (c.vorher ? "<p class=\"meta-line\">Frühere Fassung: " + esc(c.vorher) + "</p>" : "")
+  var primaer = (c.status === "freigabe" && !gesperrt)
+    ? "<button type=\"button\" class=\"btn-solid btn-gross\" data-action=\"veroeffentlichen\">Veröffentlichen</button>"
+    : "<button type=\"button\" class=\"btn-solid btn-gross\" data-action=\"freigeben\"" + (gesperrt ? " disabled" : "") + ">Freigeben</button>";
+  root.innerHTML = "<button type=\"button\" class=\"zurueck\" data-view-jump=\"redaktion\">Zurück</button>"
+    + "<h1>" + esc(c.titel) + "</h1>"
+    + "<p>" + esc(statusLabel(c.status)) + ". " + (gesperrt ? "Freigeben ist zu, weil noch etwas fehlt." : "Ein Schritt.") + "</p>"
     + "<ul class=\"pruef\">" + lis + "</ul>"
-    + "<dl class=\"gloss\"><div><dt>Niveau</dt><dd>" + esc(c.niveauLabel) + "</dd></div><div><dt>Dauer</dt><dd>" + esc(c.dauer) + "</dd></div><div><dt>Ergebnis</dt><dd>" + esc(c.ergebnis || "—") + "</dd></div><div><dt>Anwendungsfeld</dt><dd>" + esc((c.felder || []).join(", ") || "—") + "</dd></div><div><dt>Begriffe erklärt</dt><dd>" + (c.glossarOk ? "ja" : "nein") + "</dd></div></dl>"
-    + "<form id=\"review-form\" class=\"form-card\"><label class=\"field\"><span>Begründung, nötig bei Rückgabe</span><textarea name=\"grund\" rows=\"3\"></textarea></label>"
-    + "<div class=\"button-row\">"
-    + "<button type=\"button\" class=\"btn-line\" data-action=\"zurueckgeben\">Zurück an Creator</button>"
-    + "<button type=\"button\" class=\"btn-line\" data-action=\"freigeben\"" + (gesperrt ? " disabled" : "") + ">Freigeben</button>"
-    + "<button type=\"button\" class=\"btn-solid\" data-action=\"veroeffentlichen\"" + (c.status !== "freigabe" || gesperrt ? " disabled" : "") + ">Veröffentlichen</button>"
-    + "</div>" + (gesperrt ? "<p class=\"hint\">Freigabe ist gesperrt, solange Pflichtmerkmale fehlen.</p>" : "<p class=\"hint\">Zuerst freigeben, dann veröffentlichen. So bleiben die vier Status sichtbar.</p>")
+    + "<form id=\"review-form\">"
+    + primaer
+    + "<details class=\"weiteres\"><summary>Zurückgeben</summary><label class=\"field\"><span>Warum?</span><textarea name=\"grund\" rows=\"3\"></textarea></label><button type=\"button\" class=\"btn-line\" data-action=\"zurueckgeben\">Zurückgeben</button></details>"
     + "</form>";
 }
 
@@ -1003,42 +1036,43 @@ function renderStatistik() {
   var zeilen = alle().filter(function (c) { return c.status === "veroeffentlicht"; }).map(function (c) {
     return "<div class=\"listrow\"><div>" + esc(c.titel) + "</div><div>" + aufrufeInhalt(c) + "</div><div>" + feedbackSumme(c.id).up + " / " + feedbackSumme(c.id).down + "</div></div>";
   }).join("");
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"redaktion\">← Dashboard</button>"
-    + "<p class=\"eyebrow\">Aggregiert, nicht personenbezogen</p><h1>Aufrufzahlen</h1>"
-    + "<div class=\"kpi\"><div><strong>" + start + "</strong><span>Einstiegsseite</span></div><div><strong>" + p0 + "</strong><span>Pfad ohne Vorwissen</span></div><div><strong>" + p1 + "</strong><span>Pfad mit Vorkenntnis</span></div><div><strong>" + p2 + "</strong><span>Pfad konkrete Frage</span></div></div>"
-    + "<div class=\"listrow head\"><div>Inhalt</div><div>Aufrufe</div><div>Feedback + / −</div></div>" + zeilen;
+  root.innerHTML = "<button type=\"button\" class=\"zurueck\" data-view-jump=\"redaktion\">Zurück</button>"
+    + "<h1>Aufrufe</h1>"
+    + "<p>Nur Summen. Keine Namen.</p>"
+    + "<div class=\"kpi\"><div><strong>" + start + "</strong><span>Startseite</span></div><div><strong>" + p0 + "</strong><span>Ohne Vorwissen</span></div><div><strong>" + p1 + "</strong><span>Mit Vorkenntnis</span></div><div><strong>" + p2 + "</strong><span>Mit einer Frage</span></div></div>"
+    + zeilen;
 }
 
 function renderAdmin() {
   var root = document.getElementById("view-admin");
-  root.innerHTML = "<p class=\"eyebrow\">Administration</p><h1>Rollen, Rechte, Betrieb</h1>"
-    + "<p>Konzeptanzeige für die Umsetzungsstelle. Keine echte Betriebsschnittstelle und keine personenbezogene Verwaltung.</p>"
-    + "<h2>Rollen</h2>"
+  root.innerHTML = "<button type=\"button\" class=\"zurueck\" data-view-jump=\"home\">Zurück</button>"
+    + "<h1>Verwaltung</h1>"
+    + "<p>Sie sehen, wer was darf. Lernen, Einreichen und Freigeben bleiben dieselben Schritte.</p>"
     + "<div class=\"list\">"
-    + rolleZeile("Beschäftigte/r", "Lernen, FAQ, eigene Kommentare, Meldung", true)
-    + rolleZeile("Content Creator", "Entwurf anlegen, H5P-Frage, PolTube zuordnen, zur Prüfung geben", true)
-    + rolleZeile("Redaktion", "Review, Freigabe, Veröffentlichung, Einstiegsseite, Aufrufzahlen", true)
-    + rolleZeile("Gegenzeichnende Stelle", "Erlaubnisantworten vor Veröffentlichung", true)
-    + rolleZeile("Administration", "Rollen, Integrationen, Betrieb", true)
-    + rolleZeile("Moderation", "Vorgesehen. Foren, die sie moderiert, folgen in der späteren Ausbaustufe.", false)
+    + rolleZeile("Lernen", "Beiträge ansehen, Fragen stellen, etwas melden", true)
+    + rolleZeile("Einreichen", "Einen Beitrag schicken", true)
+    + rolleZeile("Freigeben", "Prüfen und veröffentlichen", true)
+    + rolleZeile("Gegenzeichnung", "Antworten zu Erlaubnis vor der Veröffentlichung", true)
+    + rolleZeile("Verwaltung", "Konten und Betrieb", true)
+    + rolleZeile("Moderation", "Kommt später, zusammen mit dem Austausch.", false)
     + "</div>"
-    + "<p class=\"hint\">Konten kommen aus dem Identity-Management. Eine manuelle Anlage ist im Prototyp nicht vorgesehen.</p>"
+    + "<p>Konten kommen mit. Hier lässt sich keines neu anlegen.</p>"
     + "<button type=\"button\" class=\"btn-line\" disabled>Konto anlegen</button>"
-    + "<h2 id=\"integrationen\">Integrationen</h2>"
+    + "<h2 id=\"integrationen\">Angebunden</h2>"
     + "<div class=\"rowlist\">"
-    + "<div class=\"rowitem\"><strong>ADFS</strong><span>Anmeldung über das Behördenkonto. Im Prototyp ohne echtes Verzeichnis.</span></div>"
-    + "<div class=\"rowitem\"><strong>PolTube / Vimp</strong><span>Videos werden eingebettet. Token und API liegen bei der Digitalen Bildung, nicht im Prototyp.</span></div>"
-    + "<div class=\"rowitem\"><strong>H5P</strong><span>Inhaltstyp Frage, analog zu Moodle. Weitere Typen folgen nach der Klärung in den ersten sechs Wochen.</span></div>"
-    + "<div class=\"rowitem\"><strong>Moodle-Webservice</strong><span>Für Zertifikate der späteren Ausbaustufe vorgesehen, hier nicht angebunden.</span></div>"
-    + "<div class=\"rowitem\"><strong>KI-HiPoS</strong><span>Leichte Sprache und Textvorschläge sind spätere Ausbaustufe.</span><button type=\"button\" class=\"btn-line\" disabled>Ergebnisse prüfen</button></div>"
+    + "<div class=\"rowitem\"><strong>Anmeldung</strong><span>Über das bestehende Konto.</span></div>"
+    + "<div class=\"rowitem\"><strong>Video</strong><span>Videos liegen woanders und werden hier nur gezeigt.</span></div>"
+    + "<div class=\"rowitem\"><strong>Kurze Frage</strong><span>Eine Frage im Beitrag. Weitere Arten kommen später.</span></div>"
+    + "<div class=\"rowitem\"><strong>Nachweise</strong><span>Kommen später.</span></div>"
+    + "<div class=\"rowitem\"><strong>Hilfe beim Text</strong><span>Kommt später.</span><button type=\"button\" class=\"btn-line\" disabled>Ergebnisse prüfen</button></div>"
     + "</div>"
     + "<h2 id=\"betrieb\">Betrieb</h2>"
-    + "<div class=\"kpi\"><div><strong>Zielbild</strong><span>Verfügbarkeit im vereinbarten Rahmen</span></div><div><strong>Sicherung</strong><span>Regelmäßige Wiederherstellung vorgesehen</span></div><div><strong>Datenschutz</strong><span>Aufrufe nur aggregiert</span></div><div><strong>Protokoll</strong><span>Administrative Änderungen revisionssicher vorgesehen</span></div></div>"
-    + "<p>Barrierefreiheit ist Anforderung an alle Oberflächen. Der BITV-Test liegt in der Pilotphase, nicht in diesem Clickdummy. Niveaustufen, Kategorien und Pflichtmetadaten sind die Felder, die Sie in Leitfaden und Freigabe sehen: Niveau, Anwendungsfeld, Dauer, Ergebnis, Prüfdatum, erklärte Begriffe.</p>";
+    + "<div class=\"kpi\"><div><strong>Erreichbar</strong><span>im vereinbarten Rahmen</span></div><div><strong>Sicherung</strong><span>regelmäßig vorgesehen</span></div><div><strong>Datenschutz</strong><span>Aufrufe nur als Summe</span></div><div><strong>Protokoll</strong><span>Änderungen bleiben nachvollziehbar</span></div></div>"
+    + "<aside class=\"randhinweis\"><p>Foren, Nachweise und eine Prüfung durch KI kommen später.</p></aside>";
 }
 
 function rolleZeile(name, text, aktiv) {
-  return "<div class=\"listrow\"><div><strong>" + esc(name) + "</strong></div><div>" + esc(text) + "</div><div>" + (aktiv ? "im MVP" : "<span class=\"ausbau\">später</span>") + "</div></div>";
+  return "<div class=\"listrow\"><div><strong>" + esc(name) + "</strong></div><div>" + esc(text) + "</div><div>" + (aktiv ? "dabei" : "später") + "</div></div>";
 }
 
 function syncKacheln() {
@@ -1079,7 +1113,7 @@ function sofortKarte() {
   var x = document.getElementById("sofort-text");
   var b = document.getElementById("sofort-btn");
   if (t) t.textContent = c.titel;
-  if (x) x.textContent = c.teaser;
+  if (x) x.textContent = (c.dauerMin ? c.dauerMin + " Minuten. " : "") + "Ein Beitrag aus dem Alltag.";
   if (b) b.dataset.sofort = c.id;
 }
 
@@ -1102,20 +1136,17 @@ function setzePfad(name) {
     setzeFilter("niveau", "basis");
     setzeFilter("thema", "grundlagen");
     bump("null");
-    hinweis("Einstiegspfad ohne Vorwissen: Grundlagen auf Stufe Basis. Die Stufe beschreibt den Inhalt, nicht Sie.");
+    hinweis("Leichte Beiträge.");
   } else if (name === "bereits") {
     setzeFilter("niveau", "aufbau");
     bump("bereits");
-    hinweis("Einstiegspfad mit Vorkenntnis: Inhalte der Stufe Aufbau.");
+    hinweis("Beiträge für Menschen, die schon üben.");
   } else {
     bump("frage");
-    hinweis("Konkrete Frage: Suche, FAQ oder Glossar. Ein Lern-Lotse ist nicht Teil des MVP.");
-    showView("home", { anker: "faq", leise: true });
-    var suche2 = document.getElementById("suche");
-    if (suche2) suche2.focus();
+    showView("faq");
     return;
   }
-  showView("home", { anker: "inhalte", leise: true });
+  showView("liste");
 }
 
 function hinweis(text) {
@@ -1139,7 +1170,7 @@ function sucheAktualisieren() {
   });
   var html = "";
   if (!treffer.length && !faq.length) {
-    html = "<p>Keine Treffer. Eine KI-gestützte Recherche und ein Lern-Lotse gehören zur späteren Ausbaustufe, nicht zu dieser Suche.</p>";
+    html = "<p>Dazu gibt es hier nichts. Eine Suche mit KI kommt später.</p>";
   } else {
     html = treffer.slice(0, 6).map(function (c) {
       return "<button type=\"button\" class=\"rowitem\" data-open=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong><span>" + esc(c.format) + " · " + esc(c.niveauLabel) + "</span></button>";
@@ -1335,15 +1366,25 @@ function init() {
     var hello = document.getElementById("hello");
     hello.hidden = false;
     showView("home");
-    toast("Guten Tag, Henning Beckmann. Die Nutzung ist freiwillig.");
+    toast("Sie sind angemeldet.");
   });
 
   document.querySelector("header nav").addEventListener("click", function (e) {
-    var a = e.target.closest("a[data-view]");
+    var a = e.target.closest("a[data-schritt]");
     if (!a) return;
     e.preventDefault();
-    showView(a.dataset.view, { anker: a.dataset.anker || "", leise: !!a.dataset.anker });
+    gehSchritt(a.dataset.schritt);
   });
+
+  var eingrenzen = document.getElementById("eingrenzen");
+  if (eingrenzen) {
+    eingrenzen.addEventListener("click", function () {
+      var liste = document.getElementById("view-liste");
+      var an = !liste.classList.contains("zeigt-filter");
+      liste.classList.toggle("zeigt-filter", an);
+      eingrenzen.setAttribute("aria-expanded", an ? "true" : "false");
+    });
+  }
 
   document.querySelector(".wordmark").addEventListener("click", function (e) {
     if (e.target.closest(".p-mark, .p-tip")) return;
@@ -1373,9 +1414,10 @@ function init() {
       renderNav();
       renderProfilKnopf();
       pmenu.hidden = true;
-      var ziel = { creator: "meine", redaktion: "redaktion", admin: "admin", beschaeftigte: "home" }[state.rolle];
+      if (state.rolle === "creator") editorId = null;
+      var ziel = { creator: "editor", redaktion: "redaktion", admin: "admin", beschaeftigte: "home" }[state.rolle];
       showView(ziel);
-      toast("Rolle im Prototyp: " + rolleLabel(state.rolle) + ". In der Umsetzung kommt sie aus der Berechtigung.");
+      toast(rolleErklaerung(state.rolle));
     });
   });
 
@@ -1392,7 +1434,7 @@ function init() {
   document.getElementById("suche-btn").addEventListener("click", function () {
     suchtext = document.getElementById("suche").value;
     if (!authAktiv()) { showView("sso"); return; }
-    showView("home", { anker: "inhalte", leise: true });
+    showView("liste");
     window.filtern();
     sucheAktualisieren();
   });
@@ -1437,6 +1479,8 @@ function init() {
 
   document.body.addEventListener("click", function (e) {
     if (e.target.closest(".likebtn")) return;
+    var schrittBtn = e.target.closest("button[data-schritt]");
+    if (schrittBtn) { gehSchritt(schrittBtn.dataset.schritt); return; }
     var open = e.target.closest("[data-open]");
     if (open && !e.target.closest("a")) {
       oeffneInhalt(open.dataset.open);
@@ -1447,23 +1491,36 @@ function init() {
     var act = e.target.closest("[data-action]");
     if (act) {
     var action = act.dataset.action;
-    if (action === "zur-lernansicht") showView("home", { anker: "inhalte" });
+    if (action === "zur-lernansicht") showView("home");
     if (action === "zurueck-inhalt") showView("player");
     if (action === "abschliessen") {
-      selbstGeprueft = !!(document.getElementById("selbstcheck") && document.getElementById("selbstcheck").checked);
+      selbstGeprueft = true;
       showView("summary");
+    }
+    if (action === "zum-einreichen") {
+      state.rolle = "creator";
+      editorId = null;
+      sichern();
+      renderProfilKnopf();
+      showView("editor");
+    }
+    if (action === "zum-freigeben") {
+      state.rolle = "redaktion";
+      sichern();
+      renderProfilKnopf();
+      showView("redaktion");
     }
     if (action === "melden") meldungOeffnen(act.dataset.ziel || aktuell || "Inhalt");
     if (action === "faq-sprung") {
       var item = document.querySelector('.faq-item[data-faq="' + act.dataset.faq + '"]');
-      showView("home", { anker: "faq", leise: true });
+      showView("faq");
       if (item) faqOeffnen(item);
     }
     if (action === "neu") { editorId = null; showView("editor"); }
     if (action === "bearbeiten") { editorId = act.dataset.id; showView("editor"); }
     if (action === "review") { aktuell = act.dataset.id; showView("review"); }
     if (action === "passwort") {
-      oeffneAusbau("Zugang", "Ein Passwort der KI-Werkstatt gibt es nicht. Zurücksetzen und Sperre liegen beim Behördenkonto über ADFS.");
+      oeffneAusbau("Zugang", "Ein eigenes Passwort gibt es hier nicht. Das bleibt beim Behördenkonto.");
     }
     if (action === "stichprobe") {
       state.stichprobe.halluzinationen = true;
@@ -1478,7 +1535,7 @@ function init() {
       state.override[aktuell] = Object.assign({}, state.override[aktuell] || {}, { vorher: "Zurückgegeben: " + grund.trim() });
       sichern();
       syncKacheln();
-      toast("Zurück an den Content Creator, Status Entwurf.");
+      toast("Zurückgegeben. Der Beitrag ist wieder ein Entwurf.");
       showView("redaktion");
     }
     if (action === "freigeben") {
@@ -1496,7 +1553,7 @@ function init() {
       state.status[aktuell] = "veroeffentlicht";
       sichern();
       syncKacheln();
-      toast("Veröffentlicht. Der Inhalt liegt in der Kursübersicht.");
+      toast("Veröffentlicht. Der Beitrag steht jetzt unter Alle Beiträge.");
       showView("redaktion");
     }
     if (action === "kommentar-loeschen") {
@@ -1561,14 +1618,14 @@ function init() {
       editorId = obj.id;
       speichereInhalt(obj);
       showView("meine");
-      toast(ziel === "review" ? "Zur Prüfung gegeben. Die Redaktion sieht den Inhalt im Dashboard." : "Entwurf gespeichert.");
+      toast(ziel === "review" ? "Zur Prüfung geschickt." : "Entwurf gespeichert.");
     }
     if (e.target.id === "pin-form") {
       e.preventDefault();
       state.prominent = new FormData(e.target).get("pin");
       sichern();
       sofortKarte();
-      toast("Der Impuls steht auf der Einstiegsseite, ohne weitere Klickstrecke.");
+      toast("Der Beitrag steht jetzt auf der Startseite.");
     }
     if (e.target.id === "profil-form") {
       e.preventDefault();
@@ -1621,9 +1678,9 @@ function init() {
   document.getElementById("impuls-anbieten").addEventListener("click", function () {
     dialog({
       titel: "Impuls anbieten",
-      html: "<p>Es braucht Erfahrung aus dem Alltag, keinen Expertenstatus. Auch ein misslungener Versuch ist ein Beitrag. Anlegen und Einreichen läuft in der Rolle Content Creator, die Freigabe bei der Redaktion.</p>",
+      html: "<p>Es braucht Erfahrung aus dem Alltag. Auch ein misslungener Versuch ist ein Beitrag.</p>",
       aktionen: [
-        { label: "Als Content Creator anlegen", fn: function () { state.rolle = "creator"; sichern(); renderNav(); renderProfilKnopf(); editorId = null; showView("editor"); } },
+        { label: "Jetzt etwas einreichen", fn: function () { state.rolle = "creator"; sichern(); renderNav(); renderProfilKnopf(); editorId = null; showView("editor"); } },
         { label: "Schließen", zweite: true }
       ]
     });

@@ -207,8 +207,8 @@
   .search input::placeholder{color:var(--text-muted);}
   .search button{
     background:var(--blue-mid);color:#fff;border:none;border-radius:7px;
-    font-family:inherit;font-size:15px;font-weight:bold;
-    padding:11px 24px;cursor:pointer;transition:background .15s;
+    font-family:inherit;font-size:18px;font-weight:bold;
+    min-height:52px;padding:12px 24px;cursor:pointer;transition:background .15s;
   }
   .search button:hover{background:var(--blue-dynamic);}
 
@@ -563,8 +563,8 @@
     color:var(--text-body);font-family:inherit;font-size:14px;padding:8px 10px;border-radius:6px;cursor:pointer;
   }
   .profile-menu button:hover,.profile-menu button.active{background:var(--bg-card-hover);color:var(--text-title);}
-  .profile-menu .menu-label{display:block;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-muted);padding:8px 10px 4px;}
-  body.sso nav,body.sso .profile,body.sso .pmode-btn{visibility:hidden;}
+  .profile-menu .menu-label{display:block;font-size:18px;letter-spacing:0;text-transform:none;color:var(--text-title);padding:8px 10px 4px;}
+  body.sso .profile,body.sso .pmode-btn{visibility:hidden;}
   .hello{color:var(--text-title);font-size:15px;margin-bottom:8px;}
   .entry-row{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:22px;}
   .entry-card{
@@ -688,6 +688,70 @@
     .entry-row,.kpi,.praxis dl,.gloss,.niveaus,.orient-steps{grid-template-columns:1fr;}
     .view h1{font-size:28px;}
   }
+
+  /* Geführte Schritte: eine Größe, große Flächen, viel Abstand */
+  .header-inner{height:auto;min-height:68px;padding:10px 0;flex-wrap:wrap;row-gap:8px;}
+  nav{gap:8px;flex-wrap:wrap;}
+  nav a{
+    font-size:18px;min-height:48px;padding:8px 14px;border-radius:999px;
+    border-bottom:none;display:inline-flex;align-items:center;
+  }
+  nav a[aria-current="page"]{
+    background:var(--accent);color:var(--bg-dark);border-bottom-color:transparent;
+  }
+  nav a.erledigt{color:var(--text-title);}
+  #inhalt, #inhalt button, #inhalt input, #inhalt select, #inhalt textarea,
+  #inhalt a, #inhalt p, #inhalt li, #inhalt label, #inhalt h1, #inhalt h2,
+  #inhalt h3, #inhalt h4, #inhalt dt, #inhalt dd, #inhalt legend, #inhalt span,
+  header nav a, .profile-btn, .profile-menu button, .profile-role,
+  .btn-solid, .btn-line, .textbtn, .backlink, .zurueck, .facebtn, .h5p-opt, .chip{
+    font-size:18px;
+    letter-spacing:0;
+    text-transform:none;
+  }
+  .view{padding:28px 0 72px;}
+  .view h1{font-size:18px;font-weight:bold;max-width:36rem;margin:0 0 8px;}
+  .schritt{max-width:40rem;display:flex;flex-direction:column;align-items:flex-start;gap:28px;padding-top:12px;}
+  .schritt p{max-width:36rem;margin:0;}
+  .zurueck, .backlink{
+    min-height:48px;padding:8px 0;background:none;border:none;color:var(--blue-light);
+    font-family:inherit;font-weight:bold;cursor:pointer;
+  }
+  .btn-solid, .btn-line, .btn-gross, .h5p-opt, .facebtn, .rowitem, button.tile{
+    min-height:52px;
+  }
+  .btn-gross{padding:16px 28px;min-width:min(100%,280px);}
+  .randhinweis{
+    margin-top:36px;max-width:22rem;color:var(--text-muted);
+    display:flex;flex-direction:column;align-items:flex-start;gap:12px;
+  }
+  .textbtn{min-height:48px;padding:8px 0;font-weight:bold;}
+  .profile-menu{width:min(360px,92vw);padding:12px;}
+  .profile-menu button{padding:12px;min-height:52px;}
+  .menu-erklaerung{display:block;font-weight:normal;color:var(--text-muted);margin-top:4px;}
+  .field{margin-bottom:22px;gap:8px;}
+  .field input,.field textarea,.field select{min-height:52px;font-size:18px;}
+  .h5p-opt{
+    display:block;width:100%;text-align:left;margin:0 0 12px;
+    background:var(--bg-card);border:1px solid var(--line);border-radius:10px;
+    color:var(--text-body);font-family:inherit;padding:14px 16px;cursor:pointer;
+  }
+  .h5p-opt:hover,.facebtn{border-color:var(--blue-light);}
+  .facebtns{flex-direction:column;align-items:stretch;gap:12px;}
+  .facebtn{border-radius:10px;padding:14px 16px;}
+  #view-liste .section-head,#view-faq .section-head,#view-liste .thumb,#view-liste .tile-foot,#view-liste .badges,#view-liste .tile-body p{display:none;}
+  #view-liste .filters,#view-liste .filter-status{display:none;}
+  #view-liste.zeigt-filter .filters,#view-liste.zeigt-filter .filter-status{display:block;}
+  #view-liste .grid{display:flex;flex-direction:column;gap:16px;}
+  #view-liste .tile{min-height:72px;padding:8px 8px 8px 18px;}
+  #view-liste .tile-body h3{margin:0;}
+  #view-liste .search{margin:8px 0 20px;}
+  .weiteres{margin-top:36px;color:var(--text-muted);}
+  .weiteres summary{cursor:pointer;min-height:48px;color:var(--blue-light);font-weight:bold;}
+  .such-zeile{margin:8px 0 20px;}
+  @media (max-width:980px){
+    nav{display:flex;}
+  }
 </style>
 </head>
 <body>
@@ -700,12 +764,11 @@
       <div class="brand">KI<span>-</span>Werkstatt</div>
       <div class="org">Polizei NRW</div>
     </div>
-    <nav aria-label="Bereiche">
-      <a href="#inhalte">Inhalte</a>
-      <a href="#impulse">Impulse aus der Praxis</a>
-      <a href="#faq">FAQ</a>
-      <a href="#community">Community</a>
-      <a href="#live">Live-Formate</a>
+    <nav aria-label="Schritte">
+      <a href="#anmelden" data-nav="anmelden" data-schritt="anmelden">Anmelden</a>
+      <a href="#lernen" data-nav="lernen" data-schritt="lernen">Lernen</a>
+      <a href="#einreichen" data-nav="einreichen" data-schritt="einreichen">Einreichen</a>
+      <a href="#freigeben" data-nav="freigeben" data-schritt="freigeben">Freigeben</a>
     </nav>
     <button class="pmode-btn" id="pmode" aria-pressed="false">
       <svg class="bulb" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M12 3a6 6 0 0 0-3.5 10.9V17h7v-3.1A6 6 0 0 0 12 3z"/><path d="M9.5 20h5"/></svg>
@@ -720,12 +783,11 @@
         </span>
       </button>
       <div class="profile-menu" id="profile-menu" hidden>
-        <span class="menu-label">Prototyp-Rolle</span>
-        <button type="button" data-rolle="beschaeftigte">Beschäftigte/r</button>
-        <button type="button" data-rolle="creator">Content Creator</button>
-        <button type="button" data-rolle="redaktion">Redaktion</button>
-        <button type="button" data-rolle="admin">Administration</button>
-        <span class="menu-label">Konto</span>
+        <span class="menu-label">Aufgabe wechseln</span>
+        <button type="button" data-rolle="beschaeftigte">Lernen<span class="menu-erklaerung">Sie sehen einen Beitrag und schließen ihn ab.</span></button>
+        <button type="button" data-rolle="creator">Einreichen<span class="menu-erklaerung">Sie schicken einen eigenen Beitrag zur Prüfung.</span></button>
+        <button type="button" data-rolle="redaktion">Freigeben<span class="menu-erklaerung">Sie prüfen einen Beitrag und geben ihn frei.</span></button>
+        <button type="button" data-rolle="admin">Verwaltung<span class="menu-erklaerung">Sie sehen, wer was darf. Der Lernweg bleibt.</span></button>
         <button type="button" id="menu-profil">Mein Profil</button>
         <button type="button" id="einfach-toggle" aria-pressed="false">Einfache Sprache</button>
         <button type="button" id="menu-abmelden">Abmelden</button>
@@ -737,92 +799,46 @@
 <div class="wrap" id="inhalt">
 
   <div id="view-sso" class="view" hidden>
-    <div class="hero">
-      <div class="eyebrow">Behördenkonto · ADFS</div>
-      <h1>Anmeldung über das vorhandene Konto</h1>
-      <p class="sub">Henning Beckmann wird über das Active Directory erkannt. Die KI-Werkstatt legt kein eigenes Passwort an und kein zweites Konto.</p>
-      <div class="form-card">
-        <p><strong style="color:var(--text-title)">Henning Beckmann</strong><br>LAFP NRW · Rolle im Prototyp danach wählbar</p>
-        <p class="hint">In der Umsetzung weist die Berechtigung die Rolle zu. Der Prototyp lässt den Wechsel nur, damit der Durchstich durch alle Rollen sichtbar wird.</p>
-        <button type="button" class="btn-solid" id="sso-go">Mit diesem Konto fortfahren</button>
-      </div>
+    <div class="schritt">
+      <h1>Anmelden</h1>
+      <p>Mit Ihrem bestehenden Konto. Ein eigenes Passwort gibt es hier nicht.</p>
+      <p><strong style="color:var(--text-title)">Henning Beckmann</strong><br>LAFP NRW</p>
+      <button type="button" class="btn-solid btn-gross" id="sso-go">Anmelden</button>
+    </div>
+  </div>
+
+  <div id="view-anmelden" class="view" hidden>
+    <div class="schritt">
+      <h1>Sie sind angemeldet</h1>
+      <p>Henning Beckmann, LAFP NRW.</p>
+      <button type="button" class="btn-solid btn-gross" data-view-jump="home">Weiter</button>
     </div>
   </div>
 
   <div id="view-home" class="view">
-
-  <!-- HERO -->
-  <div class="hero">
-    <p class="hello" id="hello" hidden data-einfach="Guten Tag. Sie müssen die KI-Werkstatt nicht nutzen. Das ist freiwillig.">Guten Tag, Henning Beckmann. Die Nutzung ist freiwillig.</p>
-    <div class="eyebrow">Lernen · Wissen · Austausch</div>
-    <h1>KI verstehen und sicher anwenden — direkt aus dem Arbeitsalltag heraus.</h1>
-    <p class="sub">Die KI-Werkstatt ergänzt die bestehende Fortbildung um eine jederzeit verfügbare Lern- und Wissensumgebung: kurze Einheiten, verlässliche Antworten, kollegialer Austausch und Impulse aus der Praxis.</p>
-
-    <div class="search" role="search">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-      <input id="suche" type="text" placeholder="Wonach suchen Sie? z. B. Transkription, Prompt, EU-KI-Verordnung …" aria-label="Suche in der KI-Werkstatt">
-      <button type="button" id="suche-btn">Suchen</button>
-    </div>
-
-    <div class="paths prinzip">
-      <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 2: Lernwege statt Kursräume">2</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 2</span><span class="p-title">Lernwege statt Kursräume</span><span class="p-text">Der Einstieg erfolgt nicht über einen Kurskatalog, sondern über die eigene Ausgangslage. Dahinter stehen kurze Einheiten, die einzeln aktualisiert werden können, gebündelt zu Lernwegen nach Rolle und Vorwissen. Der Pflichtanteil bleibt auf das rechtlich Erforderliche nach der EU-KI-Verordnung begrenzt.</span><span class="p-src">Feinkonzept 5.4.2 · Belegdichte: <b>breit getragen</b></span></span>
-      <div class="path" tabindex="0" data-pfad="anfang">
-        <h3>Ich fange bei null an</h3>
-        <p>Erste Schritte ohne Vorwissen — verständlich erklärt, in kurzen Einheiten.</p>
-        <span class="go">Einstieg starten →</span>
-      </div>
-      <div class="path" tabindex="0" data-pfad="bereits">
-        <h3>Ich nutze KI bereits</h3>
-        <p>Vertiefung für den eigenen Aufgabenbereich — von Auswertung bis Recht.</p>
-        <span class="go">Passende Inhalte finden →</span>
-      </div>
-      <div class="path" tabindex="0" data-pfad="frage">
-        <h3>Ich habe eine konkrete Frage</h3>
-        <p>Antworten über Suche, FAQ oder Glossar. Foren folgen später.</p>
-        <span class="go">Frage klären →</span>
-      </div>
-    </div>
-
-    <div class="entry-row">
-      <article class="entry-card" id="orient-card">
-        <p class="entry-kicker">Orientierung · 3 Minuten</p>
-        <h3>Zweck, Freiwilligkeit, Aufbau</h3>
-        <p data-einfach="Ein kurzes Video und derselbe Text daneben. So sehen Sie, was die KI-Werkstatt ist.">Ein kurzes Video mit derselben Aussage als Text. Beides steht auf der Einstiegsseite, ohne weiteren Weg.</p>
-        <button type="button" class="btn-line" id="orient-btn" aria-expanded="false" aria-controls="orient-panel">Orientierung anzeigen</button>
-        <div id="orient-panel" hidden>
-          <div class="orient-steps">
-            <article>
-              <h4>Zweck</h4>
-              <p>Beschäftigte bauen KI-Wissen auf. Kolleginnen und Kollegen teilen eigene Praxisbeispiele.</p>
-            </article>
-            <article>
-              <h4>Freiwilligkeit</h4>
-              <p>Die Nutzung ist freiwillig. Es gibt keinen Einstufungstest und keine Pflichtreihenfolge.</p>
-            </article>
-            <article>
-              <h4>Aufbau</h4>
-              <p>Inhalte tragen genau eine Niveaustufe: Basis, Aufbau oder Spezial. Die Stufe gehört zum Inhalt, nicht zur Person.</p>
-            </article>
-          </div>
-        </div>
-      </article>
-      <article class="entry-card" id="sofort-card">
-        <p class="entry-kicker">Sofort starten · unter 10 Minuten</p>
-        <h3 id="sofort-titel">Berichte zusammenfassen: mein Vorgehen Schritt für Schritt</h3>
-        <p id="sofort-text">Ein Praxisbeitrag aus der Rubrik Impulse, direkt von der Einstiegsseite.</p>
-        <button type="button" class="btn-solid" id="sofort-btn">Praxisbeitrag starten</button>
-      </article>
-      <article class="entry-card">
-        <p class="entry-kicker">Vor der ersten Nutzung</p>
-        <h3>Erlaubnis und Prüfschritte</h3>
-        <p>Zwei Hinweise, die von hier in ein bis zwei Klicks erreichbar sind.</p>
-        <div class="entry-actions">
-          <button type="button" class="btn-line" data-action="faq-sprung" data-faq="erlaubnis">Erlaubnisfragen</button>
-          <button type="button" class="btn-line" data-open="grenzen-daten">Was nicht hineingehört</button>
-        </div>
-      </article>
+    <div class="schritt">
+      <button type="button" class="zurueck" data-schritt="anmelden">Zurück</button>
+      <p class="hello" id="hello" hidden data-einfach="Guten Tag. Sie müssen das nicht nutzen.">Guten Tag. Die Nutzung ist freiwillig.</p>
+      <h1 id="sofort-titel">Berichte zusammenfassen: mein Vorgehen Schritt für Schritt</h1>
+      <p id="sofort-text">Neun Minuten. Ein Beitrag aus dem Alltag.</p>
+      <button type="button" class="btn-solid btn-gross" id="sofort-btn">Jetzt ansehen</button>
+      <aside class="randhinweis">
+        <p>Austausch, Termine und Nachweise kommen später.</p>
+        <button type="button" class="textbtn" data-view-jump="liste">Alle Beiträge</button>
+        <button type="button" class="textbtn" data-view-jump="faq">Eine Frage nachsehen</button>
+      </aside>
     </div>
   </div>
+
+  <div id="view-liste" class="view" hidden>
+    <button type="button" class="zurueck" data-view-jump="home">Zurück</button>
+    <h1>Alle Beiträge</h1>
+    <div class="search such-zeile" role="search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+      <input id="suche" type="text" placeholder="Wonach suchen Sie?" aria-label="Suche">
+      <button type="button" id="suche-btn">Suchen</button>
+    </div>
+    <button type="button" class="btn-line" id="eingrenzen" aria-expanded="false">Eingrenzen</button>
 
   <!-- INHALTE -->
   <section id="inhalte">
@@ -1202,70 +1218,11 @@
       </div>
     </div>
   </section>
+  </div><!-- view-liste -->
 
-  <!-- IMPULSE AUS DER PRAXIS -->
-  <section id="impulse">
-    <div class="section-head">
-      <h2>Impulse aus der Praxis</h2>
-      <span class="hint">Von Kolleginnen und Kollegen, die es bereits anwenden</span>
-    </div>
-
-    <div class="impulse-intro prinzip">
-      <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 6: Glaubwürdige Gesichter aus der Belegschaft">6</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 6</span><span class="p-title">Glaubwürdige Gesichter aus der Belegschaft</span><span class="p-text">Die Beiträge stammen nicht aus der Lehre, sondern aus dem Dienstalltag. Impulsgeberinnen und Impulsgeber berichten aus eigener Erfahrung, ausdrücklich auch über misslungene Versuche. Damit trägt die Rubrik zugleich die Kernbotschaft des Konzepts: Beim Ausprobieren kann nichts beschädigt werden.</span><span class="p-src">Feinkonzept 5.4.3 · Kernbotschaft aus 6.4.1 · Meilenstein HF 6.2 M3.7</span></span>
-      <p>Hier berichten <strong>Impulsgeberinnen und Impulsgeber</strong> aus den Behörden von ihrer eigenen Arbeit mit Künstlicher Intelligenz: was sich bewährt hat, was misslungen ist und was sie beim nächsten Mal anders machen würden. Die Beiträge stammen nicht aus der Fortbildung, sondern aus dem Dienstalltag — und stehen als Live-Session, Podcast oder kurzes Tutorial zur Verfügung.</p>
-    </div>
-
-    <div class="impulse-grid">
-
-      <article class="imp" tabindex="0" data-open="impuls-auswertung">
-        <span class="imp-fmt">Live-Session · 45 Min.</span>
-        <h3>Wie wir im Ermittlungsteam die Auswertung umgestellt haben</h3>
-        <p>Vier Monate Praxis, ehrlich bilanziert: der erste Fehlversuch, die Kurskorrektur und was die Kollegen heute anders machen.</p>
-        <div class="imp-person">
-          <div class="c-av a">TH</div>
-          <div>
-            <div class="imp-name">T. Hoffmann</div>
-            <div class="imp-role"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Impulsgeber · KPB Borken</div>
-          </div>
-        </div>
-      </article>
-
-      <article class="imp" tabindex="0" data-open="skeptikerin">
-        <span class="imp-fmt podcast">Podcast · 18 Min.</span>
-        <h3>„Ich war die Skeptikerin im Team" — ein Erfahrungsbericht</h3>
-        <p>Was den Ausschlag gab, wo die Vorbehalte berechtigt waren und welche Fragen bis heute offen sind.</p>
-        <div class="imp-person">
-          <div class="c-av b">AL</div>
-          <div>
-            <div class="imp-name">A. Lindner</div>
-            <div class="imp-role"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Impulsgeberin · KPB Gütersloh</div>
-          </div>
-        </div>
-      </article>
-
-      <article class="imp" tabindex="0" data-open="berichte">
-        <span class="imp-fmt tutorial">Tutorial · 9 Min.</span>
-        <h3>Berichte zusammenfassen: mein Vorgehen Schritt für Schritt</h3>
-        <p>Aufgezeichnet am eigenen Arbeitsplatz — einschließlich der Prüfschritte, die vor jeder Weitergabe erfolgen.</p>
-        <div class="imp-person">
-          <div class="c-av c">RD</div>
-          <div>
-            <div class="imp-name">R. Demir</div>
-            <div class="imp-role"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Impulsgeber · PP Köln</div>
-          </div>
-        </div>
-      </article>
-
-    </div>
-
-    <div class="impulse-cta">
-      <div>
-        <h3>Sie arbeiten bereits mit KI? Werden Sie Impulsgeberin oder Impulsgeber.</h3>
-        <p>Es braucht keinen Expertenstatus — es braucht Erfahrung aus dem Alltag. Auch der Bericht über einen misslungenen Versuch ist ein wertvoller Impuls. Die Redaktion unterstützt bei Aufbereitung, Aufnahme und Veröffentlichung.</p>
-      </div>
-      <button class="btn-solid" type="button" id="impuls-anbieten">Impuls anbieten</button>
-    </div>
-  </section>
+  <div id="view-faq" class="view" hidden>
+    <button type="button" class="zurueck" data-view-jump="home">Zurück</button>
+    <h1>Eine Frage</h1>
 
   <!-- FAQ -->
   <section id="faq">
@@ -1357,6 +1314,80 @@
 
     </div>
   </section>
+  </div><!-- view-faq -->
+
+  <div id="lager" hidden>
+  <!-- FAQ -->
+  <section id="impulse">
+    <div class="section-head">
+      <h2>Impulse aus der Praxis</h2>
+      <span class="hint">Von Kolleginnen und Kollegen, die es bereits anwenden</span>
+    </div>
+
+    <div class="impulse-intro prinzip">
+      <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 6: Glaubwürdige Gesichter aus der Belegschaft">6</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 6</span><span class="p-title">Glaubwürdige Gesichter aus der Belegschaft</span><span class="p-text">Die Beiträge stammen nicht aus der Lehre, sondern aus dem Dienstalltag. Impulsgeberinnen und Impulsgeber berichten aus eigener Erfahrung, ausdrücklich auch über misslungene Versuche. Damit trägt die Rubrik zugleich die Kernbotschaft des Konzepts: Beim Ausprobieren kann nichts beschädigt werden.</span><span class="p-src">Feinkonzept 5.4.3 · Kernbotschaft aus 6.4.1 · Meilenstein HF 6.2 M3.7</span></span>
+      <p>Hier berichten <strong>Impulsgeberinnen und Impulsgeber</strong> aus den Behörden von ihrer eigenen Arbeit mit Künstlicher Intelligenz: was sich bewährt hat, was misslungen ist und was sie beim nächsten Mal anders machen würden. Die Beiträge stammen nicht aus der Fortbildung, sondern aus dem Dienstalltag — und stehen als Live-Session, Podcast oder kurzes Tutorial zur Verfügung.</p>
+    </div>
+
+    <div class="impulse-grid">
+
+      <article class="imp" tabindex="0" data-open="impuls-auswertung">
+        <span class="imp-fmt">Live-Session · 45 Min.</span>
+        <h3>Wie wir im Ermittlungsteam die Auswertung umgestellt haben</h3>
+        <p>Vier Monate Praxis, ehrlich bilanziert: der erste Fehlversuch, die Kurskorrektur und was die Kollegen heute anders machen.</p>
+        <div class="imp-person">
+          <div class="c-av a">TH</div>
+          <div>
+            <div class="imp-name">T. Hoffmann</div>
+            <div class="imp-role"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Impulsgeber · KPB Borken</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="imp" tabindex="0" data-open="skeptikerin">
+        <span class="imp-fmt podcast">Podcast · 18 Min.</span>
+        <h3>„Ich war die Skeptikerin im Team" — ein Erfahrungsbericht</h3>
+        <p>Was den Ausschlag gab, wo die Vorbehalte berechtigt waren und welche Fragen bis heute offen sind.</p>
+        <div class="imp-person">
+          <div class="c-av b">AL</div>
+          <div>
+            <div class="imp-name">A. Lindner</div>
+            <div class="imp-role"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Impulsgeberin · KPB Gütersloh</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="imp" tabindex="0" data-open="berichte">
+        <span class="imp-fmt tutorial">Tutorial · 9 Min.</span>
+        <h3>Berichte zusammenfassen: mein Vorgehen Schritt für Schritt</h3>
+        <p>Aufgezeichnet am eigenen Arbeitsplatz — einschließlich der Prüfschritte, die vor jeder Weitergabe erfolgen.</p>
+        <div class="imp-person">
+          <div class="c-av c">RD</div>
+          <div>
+            <div class="imp-name">R. Demir</div>
+            <div class="imp-role"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Impulsgeber · PP Köln</div>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="impulse-cta">
+      <div>
+        <h3>Sie arbeiten bereits mit KI? Werden Sie Impulsgeberin oder Impulsgeber.</h3>
+        <p>Es braucht keinen Expertenstatus — es braucht Erfahrung aus dem Alltag. Auch der Bericht über einen misslungenen Versuch ist ein wertvoller Impuls. Die Redaktion unterstützt bei Aufbereitung, Aufnahme und Veröffentlichung.</p>
+      </div>
+      <button class="btn-solid" type="button" id="impuls-anbieten">Impuls anbieten</button>
+    </div>
+  </section>
+
+    <div class="path" tabindex="0" data-pfad="anfang"></div>
+    <div class="path" tabindex="0" data-pfad="bereits"></div>
+    <div class="path" tabindex="0" data-pfad="frage"></div>
+    <article class="entry-card" id="orient-card">
+      <button type="button" id="orient-btn" aria-expanded="false" aria-controls="orient-panel">Orientierung</button>
+      <div id="orient-panel" hidden></div>
+    </article>
 
   <!-- COMMUNITY -->
   <section id="community">
@@ -1436,7 +1467,7 @@
     </div>
   </section>
 
-  </div><!-- view-home -->
+  </div><!-- lager -->
 
   <div id="view-player" class="view" hidden></div>
   <div id="view-summary" class="view" hidden></div>
@@ -1445,24 +1476,17 @@
   <div id="view-meine" class="view" hidden></div>
   <div id="view-editor" class="view" hidden></div>
   <div id="view-leitfaden" class="view" hidden>
-    <button type="button" class="backlink" data-view-jump="meine">← Meine Inhalte</button>
-    <p class="eyebrow">Rahmen für neue Inhalte</p>
-    <h1>Leitfaden</h1>
-    <p>Der Anforderungskatalog nennt einen Leitfaden mit acht Ausschlusskriterien. Die ausformulierte Liste liegt nicht im MVP-Entwurf. Der Prototyp sperrt die Freigabe an den Merkmalen, die Katalog und Journeys für den Start benennen.</p>
-    <ol class="steps">
-      <li><h3>Genau eine Niveaustufe</h3><p>Basis, Aufbau oder Spezial. In der Einordnungshilfe entsprechen sie Anfänger, Fortgeschritten und Experte. Die Stufe beschreibt den Inhalt, nicht die Person. Keine Einstufung, keine Zugangssperre, keine Pflichtreihenfolge.</p></li>
-      <li><h3>Anwendungsfeld</h3><p>Ermittlung, Führung oder Verwaltung, auch mehrere. Unbesetzte Felder bleiben in der Übersicht als Lücke sichtbar und werden nicht mit Fremdinhalt gefüllt.</p></li>
-      <li><h3>Dauer und Ergebnis vorab</h3><p>Neue Einheiten bleiben beim Richtwert von höchstens 10 Minuten. Dauer und Ergebnis stehen am Inhalt, bevor er startet.</p></li>
-      <li><h3>Praxisbeispiel mit vier Merkmalen</h3><p>Bei anwendungsbezogenen Inhalten: benannte Rolle, konkrete Tätigkeit, Nutzen und Grenze.</p></li>
-      <li><h3>Begriffe erklärt</h3><p>Fremdwörter, Abkürzungen und Anglizismen stehen im Glossar. Ohne diese Kennzeichnung gibt es keine Freigabe.</p></li>
-      <li><h3>Fehlversuch ohne Abwertung</h3><p>Wo ein typischer Fehlversuch gezeigt wird, ist er normal und hat einen Korrekturhinweis. Keine Drohkulisse, keine Abwertung bisheriger Arbeitsweisen.</p></li>
-      <li><h3>Passendes Format</h3><p>Begriffe und Regeln als strukturierter Text. Bedienabläufe als bebilderte Schrittfolge oder als Bildschirmaufzeichnung mit Bordmitteln. Ohne Termin, Begleitung oder Beschaffung.</p></li>
-      <li><h3>Fassungsstand</h3><p>Das Prüfdatum setzt die Redaktion bei der Freigabe. Frühere Fassungen bleiben benannt.</p></li>
-    </ol>
-    <div class="form-card">
-      <h2>Grundlagenkanon</h2>
-      <p>Fünf bis sieben Module mit Lernziel, Geltungsbereich und Fassungsstand. Im Prototyp sichtbar: Wie Sprachmodelle Texte erzeugen, Halluzinationen erkennen, Was nicht in das Werkzeug gehört, Ergebnisse prüfen, Wo KI an Grenzen stößt. Dazu die Einordnung von Artikel 4 als Wissensartikel. Ein Zertifikat darüber läuft später über Moodle.</p>
-    </div>
+    <button type="button" class="zurueck" data-view-jump="editor">Zurück</button>
+    <h1>Worauf die Prüfung achtet</h1>
+    <p>Ein Beitrag braucht eine Schwierigkeit, ein Feld, höchstens zehn Minuten, ein Ergebnis und ein Beispiel aus dem Alltag. Schwierige Wörter sind erklärt.</p>
+    <ul class="summary-list">
+      <li>Eine Schwierigkeit: leicht, mittel oder vertieft.</li>
+      <li>Wobei: Ermittlung, Führung oder Verwaltung.</li>
+      <li>Höchstens zehn Minuten, und was die Person danach kann.</li>
+      <li>Ein Beispiel: wer, was, Nutzen und Grenze.</li>
+      <li>Schwierige Wörter sind erklärt.</li>
+    </ul>
+    <aside class="randhinweis"><p>Nachweise kommen später.</p></aside>
   </div>
   <div id="view-redaktion" class="view" hidden></div>
   <div id="view-review" class="view" hidden></div>
@@ -1474,7 +1498,7 @@
 <footer>
   <div class="wrap footer-inner">
     <span>KI-Werkstatt Polizei NRW · Landesamt für Ausbildung, Fortbildung und Personalangelegenheiten</span>
-    <span class="disclaimer">Konzeptvisualisierung zur Veranschaulichung der Funktionslogik — keine finale Gestaltung. MVP-Umfang nach Entwurf; die spätere Ausbaustufe ist gekennzeichnet und nicht ausführbar.</span>
+    <span class="disclaimer">Konzeptbild, keine fertige Gestaltung.</span>
   </div>
 </footer>
 
