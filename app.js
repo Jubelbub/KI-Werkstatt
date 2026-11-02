@@ -4,6 +4,7 @@
 var STORE = "kiw-dummy-v1";
 var aktuell = null;
 var suchtext = "";
+var sucheSeite = { lektion: "", impuls: "", live: "", community: "" };
 var selbstGeprueft = false;
 var editorId = null;
 var editorVorgabe = "";
@@ -703,10 +704,8 @@ function showView(name, opt) {
   if (name === "statistik") renderStatistik();
   if (name === "admin") renderAdmin();
   if (name === "leitfaden") { /* statisches HTML */ }
-  if (name === "inhalte" && typeof window.filtern === "function") window.filtern();
-  if (name === "impulse") renderImpulse();
-  if (name === "live") renderLive();
-  if (name === "community") renderCommunity();
+  if ((name === "inhalte" || name === "impulse" || name === "live" || name === "community") && typeof window.filtern === "function") window.filtern();
+  if (name === "suche") renderSuche();
   if (name === "lauf-begonnen" || name === "lauf-abgeschlossen" || name === "impuls-begonnen" || name === "impuls-abgeschlossen") renderFortschritt();
   markNav(name, opt.anker || "");
   if (opt.anker) {
@@ -865,6 +864,7 @@ function herkunftSetzen(id) {
     "impuls-abgeschlossen": { id: "impuls-abgeschlossen", nav: "impulse", anker: "", spur: [start, spurSchritt("Impulse", "impulse"), spurSchritt("Abgeschlossene Impulse", "impuls-abgeschlossen")] },
     live: { id: "live", nav: "live", anker: "", spur: [start, spurSchritt("Live-Sessions", "live")] },
     community: { id: "community", nav: "community", anker: "", spur: [start, spurSchritt("Community", "community")] },
+    suche: { id: "suche", nav: "home", anker: "", spur: [start, spurSchritt("Suche", "suche")] },
     freigabe: { id: "freigabe", nav: "redaktion", anker: "", spur: [start, spurSchritt("Moderation", "redaktion"), spurSchritt("Zur Freigabe", "mod-freigabe")] },
     kommentare: { id: "kommentare", nav: "redaktion", anker: "", spur: [start, spurSchritt("Moderation", "redaktion"), spurSchritt("Kommentare", "mod-kommentare")] },
     pruefung: { id: "pruefung", nav: "redaktion", anker: "", spur: [start, spurSchritt("Moderation", "redaktion"), spurSchritt("Prüfdaten", "mod-pruefung")] },
@@ -875,6 +875,7 @@ function herkunftSetzen(id) {
 
 function herkunftAusElement(el) {
   if (!el || !el.closest) return "";
+  if (el.closest("#view-suche")) return "suche";
   if (el.closest("#view-meine, #inhalte-eigene")) return "meine";
   if (el.closest("#view-impuls-begonnen, #impulse-begonnen")) return "impuls-begonnen";
   if (el.closest("#view-impuls-abgeschlossen, #impulse-abgeschlossen")) return "impuls-abgeschlossen";
@@ -1412,24 +1413,14 @@ function verankereKachel(tile) {
 }
 
 function renderEigene() {
-  var q = (suchtext || "").trim().toLowerCase();
-  function treffer(c) {
-    return !q || (c.titel + " " + (c.teaser || "")).toLowerCase().indexOf(q) >= 0;
-  }
-  var inhalte = alle().filter(function (c) {
-    return istEigen(c) && istLektion(c);
-  }).filter(treffer);
-  var impulse = alle().filter(function (c) {
-    return istEigen(c) && istImpuls(c);
-  }).filter(treffer);
-  var sessions = alle().filter(function (c) {
-    return istEigen(c) && istLiveSession(c);
-  }).filter(treffer);
+  var inhalte = alle().filter(function (c) { return istEigen(c) && istLektion(c); });
+  var impulse = alle().filter(function (c) { return istEigen(c) && istImpuls(c); });
+  var sessions = alle().filter(function (c) { return istEigen(c) && istLiveSession(c); });
   var box = document.getElementById("inhalte-eigene");
   if (box) {
     box.innerHTML = inhalte.length
       ? inhalte.map(kachelMarkup).join("")
-      : "<p class=\"meta-line\">" + (q ? "Kein Treffer unter Meine Inhalte." : "Noch keine eigenen Inhalte. Legen Sie oben einen neuen Inhalt an.") + "</p>";
+      : "<p class=\"meta-line\">Noch keine eigenen Inhalte. Legen Sie oben einen neuen Inhalt an.</p>";
   }
   var ibox = document.getElementById("impulse-eigene");
   if (ibox) {
@@ -1439,12 +1430,6 @@ function renderEigene() {
   if (lbox) {
     lbox.innerHTML = sessions.length ? sessions.map(kachelMarkup).join("") : "<p class=\"meta-line\">Noch keine eigene Live-Session.</p>";
   }
-  document.querySelectorAll("#impulse-alle [data-open]").forEach(function (b) {
-    var c = byId(b.dataset.open);
-    var zeigen = !!(c && c.status === "veroeffentlicht" && !istEigen(c) && !fortschrittVon(c));
-    if (zeigen && q && b.textContent.toLowerCase().indexOf(q) === -1) zeigen = false;
-    if (b.parentElement) b.parentElement.hidden = !zeigen;
-  });
 }
 
 function renderFortschritt() {
@@ -1474,14 +1459,14 @@ function renderImpulse() {
 }
 
 var LIVE_FEST = [
-  { id: "live-auswertung", tag: "23.", monat: "Juli", titel: "Fragen & Antworten: KI-gestützte Auswertung in der Praxis", text: "Mit Fachleuten aus Technik und Recht · Donnerstag, 10:00–11:00 Uhr. Die Aufzeichnung liegt danach als Lektion." },
-  { id: "live-prompt", tag: "04.", monat: "Juni", titel: "Sprechstunde: Prompts für Berichte", text: "Offene Stunde für alle Behörden." }
+  { id: "live-auswertung", tag: "23.", monat: "Juli", titel: "Fragen & Antworten: KI-gestützte Auswertung in der Praxis", text: "Mit Fachleuten aus Technik und Recht · Donnerstag, 10:00–11:00 Uhr. Die Aufzeichnung liegt danach als Lektion.", thema: "einsatzfelder", niveau: "spezial", zielgruppe: "ermittlung", werkzeug: "auswertung" },
+  { id: "live-prompt", tag: "04.", monat: "Juni", titel: "Sprechstunde: Prompts für Berichte", text: "Offene Stunde für alle Behörden.", thema: "grundlagen", niveau: "basis", zielgruppe: "verwaltung fuehrung", werkzeug: "sprachmodell" }
 ];
 
 var COMMUNITYS = [
-  { id: "transkript", kuerzel: "TH", farbe: "a", titel: "Transkript weicht stark vom Audio ab — woran kann das liegen?", meta: "T. Hoffmann · KPB Borken · 14 Antworten" },
-  { id: "formulierungen", kuerzel: "RD", farbe: "b", titel: "Welche Formulierungen funktionieren bei der Zusammenfassung längerer Berichte?", meta: "R. Demir · PP Köln · 23 Antworten" },
-  { id: "skepsis", kuerzel: "AL", farbe: "c", titel: "Erster KI-Einsatz im Team: Was hat bei euch die Skepsis abgebaut?", meta: "A. Lindner · KPB Gütersloh · 31 Antworten" }
+  { id: "transkript", kuerzel: "TH", farbe: "a", titel: "Transkript weicht stark vom Audio ab — woran kann das liegen?", meta: "T. Hoffmann · KPB Borken · 14 Antworten", thema: "einsatzfelder", zielgruppe: "ermittlung", werkzeug: "transkription" },
+  { id: "formulierungen", kuerzel: "RD", farbe: "b", titel: "Welche Formulierungen funktionieren bei der Zusammenfassung längerer Berichte?", meta: "R. Demir · PP Köln · 23 Antworten", thema: "grundlagen", zielgruppe: "verwaltung", werkzeug: "sprachmodell" },
+  { id: "skepsis", kuerzel: "AL", farbe: "c", titel: "Erster KI-Einsatz im Team: Was hat bei euch die Skepsis abgebaut?", meta: "A. Lindner · KPB Gütersloh · 31 Antworten", thema: "ethik", zielgruppe: "fuehrung", werkzeug: "keins" }
 ];
 
 function liveTermine() {
@@ -1498,7 +1483,10 @@ function liveTermine() {
       tag = c.liveDatum.slice(8, 10) + ".";
       monat = c.liveDatum.slice(5, 7) + ".";
     }
-    liste.push({ id: c.id, tag: tag, monat: c.liveZeit || monat, titel: c.titel, text: c.teaser || "" });
+    liste.push({
+      id: c.id, tag: tag, monat: c.liveZeit || monat, titel: c.titel, text: c.teaser || "",
+      thema: (c.thema || []).join(" "), niveau: c.niveau || "", zielgruppe: (c.ziel || []).join(" "), werkzeug: c.werkzeugKey || ""
+    });
   });
   return liste;
 }
@@ -1507,7 +1495,7 @@ function liveKarte(s, dabei) {
   var aktion = dabei
     ? "<span class=\"st veroeffentlicht\">Teilgenommen</span>"
     : "<button class=\"btn-solid\" type=\"button\" data-action=\"live-teilnehmen\" data-id=\"" + esc(s.id) + "\">Teilnehmen</button>";
-  return "<div class=\"live\"><div class=\"live-date\"><div class=\"d\">" + esc(s.tag) + "</div><div class=\"m\">" + esc(s.monat) + "</div></div><div class=\"live-info\"><span class=\"tag\"><span class=\"dot\"></span>Live-Session</span><h3>" + esc(s.titel) + "</h3><p>" + esc(s.text) + "</p></div>" + aktion + "</div>";
+  return "<div class=\"live\" data-thema=\"" + esc(s.thema || "") + "\" data-niveau=\"" + esc(s.niveau || "") + "\" data-zielgruppe=\"" + esc(s.zielgruppe || "") + "\" data-werkzeug=\"" + esc(s.werkzeug || "") + "\" data-format=\"live\"><div class=\"live-date\"><div class=\"d\">" + esc(s.tag) + "</div><div class=\"m\">" + esc(s.monat) + "</div></div><div class=\"live-info\"><span class=\"tag\"><span class=\"dot\"></span>Live-Session</span><h3>" + esc(s.titel) + "</h3><p>" + esc(s.text) + "</p></div>" + aktion + "</div>";
 }
 
 function renderLive() {
@@ -1521,8 +1509,8 @@ function renderLive() {
   var leerMit = document.getElementById("live-teilgenommen-leer");
   if (boxFrei) boxFrei.innerHTML = frei.map(function (s) { return liveKarte(s, false); }).join("");
   if (boxMit) boxMit.innerHTML = mit.map(function (s) { return liveKarte(s, true); }).join("");
-  if (leerFrei) leerFrei.hidden = frei.length > 0;
   if (leerMit) leerMit.hidden = mit.length > 0;
+  filtereBereichKarten("#live-verfuegbar-liste .live", "live", "live-verfuegbar-leer", "live-filter-leer");
 }
 
 function communityKarte(c) {
@@ -1530,7 +1518,7 @@ function communityKarte(c) {
   var knopf = dabei
     ? "<button type=\"button\" class=\"btn-line\" data-action=\"community-mit\" data-id=\"" + esc(c.id) + "\">Nicht mehr mitwirken</button>"
     : "<button type=\"button\" class=\"btn-line\" data-action=\"community-mit\" data-id=\"" + esc(c.id) + "\">Mitwirken</button>";
-  return "<div class=\"thread\" tabindex=\"0\" role=\"button\" data-action=\"community-lesen\"><div class=\"c-av " + esc(c.farbe) + "\">" + esc(c.kuerzel) + "</div><div><h3>" + esc(c.titel) + "</h3><div class=\"t-meta\"><span>" + esc(c.meta) + "</span></div>" + knopf + "</div></div>";
+  return "<div class=\"thread\" tabindex=\"0\" role=\"button\" data-action=\"community-lesen\" data-thema=\"" + esc(c.thema || "") + "\" data-niveau=\"\" data-zielgruppe=\"" + esc(c.zielgruppe || "") + "\" data-werkzeug=\"" + esc(c.werkzeug || "") + "\" data-format=\"community\"><div class=\"c-av " + esc(c.farbe) + "\">" + esc(c.kuerzel) + "</div><div><h3>" + esc(c.titel) + "</h3><div class=\"t-meta\"><span>" + esc(c.meta) + "</span></div>" + knopf + "</div></div>";
 }
 
 function renderCommunity() {
@@ -1544,7 +1532,7 @@ function renderCommunity() {
   if (boxMit) boxMit.innerHTML = mit.map(communityKarte).join("");
   if (boxFrei) boxFrei.innerHTML = frei.map(communityKarte).join("");
   if (leerMit) leerMit.hidden = mit.length > 0;
-  if (leerFrei) leerFrei.hidden = frei.length > 0;
+  filtereBereichKarten("#community-frei-liste .thread", "community", "community-frei-leer", "community-filter-leer");
 }
 
 function modSammeln() {
@@ -1737,23 +1725,22 @@ function sofortKarte() {
   if (b) b.dataset.sofort = c.id;
 }
 
-function setzeFilter(gruppe, wert) {
-  document.querySelectorAll(".chip[data-group]").forEach(function (c) {
+function setzeFilter(gruppe, wert, scope) {
+  scope = scope || "lektion";
+  document.querySelectorAll(".filters[data-scope=\"" + scope + "\"] .chip").forEach(function (c) {
     if (c.dataset.group !== gruppe) return;
     var an = c.dataset.value === wert;
     c.classList.toggle("active", an);
     c.setAttribute("aria-pressed", an ? "true" : "false");
   });
-  window.filtern();
+  if (typeof window.filtern === "function") window.filtern();
 }
 
 function setzePfad(name) {
-  suchtext = "";
-  ["suche", "suche-kopf", "suche-inhalte"].forEach(function (id) {
-    var feld = document.getElementById(id);
-    if (feld) feld.value = "";
-  });
-  ["thema", "format", "niveau", "zielgruppe", "werkzeug"].forEach(function (g) { setzeFilter(g, "alle"); });
+  sucheSeite.lektion = "";
+  var feldSuche = document.getElementById("suche-inhalte");
+  if (feldSuche) feldSuche.value = "";
+  ["thema", "format", "niveau", "zielgruppe", "werkzeug"].forEach(function (g) { setzeFilter(g, "alle", "lektion"); });
   if (name === "anfang") {
     setzeFilter("niveau", "basis");
     setzeFilter("thema", "grundlagen");
@@ -1781,29 +1768,324 @@ function hinweis(text) {
   el.textContent = text;
 }
 
-function sucheAktualisieren() {
-  var panel = document.getElementById("suchpanel");
-  var q = suchtext.trim().toLowerCase();
-  if (!panel) return;
-  if (!q) { panel.hidden = true; panel.innerHTML = ""; return; }
-  var treffer = alle().filter(function (c) {
-    return c.status === "veroeffentlicht" && (c.titel + " " + c.teaser).toLowerCase().indexOf(q) >= 0;
+var FILTER_WERTE = {
+  thema: ["Thema", [["grundlagen", "Grundlagen"], ["recht", "Recht"], ["ethik", "Ethik"], ["einsatzfelder", "Einsatzfelder"]]],
+  format: ["Format", [["video", "Video"], ["artikel", "Artikel"], ["lernmodul", "Lernmodul"], ["live", "Aufzeichnung"]]],
+  niveau: ["Niveau", [["basis", "Basis"], ["aufbau", "Aufbau"], ["spezial", "Spezial"]]],
+  zielgruppe: ["Zielgruppe", [["ermittlung", "Ermittlung"], ["fuehrung", "Führung"], ["verwaltung", "Verwaltung"]]],
+  werkzeug: ["Werkzeug", [["sprachmodell", "Sprachmodell"], ["transkription", "Transkription"], ["auswertung", "Auswertung"], ["keins", "Ohne Werkzeug"]]]
+};
+var FILTER_GRUPPEN = {
+  lektion: ["thema", "format", "niveau", "zielgruppe", "werkzeug"],
+  impuls: ["thema", "niveau", "zielgruppe", "werkzeug"],
+  live: ["thema", "niveau", "zielgruppe", "werkzeug"],
+  community: ["thema", "zielgruppe", "werkzeug"]
+};
+var SUCH_FELD = { lektion: "suche-inhalte", impuls: "suche-impuls", live: "suche-live", community: "suche-community" };
+
+function filterBereichHtml(scope) {
+  var texte = {
+    impuls: {
+      aria: "Suche in den verfügbaren Impulsen",
+      placeholder: "Impuls suchen, z. B. Auswertung, Skepsis, Bericht …",
+      filter: "Verfügbare Impulse filtern",
+      lead: "Suche und Filter gelten nur für die verfügbaren Impulse."
+    },
+    live: {
+      aria: "Suche in den verfügbaren Live-Sessions",
+      placeholder: "Live-Session suchen, z. B. Auswertung, Sprechstunde …",
+      filter: "Verfügbare Live-Sessions filtern",
+      lead: "Suche und Filter gelten nur für die verfügbaren Termine."
+    },
+    community: {
+      aria: "Suche in den verfügbaren Communitys",
+      placeholder: "Community suchen, z. B. Transkript, Bericht, Skepsis …",
+      filter: "Verfügbare Communitys filtern",
+      lead: "Suche und Filter gelten nur für die verfügbaren Communitys."
+    }
+  }[scope];
+  var feld = SUCH_FELD[scope];
+  var lupe = "<svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke-width=\"2\" stroke-linecap=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><line x1=\"21\" y1=\"21\" x2=\"16.5\" y2=\"16.5\"/></svg>";
+  var gruppen = (FILTER_GRUPPEN[scope] || []).map(function (g) {
+    var def = FILTER_WERTE[g];
+    var chips = "<button class=\"chip active\" type=\"button\" data-group=\"" + g + "\" data-value=\"alle\" aria-pressed=\"true\">Alle</button>" + def[1].map(function (w) {
+      return "<button class=\"chip\" type=\"button\" data-group=\"" + g + "\" data-value=\"" + w[0] + "\" aria-pressed=\"false\">" + w[1] + "</button>";
+    }).join("");
+    return "<div class=\"fgroup\" role=\"group\" aria-label=\"" + def[0] + "\"><span class=\"flabel\">" + def[0] + "</span>" + chips + "</div>";
+  }).join("");
+  return "<div class=\"search bereich-suche\" role=\"search\">" + lupe
+    + "<input id=\"" + feld + "\" type=\"search\" placeholder=\"" + texte.placeholder + "\" aria-label=\"" + texte.aria + "\">"
+    + "<button type=\"button\" id=\"" + feld + "-btn\">Suchen</button></div>"
+    + "<div class=\"filters\" data-scope=\"" + scope + "\" aria-label=\"" + texte.filter + "\">"
+    + "<p class=\"filter-lead\">" + texte.lead + "</p>"
+    + "<div class=\"filter-status\"><span class=\"fcount\" role=\"status\" aria-live=\"polite\"></span>"
+    + "<button class=\"freset\" type=\"button\" data-filter-reset=\"" + scope + "\" hidden>Filter zurücksetzen</button></div>"
+    + gruppen + "</div>";
+}
+
+function aktiveFilter(scope) {
+  var block = document.querySelector(".filters[data-scope=\"" + scope + "\"]");
+  var auswahl = {};
+  var anzahl = 0;
+  (FILTER_GRUPPEN[scope] || []).forEach(function (g) {
+    auswahl[g] = [];
+    if (!block) return;
+    block.querySelectorAll(".chip").forEach(function (c) {
+      if (c.dataset.group === g && c.dataset.value !== "alle" && c.classList.contains("active")) auswahl[g].push(c.dataset.value);
+    });
+    anzahl += auswahl[g].length;
+  });
+  return { auswahl: auswahl, anzahl: anzahl };
+}
+
+function passtKarte(el, scope, auswahl) {
+  return (FILTER_GRUPPEN[scope] || []).every(function (g) {
+    var werte = auswahl[g] || [];
+    if (!werte.length) return true;
+    var eigene = (el.dataset[g] || "").split(" ");
+    return werte.some(function (w) { return eigene.indexOf(w) !== -1; });
+  });
+}
+
+function syncAlleChips(scope) {
+  var block = document.querySelector(".filters[data-scope=\"" + scope + "\"]");
+  if (!block) return;
+  block.querySelectorAll(".chip[data-value=\"alle\"]").forEach(function (c) {
+    var aktiv = false;
+    block.querySelectorAll(".chip").forEach(function (andere) {
+      if (andere.dataset.group === c.dataset.group && andere.dataset.value !== "alle" && andere.classList.contains("active")) aktiv = true;
+    });
+    c.classList.toggle("active", !aktiv);
+    c.setAttribute("aria-pressed", !aktiv ? "true" : "false");
+  });
+}
+
+function filterStatusText(scope, sichtbar, gesamt, anzahl, q) {
+  var namen = {
+    lektion: { eine: "Lektion", keine: "Keine Lektion", alle: "Lektionen", fall: "Lektionen" },
+    impuls: { eine: "Impuls", keine: "Kein Impuls", alle: "Impulse", fall: "Impulsen" },
+    live: { eine: "Live-Session", keine: "Keine Live-Session", alle: "Live-Sessions", fall: "Live-Sessions" },
+    community: { eine: "Community", keine: "Keine Community", alle: "Communitys", fall: "Communitys" }
+  }[scope];
+  if (!namen) return "";
+  if (anzahl === 0 && !q) {
+    if (gesamt === 1) return scope === "impuls" ? "Der verfügbare Impuls wird angezeigt." : "Die verfügbare " + namen.eine + " wird angezeigt.";
+    return "Alle " + gesamt + " verfügbaren " + namen.alle + " werden angezeigt.";
+  }
+  if (sichtbar === 0) return namen.keine + " entspricht dieser Auswahl.";
+  if (sichtbar === 1) return "<strong>1</strong> von " + gesamt + " verfügbaren " + namen.fall + " entspricht Ihrer Auswahl.";
+  return "<strong>" + sichtbar + "</strong> von " + gesamt + " verfügbaren " + namen.fall + " entsprechen Ihrer Auswahl.";
+}
+
+function setzeFilterStatus(scope, sichtbar, gesamt, anzahl, q) {
+  var block = document.querySelector(".filters[data-scope=\"" + scope + "\"]");
+  if (!block) return;
+  var zahl = block.querySelector(".fcount");
+  var reset = block.querySelector(".freset");
+  if (zahl) zahl.innerHTML = filterStatusText(scope, sichtbar, gesamt, anzahl, q);
+  if (reset) reset.hidden = anzahl === 0 && !q;
+  syncAlleChips(scope);
+}
+
+function schreibeImpulsDaten(li, c) {
+  li.dataset.thema = (c.thema || []).join(" ");
+  li.dataset.niveau = c.niveau || "";
+  li.dataset.zielgruppe = (c.ziel || []).join(" ");
+  li.dataset.werkzeug = c.werkzeugKey || "";
+  li.dataset.format = c.formatKey || "";
+  li.dataset.suchtext = ((c.titel || "") + " " + (c.teaser || "")).toLowerCase();
+}
+
+function anreichernImpulse() {
+  var ul = document.getElementById("impulse-alle");
+  if (!ul) return;
+  var vorhanden = {};
+  Array.prototype.forEach.call(ul.children, function (li) {
+    if (!li.querySelector) return;
+    var btn = li.querySelector("[data-open]");
+    if (!btn) return;
+    vorhanden[btn.dataset.open] = true;
+    var c = byId(btn.dataset.open);
+    if (c) schreibeImpulsDaten(li, c);
+  });
+  alle().forEach(function (c) {
+    if (!istImpuls(c) || vorhanden[c.id] || c.status !== "veroeffentlicht" || istEigen(c) || fortschrittVon(c)) return;
+    var li = document.createElement("li");
+    li.innerHTML = "<button type=\"button\" data-open=\"" + esc(c.id) + "\">" + esc(c.titel) + "<span>" + esc(c.dauer) + "</span></button>";
+    schreibeImpulsDaten(li, c);
+    ul.appendChild(li);
+    vorhanden[c.id] = true;
+  });
+}
+
+function filtereLektionen() {
+  var kacheln = Array.prototype.slice.call(document.querySelectorAll("#katalog-grid .tile"));
+  var q = (sucheSeite.lektion || "").trim().toLowerCase();
+  var info = aktiveFilter("lektion");
+  var gesamt = 0;
+  var sichtbar = 0;
+  kacheln.forEach(function (k) {
+    var inhalt = byId(k.dataset.id);
+    var verfuegbar = !!(inhalt && istLektion(inhalt) && !istEigen(inhalt) && !fortschrittVon(inhalt));
+    var treffer = verfuegbar && passtKarte(k, "lektion", info.auswahl);
+    if (treffer && q && k.textContent.toLowerCase().indexOf(q) === -1) treffer = false;
+    k.hidden = !treffer;
+    if (verfuegbar) gesamt++;
+    if (treffer) sichtbar++;
+    verankereKachel(k);
+  });
+  setzeFilterStatus("lektion", sichtbar, gesamt, info.anzahl, q);
+  var empty = document.getElementById("empty");
+  if (empty) empty.hidden = sichtbar > 0;
+}
+
+function filtereImpulse() {
+  anreichernImpulse();
+  var items = Array.prototype.slice.call(document.querySelectorAll("#impulse-alle > li"));
+  var q = (sucheSeite.impuls || "").trim().toLowerCase();
+  var info = aktiveFilter("impuls");
+  var gesamt = 0;
+  var sichtbar = 0;
+  items.forEach(function (li) {
+    var btn = li.querySelector("[data-open]");
+    var c = btn && byId(btn.dataset.open);
+    var verfuegbar = !!(c && istImpuls(c) && c.status === "veroeffentlicht" && !istEigen(c) && !fortschrittVon(c));
+    var treffer = verfuegbar && passtKarte(li, "impuls", info.auswahl);
+    if (treffer && q && (li.dataset.suchtext || li.textContent || "").toLowerCase().indexOf(q) === -1) treffer = false;
+    li.hidden = !treffer;
+    if (verfuegbar) gesamt++;
+    if (treffer) sichtbar++;
+  });
+  setzeFilterStatus("impuls", sichtbar, gesamt, info.anzahl, q);
+  var leer = document.getElementById("impuls-filter-leer");
+  if (leer) {
+    leer.hidden = sichtbar > 0;
+    leer.textContent = gesamt === 0 ? "Zurzeit kein weiterer Impuls." : "Kein Impuls entspricht dieser Auswahl.";
+  }
+}
+
+function filtereBereichKarten(selektor, scope, leerId, filterLeerId) {
+  var karten = Array.prototype.slice.call(document.querySelectorAll(selektor));
+  var block = document.querySelector(".filters[data-scope=\"" + scope + "\"]");
+  var leer = document.getElementById(leerId);
+  var filterLeer = document.getElementById(filterLeerId);
+  if (!block) {
+    if (leer) leer.hidden = karten.length > 0;
+    if (filterLeer) filterLeer.hidden = true;
+    return;
+  }
+  var q = (sucheSeite[scope] || "").trim().toLowerCase();
+  var info = aktiveFilter(scope);
+  var sichtbar = 0;
+  karten.forEach(function (k) {
+    var treffer = passtKarte(k, scope, info.auswahl);
+    if (treffer && q && k.textContent.toLowerCase().indexOf(q) === -1) treffer = false;
+    k.hidden = !treffer;
+    if (treffer) sichtbar++;
+  });
+  setzeFilterStatus(scope, sichtbar, karten.length, info.anzahl, q);
+  if (leer) leer.hidden = karten.length > 0;
+  if (filterLeer) filterLeer.hidden = !(karten.length > 0 && sichtbar === 0);
+}
+
+function filtern() {
+  filtereLektionen();
+  filtereImpulse();
+  renderLive();
+  renderCommunity();
+  renderEigene();
+  renderFortschritt();
+}
+
+function bereichZurueck(scope) {
+  sucheSeite[scope] = "";
+  var feld = document.getElementById(SUCH_FELD[scope] || "");
+  if (feld) feld.value = "";
+  var block = document.querySelector(".filters[data-scope=\"" + scope + "\"]");
+  if (block) {
+    block.querySelectorAll(".chip").forEach(function (c) {
+      var an = c.dataset.value === "alle";
+      c.classList.toggle("active", an);
+      c.setAttribute("aria-pressed", an ? "true" : "false");
+    });
+  }
+  if (scope === "lektion") {
+    var hinweisFeld = document.getElementById("pfadhinweis");
+    if (hinweisFeld) hinweisFeld.hidden = true;
+  }
+  filtern();
+}
+
+function suchZeile(label, titel, attrs) {
+  return "<button type=\"button\" class=\"rowitem\" " + attrs + "><strong>" + esc(titel) + "</strong><span>" + esc(label) + "</span></button>";
+}
+
+function renderSuche() {
+  var box = document.getElementById("suche-treffer");
+  var frage = document.getElementById("suche-frage");
+  if (!box) return;
+  var roh = (suchtext || "").trim();
+  var q = roh.toLowerCase();
+  if (frage) {
+    frage.textContent = q
+      ? "Ergebnisse für „" + roh + "“. Geprüft werden Lektionen, Impulse, Live-Sessions, Communitys und die häufigen Fragen."
+      : "Die Suche geht über Lektionen, Impulse, Live-Sessions, Communitys und die häufigen Fragen.";
+  }
+  if (!q) {
+    box.innerHTML = "<p>Bitte geben Sie einen Suchbegriff ein.</p>";
+    return;
+  }
+  var lektionen = [];
+  var impulse = [];
+  var sessions = [];
+  var sessionIds = {};
+  alle().forEach(function (c) {
+    if (!c || !(istEigen(c) || c.status === "veroeffentlicht")) return;
+    var hay = ((c.titel || "") + " " + (c.teaser || "") + " " + (c.format || "") + " " + (c.werkzeug || "") + " " + (c.autor || "")).toLowerCase();
+    if (hay.indexOf(q) === -1) return;
+    if (istImpuls(c)) impulse.push(c);
+    else if (istLiveSession(c)) { sessions.push(c); sessionIds[c.id] = true; }
+    else if (istLektion(c)) lektionen.push(c);
+  });
+  var fest = LIVE_FEST.filter(function (s) {
+    return !sessionIds[s.id] && (s.titel + " " + s.text).toLowerCase().indexOf(q) >= 0;
+  });
+  var community = COMMUNITYS.filter(function (c) {
+    return (c.titel + " " + (c.meta || "")).toLowerCase().indexOf(q) >= 0;
   });
   var faq = [];
   document.querySelectorAll(".faq-item").forEach(function (item) {
     if (item.textContent.toLowerCase().indexOf(q) >= 0) faq.push(item);
   });
-  if (!treffer.length && !faq.length) {
-    panel.innerHTML = "<p>Keine Treffer. Eine KI-gestützte Recherche und ein Lern-Lotse gehören zur späteren Ausbaustufe, nicht zu dieser Suche.</p>";
-    panel.hidden = false;
+  function inhaltButtons(liste, art) {
+    return liste.map(function (c) {
+      var zusatz = c.status && c.status !== "veroeffentlicht" ? " · " + statusLabel(c.status) : "";
+      return suchZeile(art + zusatz, c.titel, "data-open=\"" + esc(c.id) + "\"");
+    }).join("");
+  }
+  var gruppen = [];
+  if (lektionen.length) gruppen.push(["Lektionen", inhaltButtons(lektionen, "Lektion")]);
+  if (impulse.length) gruppen.push(["Impulse", inhaltButtons(impulse, "Impuls")]);
+  var liveHtml = inhaltButtons(sessions, "Live-Session") + fest.map(function (s) {
+    return suchZeile("Live-Session", s.titel, "data-view-jump=\"live\" data-herkunft=\"live\"");
+  }).join("");
+  if (liveHtml) gruppen.push(["Live-Sessions", liveHtml]);
+  if (community.length) gruppen.push(["Community", community.map(function (c) {
+    return suchZeile("Community", c.titel, "data-view-jump=\"community\" data-herkunft=\"community\"");
+  }).join("")]);
+  if (faq.length) gruppen.push(["Häufige Fragen", faq.map(function (item) {
+    var knopf = item.querySelector(".faq-q");
+    var text = knopf && knopf.childNodes[0] ? knopf.childNodes[0].textContent.trim() : "";
+    if (!text && knopf) text = knopf.textContent.replace("+", "").trim();
+    return suchZeile("FAQ", text, "data-action=\"faq-sprung\" data-faq=\"" + esc(item.dataset.faq || "") + "\"");
+  }).join("")]);
+  if (!gruppen.length) {
+    box.innerHTML = "<p>Keine Treffer. Eine KI-gestützte Recherche und ein Lern-Lotse gehören zur späteren Ausbaustufe, nicht zu dieser Suche.</p>";
     return;
   }
-  if (!faq.length) { panel.hidden = true; panel.innerHTML = ""; return; }
-  panel.innerHTML = "<h2 class=\"bereich-titel\">Häufige Fragen</h2>" + faq.slice(0, 3).map(function (item) {
-    var frage = item.querySelector(".faq-q").childNodes[0].textContent.trim();
-    return "<button type=\"button\" class=\"rowitem\" data-action=\"faq-sprung\" data-faq=\"" + esc(item.dataset.faq) + "\"><strong>FAQ · " + esc(frage) + "</strong></button>";
+  box.innerHTML = gruppen.map(function (g) {
+    return "<section class=\"such-gruppe\"><h2 class=\"bereich-titel\">" + esc(g[0]) + "</h2>" + g[1] + "</section>";
   }).join("");
-  panel.hidden = false;
 }
 
 function faqOeffnen(item) {
@@ -1819,69 +2101,16 @@ function faqOeffnen(item) {
 }
 
 function initFilter() {
-  var GRUPPEN = ["thema", "format", "niveau", "zielgruppe", "werkzeug"];
-  var chips = Array.prototype.slice.call(document.querySelectorAll(".chip[data-group]"));
-  var fcount = document.getElementById("fcount");
-  var freset = document.getElementById("freset");
-  var empty = document.getElementById("empty");
-
-  function aktiveWerte(gruppe) {
-    return chips.filter(function (c) {
-      return c.dataset.group === gruppe && c.dataset.value !== "alle" && c.classList.contains("active");
-    }).map(function (c) { return c.dataset.value; });
-  }
-  function passt(kachel, gruppe, werte) {
-    if (!werte.length) return true;
-    var eigene = (kachel.dataset[gruppe] || "").split(" ");
-    return werte.some(function (w) { return eigene.indexOf(w) !== -1; });
-  }
-  function filtern() {
-    var kacheln = Array.prototype.slice.call(document.querySelectorAll("#katalog-grid .tile"));
-    var auswahl = {};
-    var anzahlAktiv = 0;
-    GRUPPEN.forEach(function (g) {
-      auswahl[g] = aktiveWerte(g);
-      anzahlAktiv += auswahl[g].length;
-    });
-    var q = suchtext.trim().toLowerCase();
-    var sichtbar = 0;
-    kacheln.forEach(function (k) {
-      var treffer = GRUPPEN.every(function (g) { return passt(k, g, auswahl[g]); });
-      if (treffer && q && k.textContent.toLowerCase().indexOf(q) === -1) treffer = false;
-      if (treffer) {
-        var inhalt = byId(k.dataset.id);
-        if (!inhalt || !istLektion(inhalt) || istEigen(inhalt) || fortschrittVon(inhalt)) treffer = false;
-      }
-      k.hidden = !treffer;
-      if (treffer) sichtbar++;
-      verankereKachel(k);
-    });
-    renderEigene();
-    renderFortschritt();
-    chips.forEach(function (c) {
-      if (c.dataset.value === "alle") {
-        var leer = auswahl[c.dataset.group].length === 0;
-        c.classList.toggle("active", leer);
-        c.setAttribute("aria-pressed", leer ? "true" : "false");
-      }
-    });
-    var allgemein = kacheln.filter(function (k) {
-      var inhalt = byId(k.dataset.id);
-      return !!(inhalt && istLektion(inhalt) && !istEigen(inhalt) && !fortschrittVon(inhalt));
-    }).length;
-    if (anzahlAktiv === 0 && !q) fcount.textContent = "Alle " + allgemein + " verfügbaren Lektionen werden angezeigt.";
-    else if (sichtbar === 0) fcount.textContent = "Keine Lektion entspricht dieser Auswahl.";
-    else if (sichtbar === 1) fcount.innerHTML = "<strong>1</strong> von " + allgemein + " verfügbaren Lektionen entspricht Ihrer Auswahl.";
-    else fcount.innerHTML = "<strong>" + sichtbar + "</strong> von " + allgemein + " verfügbaren Lektionen entsprechen Ihrer Auswahl.";
-    freset.hidden = anzahlAktiv === 0 && !q;
-    empty.hidden = sichtbar > 0;
-  }
-  window.filtern = filtern;
-  chips.forEach(function (chip) {
+  ["impuls", "live", "community"].forEach(function (scope) {
+    var slot = document.getElementById("filter-slot-" + scope);
+    if (slot && !slot.firstChild) slot.innerHTML = filterBereichHtml(scope);
+  });
+  document.querySelectorAll(".filters[data-scope] .chip").forEach(function (chip) {
     chip.addEventListener("click", function () {
+      var block = chip.closest(".filters");
       var gruppe = chip.dataset.group;
       if (chip.dataset.value === "alle") {
-        chips.forEach(function (c) {
+        block.querySelectorAll(".chip").forEach(function (c) {
           if (c.dataset.group === gruppe && c.dataset.value !== "alle") {
             c.classList.remove("active");
             c.setAttribute("aria-pressed", "false");
@@ -1894,25 +2123,15 @@ function initFilter() {
       filtern();
     });
   });
-  function zuruecksetzen() {
-    suchtext = "";
-    ["suche", "suche-kopf", "suche-inhalte"].forEach(function (id) {
-      var feld = document.getElementById(id);
-      if (feld) feld.value = "";
-    });
-    document.getElementById("suchpanel").hidden = true;
-    document.getElementById("pfadhinweis").hidden = true;
-    chips.forEach(function (c) {
-      if (c.dataset.value !== "alle") {
-        c.classList.remove("active");
-        c.setAttribute("aria-pressed", "false");
+  document.querySelectorAll("[data-filter-reset]").forEach(function (knopf) {
+    knopf.addEventListener("click", function () {
+      bereichZurueck(knopf.dataset.filterReset);
+      if (knopf.dataset.filterReset === "lektion") {
+        try { document.getElementById("inhalte").scrollIntoView({ block: "start" }); } catch (e) { /* Prototyp bleibt bedienbar. */ }
       }
     });
-    filtern();
-    try { document.getElementById("inhalte").scrollIntoView({ block: "start" }); } catch (e) { /* siehe showView */ }
-  }
-  document.getElementById("freset").addEventListener("click", zuruecksetzen);
-  document.getElementById("empty-reset").addEventListener("click", zuruecksetzen);
+  });
+  window.filtern = filtern;
   filtern();
 }
 
@@ -2074,17 +2293,21 @@ function init() {
     showView("sso");
   });
 
-  function sucheAusloesen(wert) {
+  function sucheGlobal(wert) {
     suchtext = wert || "";
-    ["suche", "suche-kopf", "suche-inhalte"].forEach(function (id) {
+    ["suche", "suche-kopf"].forEach(function (id) {
       var feld = document.getElementById(id);
       if (feld && feld.value !== suchtext) feld.value = suchtext;
     });
     if (!authAktiv()) { showView("sso"); return; }
-    showView("inhalte", { leise: true });
-    window.filtern();
-    sucheAktualisieren();
+    showView("suche", { leise: true });
     kopfSuche(false);
+  }
+  function sucheLokal(scope, wert) {
+    sucheSeite[scope] = wert || "";
+    var ziel = { lektion: "inhalte", impuls: "impulse", live: "live", community: "community" }[scope] || "inhalte";
+    if (!authAktiv()) { showView("sso"); return; }
+    showView(ziel, { leise: true });
   }
   var lupe = document.getElementById("lupe");
   var kopfSuchfeld = document.getElementById("kopf-suchfeld");
@@ -2121,13 +2344,24 @@ function init() {
       }
     });
   }
-  [["suche", "suche-btn"], ["suche-kopf", "suche-kopf-btn"], ["suche-inhalte", "suche-inhalte-btn"]].forEach(function (paar) {
+  [
+    ["suche", "suche-btn", "global"],
+    ["suche-kopf", "suche-kopf-btn", "global"],
+    ["suche-inhalte", "suche-inhalte-btn", "lektion"],
+    ["suche-impuls", "suche-impuls-btn", "impuls"],
+    ["suche-live", "suche-live-btn", "live"],
+    ["suche-community", "suche-community-btn", "community"]
+  ].forEach(function (paar) {
     var feld = document.getElementById(paar[0]);
     var knopf = document.getElementById(paar[1]);
     if (!feld || !knopf) return;
-    knopf.addEventListener("click", function () { sucheAusloesen(feld.value); });
+    function los() {
+      if (paar[2] === "global") sucheGlobal(feld.value);
+      else sucheLokal(paar[2], feld.value);
+    }
+    knopf.addEventListener("click", los);
     feld.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") { e.preventDefault(); sucheAusloesen(feld.value); }
+      if (e.key === "Enter") { e.preventDefault(); los(); }
     });
   });
 

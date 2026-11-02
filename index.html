@@ -804,6 +804,8 @@
   }
   @keyframes such-aus{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:none;}}
   .bereich-suche{margin:0 0 22px;max-width:760px;}
+  .such-gruppe{margin:0 0 28px;}
+  .such-gruppe .rowitem{width:100%;}
   .bereich-titel{color:var(--text-title);font-size:20px;margin:22px 0 14px;}
   .happen{list-style:none;display:flex;flex-direction:column;gap:10px;margin:0 0 8px;}
   .happen li{margin:0;}
@@ -850,7 +852,7 @@
       <div class="kopf-suchfeld" id="kopf-suchfeld" hidden>
         <div class="search" role="search">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-          <input id="suche-kopf" type="search" placeholder="Wonach suchen Sie?" aria-label="Suche in der KI-Werkstatt">
+          <input id="suche-kopf" type="search" placeholder="Suche in allen Inhalten" aria-label="Suche in allen Inhalten">
           <button type="button" id="suche-kopf-btn">Suchen</button>
         </div>
       </div>
@@ -904,7 +906,7 @@
 
     <div class="search" role="search">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-      <input id="suche" type="text" placeholder="Wonach suchen Sie? z. B. Transkription, Prompt, EU-KI-Verordnung …" aria-label="Suche in der KI-Werkstatt">
+      <input id="suche" type="text" placeholder="Lektionen, Impulse, Live-Sessions, Community …" aria-label="Suche in allen Inhalten">
       <button type="button" id="suche-btn">Suchen</button>
     </div>
 
@@ -912,6 +914,13 @@
   </div>
 
   </div><!-- view-home -->
+
+  <div id="view-suche" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="home">Zurück</button>
+    <h1>Suchergebnisse</h1>
+    <p id="suche-frage">Die Suche geht über Lektionen, Impulse, Live-Sessions, Communitys und die häufigen Fragen.</p>
+    <div id="suche-treffer"></div>
+  </div>
 
   <div id="lager" hidden>
     <div class="paths prinzip">
@@ -979,12 +988,6 @@
   <section id="inhalte">
     <h1>Lektionen</h1>
     <p>Nur Lektionen. Impulse, Live-Sessions und Community haben jeweils eine eigene Seite.</p>
-    <div class="search bereich-suche" role="search">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-      <input id="suche-inhalte" type="search" placeholder="Wonach suchen Sie? z. B. Transkription, Prompt, EU-KI-Verordnung …" aria-label="Suche in den Inhalten">
-      <button type="button" id="suche-inhalte-btn">Suchen</button>
-    </div>
-    <div id="suchpanel" hidden></div>
 
     <section class="inhaltsbereich bereich-allgemein" aria-labelledby="allgemeine-inhalte-titel">
     <div class="section-head">
@@ -1013,12 +1016,17 @@
     <h3 class="bereich-titel" id="uebrige-titel">Verfügbare Lektionen</h3>
 
     <p class="banner" id="pfadhinweis" hidden></p>
-    <div class="filters prinzip" aria-label="Inhalte filtern">
+    <div class="search bereich-suche" role="search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+      <input id="suche-inhalte" type="search" placeholder="Lektion suchen, z. B. Transkription, Prompt, EU-KI-Verordnung …" aria-label="Suche in den verfügbaren Lektionen">
+      <button type="button" id="suche-inhalte-btn">Suchen</button>
+    </div>
+    <div class="filters prinzip" data-scope="lektion" aria-label="Verfügbare Lektionen filtern">
       <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 3: Auffindbar nach Rolle und Vorwissen">3</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 3</span><span class="p-title">Auffindbar nach Rolle und Vorwissen</span><span class="p-text">Dieselbe Sammlung, vier Zugänge: Thema, Format, Niveau und Zielgruppe. Wer nur zehn Minuten hat, findet ebenso etwas wie jemand, der ein Thema vertiefen will. Filterkombinationen ohne Treffer sind kein Fehler, sondern ein Hinweis an die Redaktion, wo das Angebot noch Lücken hat.</span><span class="p-src">Feinkonzept 5.4.1 und 5.4.2 · operative Ziele HF 6.2</span></span>
-      <p class="filter-lead">Grenzen Sie die Inhalte ein. Die Kacheln darunter bleiben dieselben.</p>
+      <p class="filter-lead">Suche und Filter gelten nur für die verfügbaren Lektionen.</p>
       <div class="filter-status">
-        <span class="fcount" id="fcount" role="status" aria-live="polite">Alle 10 Inhalte werden angezeigt.</span>
-        <button class="freset" id="freset" hidden>Filter zurücksetzen</button>
+        <span class="fcount" id="fcount" role="status" aria-live="polite">Alle verfügbaren Lektionen werden angezeigt.</span>
+        <button class="freset" id="freset" type="button" data-filter-reset="lektion" hidden>Filter zurücksetzen</button>
       </div>
       <div class="fgroup" role="group" aria-label="Thema">
         <span class="flabel">Thema</span>
@@ -1326,7 +1334,7 @@
     <div class="empty" id="empty" hidden>
       <h3>Zu dieser Auswahl liegt noch keine Lektion vor.</h3>
       <p>Setzen Sie einzelne Filter zurück — oder melden Sie den Bedarf der Redaktion. Lücken im Angebot sind ein wichtiger Hinweis für die Weiterentwicklung.</p>
-      <button class="btn-line" id="empty-reset">Filter zurücksetzen</button>
+      <button class="btn-line" id="empty-reset" type="button" data-filter-reset="lektion">Filter zurücksetzen</button>
     </div>
 
     </section>
@@ -1359,11 +1367,13 @@
         <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 6: Glaubwürdige Gesichter aus der Belegschaft">6</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 6</span><span class="p-title">Glaubwürdige Gesichter aus der Belegschaft</span><span class="p-text">Die Beiträge stammen nicht aus der Lehre, sondern aus dem Dienstalltag. Impulsgeberinnen und Impulsgeber berichten aus eigener Erfahrung, ausdrücklich auch über misslungene Versuche. Damit trägt die Rubrik zugleich die Kernbotschaft des Konzepts: Beim Ausprobieren kann nichts beschädigt werden.</span><span class="p-src">Feinkonzept 5.4.3 · Kernbotschaft aus 6.4.1 · Meilenstein HF 6.2 M3.7</span></span>
         <p>Hier berichten <strong>Impulsgeberinnen und Impulsgeber</strong> aus den Behörden von ihrer eigenen Arbeit mit Künstlicher Intelligenz: was sich bewährt hat, was misslungen ist und was sie beim nächsten Mal anders machen würden.</p>
       </div>
+      <div id="filter-slot-impuls"></div>
       <ul class="happen" id="impulse-alle">
         <li><button type="button" data-open="impuls-auswertung">Wie wir im Ermittlungsteam die Auswertung umgestellt haben<span>45 Min.</span></button></li>
         <li><button type="button" data-open="skeptikerin">Ich war die Skeptikerin im Team<span>18 Min.</span></button></li>
         <li><button type="button" data-open="berichte">Berichte zusammenfassen: mein Vorgehen Schritt für Schritt<span>9 Min.</span></button></li>
       </ul>
+      <p class="meta-line" id="impuls-filter-leer" hidden>Kein Impuls entspricht dieser Auswahl.</p>
       <div class="impulse-cta">
         <div>
           <h3>Sie arbeiten bereits mit KI? Werden Sie Impulsgeberin oder Impulsgeber.</h3>
@@ -1392,9 +1402,11 @@
       <div id="community-mit-liste"></div>
       <p class="meta-line" id="community-mit-leer" hidden>Sie wirken noch in keinem Bereich mit.</p>
       <h2 class="bereich-titel" id="community-frei-titel">Verfügbare Communitys</h2>
-      <p class="meta-line">Bereiche, denen Sie noch nicht beigetreten sind.</p>
+      <p class="meta-line">Bereiche, denen Sie noch nicht beigetreten sind. Suche und Filter gelten nur für diese Liste.</p>
+      <div id="filter-slot-community"></div>
       <div id="community-frei-liste"></div>
       <p class="meta-line" id="community-frei-leer" hidden>Keine weitere Community.</p>
+      <p class="meta-line" id="community-filter-leer" hidden>Keine Community entspricht dieser Auswahl.</p>
     </section>
   </div>
 
@@ -1408,9 +1420,11 @@
         <p>Aufzeichnungen einer Session bleiben Lektionen. Hier stehen nur die Termine.</p>
       </div>
       <h2 class="bereich-titel" id="live-frei-titel">Verfügbare Live-Sessions</h2>
-      <p class="meta-line">Termine, an denen Sie noch nicht teilgenommen haben.</p>
+      <p class="meta-line">Termine, an denen Sie noch nicht teilgenommen haben. Suche und Filter gelten nur für diese Liste.</p>
+      <div id="filter-slot-live"></div>
       <div id="live-verfuegbar-liste"></div>
       <p class="meta-line" id="live-verfuegbar-leer" hidden>Zurzeit keine weitere Session.</p>
+      <p class="meta-line" id="live-filter-leer" hidden>Keine Live-Session entspricht dieser Auswahl.</p>
       <h2 class="bereich-titel" id="live-dabei-titel">Teilgenommen</h2>
       <p class="meta-line">Sessions, an denen Sie dabei waren.</p>
       <div id="live-teilgenommen-liste"></div>
