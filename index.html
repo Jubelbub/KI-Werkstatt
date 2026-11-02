@@ -1377,22 +1377,8 @@
   <div id="view-community" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="home">Zurück</button>
     <h1 id="community-titel">Community</h1>
-    <p>Zwei Kacheln: Bereiche, an denen Sie mitwirken, und verfügbare Communitys.</p>
-    <div class="lauf-hub" id="community-hub">
-      <button type="button" class="hub-tile" data-view-jump="community-mit" data-herkunft="community-mit">
-        <span class="zahl-badge zahl-community-mit">0</span>
-        <span class="hub-titel">Bereiche, an denen ich mitwirke</span>
-        <span class="hub-text">Communitys, in denen Sie dabei sind.</span>
-        <span class="go">Bereiche öffnen</span>
-      </button>
-      <button type="button" class="hub-tile" data-view-jump="community-frei" data-herkunft="community-frei">
-        <span class="zahl-badge zahl-community-frei">0</span>
-        <span class="hub-titel">Verfügbare Communitys</span>
-        <span class="hub-text">Bereiche, denen Sie noch nicht beigetreten sind.</span>
-        <span class="go">Communitys öffnen</span>
-      </button>
-    </div>
-    <section class="inhaltsbereich bereich-community" id="community" aria-labelledby="community-titel">
+    <p>Zwei Bereiche auf dieser Seite: Bereiche, an denen Sie mitwirken, und verfügbare Communitys.</p>
+    <section class="inhaltsbereich bereich-community" id="community" aria-labelledby="community-mit-titel">
       <div class="community-wrap prinzip">
         <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 7: Beteiligung über Behördengrenzen hinweg">7</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 7</span><span class="p-title">Beteiligung über Behördengrenzen hinweg</span><span class="p-text">Fragen werden nicht an eine zentrale Stelle gerichtet, sondern in die Fläche. Kolleginnen und Kollegen aus ganz Nordrhein-Westfalen antworten einander, fachlich gekennzeichnete Personen ergänzen, wo es in die Tiefe geht. Wer mitgestaltet, trägt das Ergebnis mit.</span><span class="p-src">Feinkonzept 5.4.3 · operatives Ziel HF 6.2: Lernen voneinander, auch über Behördengrenzen hinweg</span></span>
         <aside class="community-side">
@@ -1401,6 +1387,14 @@
           <button type="button" class="btn-line" id="community-mehr">Was später kommt</button>
         </aside>
       </div>
+      <h2 class="bereich-titel" id="community-mit-titel">Bereiche, an denen ich mitwirke</h2>
+      <p class="meta-line">Communitys, in denen Sie dabei sind. Den Austausch selbst gibt es in dieser Fassung noch nicht.</p>
+      <div id="community-mit-liste"></div>
+      <p class="meta-line" id="community-mit-leer" hidden>Sie wirken noch in keinem Bereich mit.</p>
+      <h2 class="bereich-titel" id="community-frei-titel">Verfügbare Communitys</h2>
+      <p class="meta-line">Bereiche, denen Sie noch nicht beigetreten sind.</p>
+      <div id="community-frei-liste"></div>
+      <p class="meta-line" id="community-frei-leer" hidden>Keine weitere Community.</p>
     </section>
   </div>
 
@@ -1451,20 +1445,6 @@
     <p>Dieselben Kacheln wie bei den Lektionen.</p>
     <div id="impulse-abgeschlossen" class="grid"></div>
     <p class="meta-line" id="impuls-abgeschlossen-leer" hidden>Noch kein abgeschlossener Impuls.</p>
-  </div>
-  <div id="view-community-mit" class="view" hidden>
-    <button type="button" class="backlink" data-view-jump="community">← Community</button>
-    <h1>Bereiche, an denen ich mitwirke</h1>
-    <p>Communitys, in denen Sie dabei sind. Den Austausch selbst gibt es in dieser Fassung noch nicht.</p>
-    <div id="community-mit-liste"></div>
-    <p class="meta-line" id="community-mit-leer" hidden>Sie wirken noch in keinem Bereich mit.</p>
-  </div>
-  <div id="view-community-frei" class="view" hidden>
-    <button type="button" class="backlink" data-view-jump="community">← Community</button>
-    <h1>Verfügbare Communitys</h1>
-    <p>Bereiche, denen Sie noch nicht beigetreten sind.</p>
-    <div id="community-frei-liste"></div>
-    <p class="meta-line" id="community-frei-leer" hidden>Keine weitere Community.</p>
   </div>
 
   <div id="view-faq" class="view" hidden>

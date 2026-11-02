@@ -706,7 +706,7 @@ function showView(name, opt) {
   if (name === "inhalte" && typeof window.filtern === "function") window.filtern();
   if (name === "impulse") renderImpulse();
   if (name === "live") renderLive();
-  if (name === "community" || name === "community-mit" || name === "community-frei") renderCommunity();
+  if (name === "community") renderCommunity();
   if (name === "lauf-begonnen" || name === "lauf-abgeschlossen" || name === "impuls-begonnen" || name === "impuls-abgeschlossen") renderFortschritt();
   markNav(name, opt.anker || "");
   if (opt.anker) {
@@ -733,7 +733,6 @@ function markNav(name, anker) {
   if (name === "statistik" || name.indexOf("mod-") === 0) bereich = "redaktion";
   if (name === "lauf-begonnen" || name === "lauf-abgeschlossen") bereich = "inhalte";
   if (name === "impuls-begonnen" || name === "impuls-abgeschlossen") bereich = "impulse";
-  if (name === "community-mit" || name === "community-frei") bereich = "community";
   document.querySelectorAll("header nav a").forEach(function (a) {
     var an = false;
     if (a.dataset.anker) an = bereich === "inhalte" && anker === a.dataset.anker;
@@ -866,8 +865,6 @@ function herkunftSetzen(id) {
     "impuls-abgeschlossen": { id: "impuls-abgeschlossen", nav: "impulse", anker: "", spur: [start, spurSchritt("Impulse", "impulse"), spurSchritt("Abgeschlossene Impulse", "impuls-abgeschlossen")] },
     live: { id: "live", nav: "live", anker: "", spur: [start, spurSchritt("Live-Sessions", "live")] },
     community: { id: "community", nav: "community", anker: "", spur: [start, spurSchritt("Community", "community")] },
-    "community-mit": { id: "community-mit", nav: "community", anker: "", spur: [start, spurSchritt("Community", "community"), spurSchritt("Mitwirkung", "community-mit")] },
-    "community-frei": { id: "community-frei", nav: "community", anker: "", spur: [start, spurSchritt("Community", "community"), spurSchritt("Verfügbare Communitys", "community-frei")] },
     freigabe: { id: "freigabe", nav: "redaktion", anker: "", spur: [start, spurSchritt("Moderation", "redaktion"), spurSchritt("Zur Freigabe", "mod-freigabe")] },
     kommentare: { id: "kommentare", nav: "redaktion", anker: "", spur: [start, spurSchritt("Moderation", "redaktion"), spurSchritt("Kommentare", "mod-kommentare")] },
     pruefung: { id: "pruefung", nav: "redaktion", anker: "", spur: [start, spurSchritt("Moderation", "redaktion"), spurSchritt("Prüfdaten", "mod-pruefung")] },
@@ -888,8 +885,6 @@ function herkunftAusElement(el) {
   if (el.closest("#view-lauf-begonnen, #inhalte-begonnen")) return "begonnen";
   if (el.closest("#view-lauf-abgeschlossen, #inhalte-abgeschlossen")) return "abgeschlossen";
   if (el.closest("#view-live, #live")) return "live";
-  if (el.closest("#view-community-mit")) return "community-mit";
-  if (el.closest("#view-community-frei")) return "community-frei";
   if (el.closest("#view-community, #community")) return "community";
   if (el.closest("#katalog-grid, .bereich-allgemein")) return "allgemein";
   if (el.closest("#view-faq")) return "faq";
@@ -1550,8 +1545,6 @@ function renderCommunity() {
   if (boxFrei) boxFrei.innerHTML = frei.map(communityKarte).join("");
   if (leerMit) leerMit.hidden = mit.length > 0;
   if (leerFrei) leerFrei.hidden = frei.length > 0;
-  document.querySelectorAll(".zahl-community-mit").forEach(function (el) { el.textContent = String(mit.length); });
-  document.querySelectorAll(".zahl-community-frei").forEach(function (el) { el.textContent = String(frei.length); });
 }
 
 function modSammeln() {
@@ -2287,7 +2280,7 @@ function init() {
       state.communityMit[communityId] = !state.communityMit[communityId];
       sichern();
       renderCommunity();
-      toast(state.communityMit[communityId] ? "Der Bereich liegt unter Mitwirkung." : "Der Bereich liegt wieder unter verfügbaren Communitys.");
+      toast(state.communityMit[communityId] ? "Der Bereich steht jetzt unter Mitwirkung." : "Der Bereich steht wieder unter verfügbaren Communitys.");
     }
     if (action === "community-lesen") {
       if (e.target.closest("[data-action=community-mit]")) return;
