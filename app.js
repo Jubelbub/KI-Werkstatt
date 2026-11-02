@@ -433,6 +433,7 @@ function leerZustand() {
     override: {},
     eigene: [],
     prominent: "berichte",
+    moderationsrechte: { hb: true, jw: true, th: true, rd: false, al: false },
     extra: { start: 0, null: 0, bereits: 0, frage: 0, inhalte: {} },
     stichprobe: {},
     pruefdatum: {}
@@ -580,8 +581,22 @@ function darfBearbeiten() {
   return state.rolle === "teilnehmende" || state.rolle === "redaktion" || state.rolle === "admin";
 }
 
+var PERSONEN = [
+  { id: "hb", name: "Henning Beckmann", stelle: "LAFP NRW", sitzung: true },
+  { id: "jw", name: "J. Weber", stelle: "LZPD NRW" },
+  { id: "th", name: "T. Hoffmann", stelle: "KPB Borken" },
+  { id: "rd", name: "R. Demir", stelle: "PP Köln" },
+  { id: "al", name: "A. Lindner", stelle: "KPB Gütersloh" }
+];
+
+function moderationsrecht(id) {
+  var rechte = state.moderationsrechte || {};
+  return !!rechte[id];
+}
+
 function darfFreigeben() {
-  return state.rolle === "redaktion" || state.rolle === "admin";
+  if (state.rolle === "admin") return true;
+  return state.rolle === "redaktion" && moderationsrecht("hb");
 }
 
 var BEREITGESTELLT = { "grenzen-daten": 1, "ergebnis-pruefen": 1 };
@@ -690,7 +705,7 @@ function renderHub() {
   var box = document.getElementById("hub-kacheln");
   if (!box) return;
   var kacheln = [
-    ["inhalte", "eigene-inhalte-titel", "Meine Inhalte", "Erstellt, bereitgestellt oder begonnen."],
+    ["meine", "", "Meine Inhalte", "Erstellt, bereitgestellt oder begonnen."],
     ["inhalte", "allgemeine-inhalte-titel", "Allgemeine Inhalte", "Inhalte entdecken."],
     ["inhalte", "impulse-titel", "Impulse", "Kurze Beiträge aus dem Dienstalltag."],
     ["inhalte", "live-titel", "Live-Sessions", "Offenes Format. Die Teilnahme folgt später."],
@@ -708,8 +723,7 @@ function renderNav() {
   var html = "<div class=\"nav-drop\">" +
     "<button type=\"button\" class=\"nav-drop-btn\" id=\"nav-inhalte-btn\" data-nav-toggle aria-expanded=\"false\" aria-controls=\"nav-inhalte-sub\">Inhalte</button>" +
     "<div class=\"nav-sub\" id=\"nav-inhalte-sub\" hidden>" +
-      "<a href=\"#erstellen\" data-nav=\"meine\" data-view=\"meine\">Erstellen</a>" +
-      "<a href=\"#meine-inhalte\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"eigene-inhalte-titel\">Meine Inhalte</a>" +
+      "<a href=\"#meine-inhalte\" data-nav=\"meine\" data-view=\"meine\">Meine Inhalte</a>" +
       "<a href=\"#allgemeine-inhalte\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"allgemeine-inhalte-titel\">Allgemeine Inhalte</a>" +
       "<a href=\"#impulse\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"impulse-titel\">Impulse</a>" +
       "<a href=\"#live\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"live-titel\">Live-Sessions</a>" +
@@ -815,7 +829,7 @@ function kommentareVon(c) {
 function wegweiserHtml(opts) {
   opts = opts || {};
   var teile = [
-    "<button type=\"button\" data-view-jump=\"inhalte\" data-anker=\"eigene-inhalte-titel\">Meine Inhalte</button>",
+    "<button type=\"button\" data-view-jump=\"meine\">Meine Inhalte</button>",
     "<button type=\"button\" data-view-jump=\"inhalte\" data-anker=\"allgemeine-inhalte-titel\">Alle entdecken</button>"
   ];
   if (opts.kommentar) teile.push("<button type=\"button\" data-action=\"zum-kommentar\">Zum Kommentar</button>");
@@ -973,7 +987,7 @@ function renderEditor(root) {
       return "<option value=\"" + o[0] + "\"" + (String(v[wert] || "") === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
     }).join("") + "</select></label>";
   }
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"meine\">← Erstellen</button>"
+  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"meine\">← Meine Inhalte</button>"
     + wegweiserHtml({ freigabe: false })
     + "<p class=\"eyebrow\">Dieselbe Sicht, nur die Felder</p><h1>" + (c ? "Inhalt bearbeiten" : "Neuen Inhalt anlegen") + "</h1>"
     + "<p>Speichern legt die Fassung ab. Zur Prüfung geben legt den Inhalt in die Freigabeliste. Nach der Freigabe ist er unter Allgemeine Inhalte sichtbar.</p>"
@@ -1101,16 +1115,7 @@ function speichereInhalt(obj) {
 }
 
 function renderMeine() {
-  var root = document.getElementById("view-meine");
-  var liste = alle().filter(function (c) { return c.autorRolle === "creator" || (state.eigene || []).some(function (e) { return e.id === c.id; }); });
-  var rows = liste.map(function (c) {
-    var fb = feedbackSumme(c.id);
-    return "<div class=\"listrow\"><div><strong>" + esc(c.titel) + "</strong><div class=\"meta-line\">Fassung " + esc(c.fassung || "1") + " · " + esc(c.dauer) + "</div></div><div><span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span></div><div class=\"meta-line\">" + fb.up + " weitergeholfen · " + fb.down + " nicht · " + aufrufeInhalt(c) + " Aufrufe</div><button type=\"button\" class=\"btn-line\" data-action=\"bearbeiten\" data-id=\"" + esc(c.id) + "\">Bearbeiten</button></div>";
-  }).join("");
-  root.innerHTML = "<p class=\"eyebrow\">Teilnehmende mit Erstellen</p><h1>Erstellen</h1>"
-    + "<p>Rückmeldung zu Aufrufen und Ein-Klick-Feedback steht hier, nicht in einer separaten Mail. Eine Mail würde in der Umsetzung denselben Stand spiegeln.</p>"
-    + "<div class=\"list\">" + (rows || "<p>Noch keine eigenen Inhalte.</p>") + "</div>"
-    + "<div class=\"button-row\"><button type=\"button\" class=\"btn-solid\" data-action=\"neu\">Neue Lerneinheit</button><button type=\"button\" class=\"btn-line\" data-view-jump=\"leitfaden\">Leitfaden öffnen</button></div>";
+  renderEigene();
 }
 
 function feedbackSumme(id) {
@@ -1186,7 +1191,7 @@ function renderEigene() {
   if (box) {
     box.innerHTML = inhalte.length
       ? inhalte.map(kachelMarkup).join("")
-      : "<p class=\"meta-line\">" + (q ? "Kein Treffer unter Meine Inhalte." : "Noch keine eigenen Inhalte. Unter Erstellen legen Sie einen an.") + "</p>";
+      : "<p class=\"meta-line\">" + (q ? "Kein Treffer unter Meine Inhalte." : "Noch keine eigenen Inhalte. Legen Sie oben einen neuen Inhalt an.") + "</p>";
   }
   var ibox = document.getElementById("impulse-eigene");
   if (ibox) {
@@ -1212,8 +1217,12 @@ function renderRedaktion() {
   alle().forEach(function (c) {
     kommentareVon(c).forEach(function (k) {
       if (!k.gemeldet) return;
-      gemeldet.push("<div class=\"listrow\"><div><button type=\"button\" class=\"textbtn\" data-open=\"" + esc(c.id) + "\" data-kommentar=\"1\"><strong>" + esc(c.titel) + "</strong></button><div class=\"meta-line\">" + esc(k.name) + " · " + esc(k.text) + "</div></div><button type=\"button\" class=\"btn-line\" data-action=\"kommentar-loeschen\" data-key=\"" + esc(k.key) + "\" data-id=\"" + esc(c.id) + "\">Löschen</button></div>");
+      gemeldet.push("<div class=\"listrow\"><div><button type=\"button\" class=\"textbtn\" data-open=\"" + esc(c.id) + "\" data-kommentar=\"1\"><strong>" + esc(c.titel) + "</strong></button><div class=\"meta-line\">Gemeldet · " + esc(k.name) + " · " + esc(k.text) + "</div></div><button type=\"button\" class=\"btn-line\" data-action=\"kommentar-loeschen\" data-key=\"" + esc(k.key) + "\" data-id=\"" + esc(c.id) + "\">Löschen</button></div>");
     });
+    var fb = state.feedback[c.id];
+    if (fb === "up" || fb === "down") {
+      gemeldet.push("<div class=\"listrow\"><div><button type=\"button\" class=\"textbtn\" data-open=\"" + esc(c.id) + "\" data-kommentar=\"1\"><strong>" + esc(c.titel) + "</strong></button><div class=\"meta-line\">Bewertung · " + (fb === "up" ? "hat weitergeholfen" : "hat nicht weitergeholfen") + "</div></div></div>");
+    }
   });
   var faellig = alle().filter(ueberfaellig).map(function (c) {
     return "<button type=\"button\" class=\"rowitem\" data-open=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong><span>Geprüft am " + esc(datum(c.geprueft)) + "</span></button>";
@@ -1224,14 +1233,32 @@ function renderRedaktion() {
   var impulse = alle().filter(function (c) { return c.impuls && c.status === "veroeffentlicht"; });
   var stufen = { basis: 0, aufbau: 0, spezial: 0 };
   alle().forEach(function (c) { if (c.status === "veroeffentlicht" && stufen[c.niveau] !== undefined) stufen[c.niveau]++; });
+  var hinweise = alle().filter(function (c) {
+    var gemeldetHier = kommentareVon(c).some(function (k) { return k.gemeldet; });
+    var bewertet = state.feedback[c.id] === "up" || state.feedback[c.id] === "down";
+    return gemeldetHier || bewertet;
+  });
+  var faelligListe = alle().filter(ueberfaellig);
+  function modKachel(ziel, zahl, titel, text) {
+    return "<button type=\"button\" class=\"hub-tile\" data-action=\"mod-sprung\" data-ziel=\"" + ziel + "\">"
+      + "<span class=\"zahl-badge\">" + zahl + "</span>"
+      + "<span class=\"hub-titel\">" + esc(titel) + "</span>"
+      + "<span class=\"hub-text\">" + esc(text) + "</span>"
+      + "<span class=\"go\">Liste öffnen</span></button>";
+  }
   root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"home\">Zurück</button>"
     + wegweiserHtml({})
     + "<h1>Moderation</h1>"
-    + "<p>Dieselben Inhalte wie für alle anderen. Hier entscheiden Sie nur, was sichtbar wird, und welche Kommentare bleiben.</p>"
-    + "<h2>Zur Freigabe</h2><p class=\"meta-line\">Freigabe schaltet den Inhalt sichtbar. Der Eintrag öffnet dieselbe Detailansicht.</p>"
+    + "<p>Dieselben Inhalte wie für alle anderen. Die drei Kacheln zeigen, wo eine Entscheidung ansteht.</p>"
+    + "<div class=\"hub-grid\">"
+    + modKachel("mod-freigabe", wartend.length, "Zur Freigabe", "Inhalte, die auf eine Entscheidung warten. Freigabe schaltet sie sichtbar.")
+    + modKachel("mod-kommentare", hinweise.length, "Kommentare", "Inhalte mit einer Bewertung oder einem gemeldeten Kommentar.")
+    + modKachel("mod-pruefung", faelligListe.length, "Prüfdaten", "Veröffentlichte Inhalte, deren Prüfdatum älter als ein halbes Jahr ist.")
+    + "</div>"
+    + "<h2 id=\"mod-freigabe\">Zur Freigabe</h2><p class=\"meta-line\">" + wartend.length + (wartend.length === 1 ? " Inhalt steht" : " Inhalte stehen") + " an. Der Eintrag öffnet dieselbe Detailansicht.</p>"
     + "<div class=\"rowlist\">" + (rows || "<p>Keine offenen Inhalte.</p>") + "</div>"
-    + "<h2>Gemeldete Kommentare</h2><div class=\"list\">" + (gemeldet.join("") || "<p>Keine gemeldeten Kommentare.</p>") + "</div>"
-    + "<h2>Überfällige Prüfdaten</h2><div class=\"rowlist\">" + (faellig || "<p>Kein Prüfdatum ist älter als ein halbes Jahr.</p>") + "</div>"
+    + "<h2 id=\"mod-kommentare\">Gewertete und gemeldete Kommentare</h2><p class=\"meta-line\">" + hinweise.length + (hinweise.length === 1 ? " Inhalt hat" : " Inhalte haben") + " eine Bewertung oder einen gemeldeten Kommentar.</p><div class=\"list\">" + (gemeldet.join("") || "<p>Keine gemeldeten Kommentare.</p>") + "</div>"
+    + "<h2 id=\"mod-pruefung\">Überfällige Prüfdaten</h2><div class=\"rowlist\">" + (faellig || "<p>Kein Prüfdatum ist älter als ein halbes Jahr.</p>") + "</div>"
     + "<h2>Neue Rückmeldungen</h2><div class=\"list\">" + (meldungen || "<p>Noch keine Meldung in dieser Sitzung. Meldungen aus FAQ und Inhalten erscheinen hier und gehen in die Quartalsprüfung ein.</p>") + "</div>"
     + "<h2>Einstiegsseite</h2><form id=\"pin-form\" class=\"form-card\"><label class=\"field\"><span>Praxisimpuls ohne weitere Klickstrecke</span><select name=\"pin\">" + impulse.map(function (c) {
       return "<option value=\"" + esc(c.id) + "\"" + (state.prominent === c.id ? " selected" : "") + ">" + esc(c.titel) + "</option>";
@@ -1292,8 +1319,16 @@ function renderAdmin() {
     + rolleZeile("Gegenzeichnende Stelle", "Erlaubnisantworten vor Veröffentlichung", true)
     + rolleZeile("Forenmoderation", "Vorgesehen. Foren folgen in der späteren Ausbaustufe.", false)
     + "</div>"
-    + "<p class=\"hint\">Konten kommen aus dem Identity-Management. Eine manuelle Anlage ist im Prototyp nicht vorgesehen.</p>"
-    + "<button type=\"button\" class=\"btn-line\" disabled>Konto anlegen</button>"
+    + "<p class=\"hint\">Konten kommen aus dem Identity-Management. Hier vergeben Sie nur das Moderationsrecht, kein neues Konto.</p>"
+    + "<h2 id=\"moderationsrechte\">Moderationsrechte</h2>"
+    + "<p>Wer dieses Recht hat, sieht die Freigaben, die gemeldeten Kommentare und die Prüfdaten. Wer es nicht hat, bleibt bei den Inhalten.</p>"
+    + "<div class=\"list\">" + PERSONEN.map(function (p) {
+      var an = moderationsrecht(p.id);
+      return "<div class=\"listrow\"><div><strong>" + esc(p.name) + "</strong><div class=\"meta-line\">" + esc(p.stelle) + (p.sitzung ? " · Konto dieser Sitzung" : "") + "</div></div>"
+        + "<div>" + (an ? "Moderationsrecht" : "kein Moderationsrecht") + "</div>"
+        + "<button type=\"button\" class=\"btn-line\" data-action=\"mod-recht\" data-person=\"" + esc(p.id) + "\" aria-pressed=\"" + (an ? "true" : "false") + "\">" + (an ? "Recht entziehen" : "Recht geben") + "</button></div>";
+    }).join("") + "</div>"
+    + "<p class=\"hint\">Henning Beckmann ist das Konto dieser Sitzung. Ohne sein Recht verschwindet Moderation aus der Leiste, sobald die Rolle Moderation gewählt ist. Administration behält den Zugang.</p>"
     + "<h2 id=\"integrationen\">Integrationen</h2>"
     + "<div class=\"rowlist\">"
     + "<div class=\"rowitem\"><strong>ADFS</strong><span>Anmeldung über das Behördenkonto. Im Prototyp ohne echtes Verzeichnis.</span></div>"
@@ -1842,6 +1877,22 @@ function init() {
     if (action === "review") { aktuell = act.dataset.id; detailModus = "lesen"; oeffneInhalt(act.dataset.id); }
     if (action === "passwort") {
       oeffneAusbau("Zugang", "Ein Passwort der KI-Werkstatt gibt es nicht. Zurücksetzen und Sperre liegen beim Behördenkonto über ADFS.");
+    }
+    if (action === "mod-sprung") {
+      var sprung = document.getElementById(act.dataset.ziel);
+      if (sprung) {
+        try { sprung.scrollIntoView({ block: "start" }); } catch (err) { /* Prototyp bleibt bedienbar. */ }
+      }
+    }
+    if (action === "mod-recht") {
+      var person = act.dataset.person;
+      state.moderationsrechte = state.moderationsrechte || {};
+      state.moderationsrechte[person] = !moderationsrecht(person);
+      sichern();
+      renderAdmin();
+      if (person === "hb") renderNav();
+      var wer = PERSONEN.filter(function (p) { return p.id === person; })[0];
+      toast((wer ? wer.name : "Die Person") + (state.moderationsrechte[person] ? " hat das Moderationsrecht." : " hat kein Moderationsrecht mehr."));
     }
     if (action === "stichprobe") {
       state.stichprobe.halluzinationen = true;
