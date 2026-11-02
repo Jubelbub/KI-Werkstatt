@@ -629,12 +629,23 @@ function markNav(name, anker) {
   });
 }
 
+function hubKachel(k) {
+  var anker = k[1] ? " data-anker=\"" + k[1] + "\"" : "";
+  return "<button type=\"button\" class=\"hub-tile\" data-view-jump=\"" + k[0] + "\"" + anker + "><span class=\"hub-titel\">" + k[2] + "</span><span class=\"hub-text\">" + k[3] + "</span><span class=\"go\">Öffnen</span></button>";
+}
+
 function renderHub() {
+  var meine = document.getElementById("hub-meine");
+  var allgemein = document.getElementById("hub-allgemein");
   var box = document.getElementById("hub-kacheln");
+  if (meine) {
+    meine.innerHTML = hubKachel(["inhalte", "eigene-inhalte-titel", "Ihre Beiträge", "Nur Ihre eigenen Inhalte. Die allgemeinen Inhalte liegen im Bereich daneben."]);
+  }
+  if (allgemein) {
+    allgemein.innerHTML = hubKachel(["inhalte", "allgemeine-inhalte-titel", "Inhalte entdecken", "Geprüfte Inhalte für alle, mit Filtern und denselben Kacheln."]);
+  }
   if (!box) return;
   var kacheln = [
-    ["inhalte", "eigene-inhalte-titel", "Meine Inhalte", "Ihre eigenen Beiträge stehen im Bereich Inhalte an erster Stelle."],
-    ["inhalte", "", "Allgemeine Inhalte", "Inhalte entdecken, mit Filtern und derselben Kachelansicht."],
     ["impulse", "", "Impulse aus der Praxis", "Kurze Beiträge aus dem Dienstalltag, jeder für sich."],
     ["faq", "", "Häufige Fragen", "Verlässliche Antworten zum Einstieg, getrennt von den Inhalten."],
     ["community", "", "Aus der Community", "Vorschau auf den späteren Austausch. Am einzelnen Inhalt können Sie schon kommentieren."],
@@ -642,17 +653,14 @@ function renderHub() {
   ];
   if (darfFreigeben()) kacheln.push(["redaktion", "", "Freigabe", "Beiträge, die auf eine Entscheidung warten."]);
   if (state.rolle === "admin") kacheln.push(["admin", "", "Verwaltung", "Rollen, Anbindung und Betrieb."]);
-  box.innerHTML = kacheln.map(function (k) {
-    var anker = k[1] ? " data-anker=\"" + k[1] + "\"" : "";
-    return "<button type=\"button\" class=\"hub-tile\" data-view-jump=\"" + k[0] + "\"" + anker + "><span class=\"hub-titel\">" + k[2] + "</span><span class=\"hub-text\">" + k[3] + "</span><span class=\"go\">Öffnen</span></button>";
-  }).join("");
+  box.innerHTML = kacheln.map(hubKachel).join("");
 }
 
 function renderNav() {
   var items = [
-    ["faq", "FAQ", "faq", ""],
     ["inhalte", "Inhalte", "inhalte", ""],
-    ["impulse", "Impulse", "impulse", ""]
+    ["impulse", "Impulse", "impulse", ""],
+    ["faq", "FAQ", "faq", ""]
   ];
   if (darfBearbeiten()) items.push(["bearbeiten", "Bearbeiten", "meine", ""]);
   if (darfFreigeben()) items.push(["freigabe", "Freigabe", "redaktion", ""]);
@@ -1009,7 +1017,11 @@ function renderEigene() {
     return istEigen(c) && (c.impuls || c.formatKey === "impuls");
   }).filter(treffer);
   var box = document.getElementById("inhalte-eigene");
-  if (box) box.innerHTML = inhalte.length ? inhalte.map(zeile).join("") : "<p>Noch keine eigenen Inhalte.</p>";
+  if (box) {
+    box.innerHTML = inhalte.length
+      ? inhalte.map(zeile).join("")
+      : "<p>" + (q ? "Kein Treffer unter Meine Inhalte." : "Noch keine eigenen Inhalte.") + "</p>";
+  }
   var ibox = document.getElementById("impulse-eigene");
   if (ibox) ibox.innerHTML = impulse.length ? impulse.map(zeile).join("") : "<p>Noch keine eigenen Impulse.</p>";
   document.querySelectorAll("#impulse-alle [data-open]").forEach(function (b) {
@@ -1218,19 +1230,16 @@ function sucheAktualisieren() {
   document.querySelectorAll(".faq-item").forEach(function (item) {
     if (item.textContent.toLowerCase().indexOf(q) >= 0) faq.push(item);
   });
-  var html = "";
   if (!treffer.length && !faq.length) {
-    html = "<p>Keine Treffer. Eine KI-gestützte Recherche und ein Lern-Lotse gehören zur späteren Ausbaustufe, nicht zu dieser Suche.</p>";
-  } else {
-    html = treffer.slice(0, 6).map(function (c) {
-      return "<button type=\"button\" class=\"rowitem\" data-open=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong><span>" + esc(c.format) + " · " + esc(c.niveauLabel) + "</span></button>";
-    }).join("");
-    html += faq.slice(0, 3).map(function (item) {
-      var frage = item.querySelector(".faq-q").childNodes[0].textContent.trim();
-      return "<button type=\"button\" class=\"rowitem\" data-action=\"faq-sprung\" data-faq=\"" + esc(item.dataset.faq) + "\"><strong>FAQ · " + esc(frage) + "</strong></button>";
-    }).join("");
+    panel.innerHTML = "<p>Keine Treffer. Eine KI-gestützte Recherche und ein Lern-Lotse gehören zur späteren Ausbaustufe, nicht zu dieser Suche.</p>";
+    panel.hidden = false;
+    return;
   }
-  panel.innerHTML = html;
+  if (!faq.length) { panel.hidden = true; panel.innerHTML = ""; return; }
+  panel.innerHTML = "<h2 class=\"bereich-titel\">Häufige Fragen</h2>" + faq.slice(0, 3).map(function (item) {
+    var frage = item.querySelector(".faq-q").childNodes[0].textContent.trim();
+    return "<button type=\"button\" class=\"rowitem\" data-action=\"faq-sprung\" data-faq=\"" + esc(item.dataset.faq) + "\"><strong>FAQ · " + esc(frage) + "</strong></button>";
+  }).join("");
   panel.hidden = false;
 }
 
@@ -1491,6 +1500,33 @@ function init() {
     showView("inhalte", { leise: true });
     window.filtern();
     sucheAktualisieren();
+    kopfSuche(false);
+  }
+  var lupe = document.getElementById("lupe");
+  var kopfSuchfeld = document.getElementById("kopf-suchfeld");
+  function kopfSuche(auf) {
+    if (!kopfSuchfeld || !lupe) return;
+    var warOffen = !kopfSuchfeld.hidden;
+    kopfSuchfeld.hidden = !auf;
+    lupe.setAttribute("aria-expanded", auf ? "true" : "false");
+    lupe.setAttribute("aria-label", auf ? "Suche schließen" : "Suche öffnen");
+    if (auf) {
+      var feld = document.getElementById("suche-kopf");
+      if (feld) feld.focus();
+    } else if (warOffen) {
+      lupe.focus();
+    }
+  }
+  if (lupe && kopfSuchfeld) {
+    lupe.addEventListener("click", function () { kopfSuche(kopfSuchfeld.hidden); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !kopfSuchfeld.hidden) kopfSuche(false);
+    });
+    document.addEventListener("click", function (e) {
+      if (kopfSuchfeld.hidden) return;
+      if (e.target.closest(".kopf-suche")) return;
+      kopfSuche(false);
+    });
   }
   [["suche", "suche-btn"], ["suche-kopf", "suche-kopf-btn"], ["suche-inhalte", "suche-inhalte-btn"]].forEach(function (paar) {
     var feld = document.getElementById(paar[0]);

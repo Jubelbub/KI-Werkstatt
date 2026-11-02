@@ -540,7 +540,18 @@
   .footer-inner .disclaimer{font-style:italic;}
 
   .hub{padding-bottom:64px;}
-  .hub-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px;}
+  .hub-split{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:28px;}
+  .hub-zone{padding:18px;border:1px solid var(--line);border-radius:12px;}
+  section.hub-zone{padding:18px;}
+  .hub-zone h2{font-size:22px;margin:0 0 12px;}
+  .hub-zone-meine{border-top:4px solid var(--blue-light);}
+  .hub-zone-allgemein{border-top:4px solid var(--accent);}
+  .hub-zone .hub-tile{width:100%;min-height:148px;}
+  .hub-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:22px;}
+  .inhaltsbereich{margin:8px 0 32px;padding:22px 22px 26px;border:1px solid var(--line);border-radius:12px;}
+  section.inhaltsbereich{padding:22px 22px 26px;}
+  .bereich-meine{border-top:4px solid var(--blue-light);}
+  .bereich-allgemein{border-top:4px solid var(--accent);}
   .hub-tile{
     text-align:left;background:var(--bg-card);border:1px solid var(--line);border-radius:10px;
     padding:22px 22px 18px;min-height:168px;cursor:pointer;color:inherit;font-family:inherit;
@@ -554,13 +565,13 @@
   .view > .backlink{margin-top:28px;}
 
   @media (max-width:980px){
-    .grid,.paths,.hub-grid{grid-template-columns:1fr 1fr;}
+    .grid,.paths,.hub-grid,.hub-split{grid-template-columns:1fr 1fr;}
     .detail{grid-template-columns:1fr;}
     .community-wrap{grid-template-columns:1fr;}
     nav{display:none;}
   }
   @media (max-width:640px){
-    .grid,.paths,.impulse-grid,.hub-grid{grid-template-columns:1fr;}
+    .grid,.paths,.impulse-grid,.hub-grid,.hub-split{grid-template-columns:1fr;}
     .fgroup .flabel{flex-basis:100%;}
     .p-tip{width:min(330px,88vw);left:0;right:auto;}
     .p-tip[data-align="right"]{left:0;right:auto;}
@@ -711,8 +722,26 @@
     .view h1{font-size:28px;}
   }
 
-  .kopf-suche{flex:1 1 220px;max-width:340px;margin:0;}
-  .kopf-suche input{min-width:0;}
+  .kopf-suche{position:relative;flex:0 0 auto;margin:0;}
+  .lupe{
+    width:44px;height:44px;border-radius:50%;
+    display:inline-flex;align-items:center;justify-content:center;
+    background:transparent;border:1px solid var(--line);color:var(--text-title);
+    cursor:pointer;padding:0;
+  }
+  .lupe:hover,.lupe[aria-expanded="true"]{border-color:var(--blue-light);background:var(--bg-card);}
+  .lupe svg{stroke:currentColor;}
+  .kopf-suchfeld{
+    position:absolute;top:calc(100% + 10px);right:0;z-index:60;
+    width:min(520px,86vw);
+    background:var(--bg-card);border:1px solid var(--line);border-radius:10px;
+    padding:10px;box-shadow:0 12px 32px rgba(0,0,0,0.45);
+  }
+  .kopf-suchfeld .search{max-width:none;margin:0;}
+  @media (prefers-reduced-motion: no-preference){
+    .kopf-suchfeld{animation:such-aus .16s ease;}
+  }
+  @keyframes such-aus{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:none;}}
   .bereich-suche{margin:0 0 22px;max-width:760px;}
   .bereich-titel{color:var(--text-title);font-size:20px;margin:22px 0 14px;}
   .happen{list-style:none;display:flex;flex-direction:column;gap:10px;margin:0 0 8px;}
@@ -741,14 +770,21 @@
       <div class="org">Polizei NRW</div>
     </div>
     <nav aria-label="Bereiche">
-      <a href="#faq" data-nav="faq" data-view="faq">FAQ</a>
       <a href="#inhalte" data-nav="inhalte" data-view="inhalte">Inhalte</a>
       <a href="#impulse" data-nav="impulse" data-view="impulse">Impulse</a>
+      <a href="#faq" data-nav="faq" data-view="faq">FAQ</a>
     </nav>
-    <div class="search kopf-suche" role="search">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-      <input id="suche-kopf" type="search" placeholder="Wonach suchen Sie?" aria-label="Suche in der KI-Werkstatt">
-      <button type="button" id="suche-kopf-btn">Suchen</button>
+    <div class="kopf-suche">
+      <button type="button" class="lupe" id="lupe" aria-expanded="false" aria-controls="kopf-suchfeld" aria-label="Suche öffnen">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+      </button>
+      <div class="kopf-suchfeld" id="kopf-suchfeld" hidden>
+        <div class="search" role="search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+          <input id="suche-kopf" type="search" placeholder="Wonach suchen Sie?" aria-label="Suche in der KI-Werkstatt">
+          <button type="button" id="suche-kopf-btn">Suchen</button>
+        </div>
+      </div>
     </div>
     <button class="pmode-btn" id="pmode" aria-pressed="false">
       <svg class="bulb" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M12 3a6 6 0 0 0-3.5 10.9V17h7v-3.1A6 6 0 0 0 12 3z"/><path d="M9.5 20h5"/></svg>
@@ -804,6 +840,16 @@
       <button type="button" id="suche-btn">Suchen</button>
     </div>
 
+    <div class="hub-split">
+      <section class="hub-zone hub-zone-meine" aria-labelledby="hub-meine-titel">
+        <h2 id="hub-meine-titel">Meine Inhalte</h2>
+        <div id="hub-meine"></div>
+      </section>
+      <section class="hub-zone hub-zone-allgemein" aria-labelledby="hub-allgemein-titel">
+        <h2 id="hub-allgemein-titel">Allgemeine Inhalte</h2>
+        <div id="hub-allgemein"></div>
+      </section>
+    </div>
     <div class="hub-grid" id="hub-kacheln"></div>
   </div>
 
@@ -881,11 +927,14 @@
     </div>
     <div id="suchpanel" hidden></div>
 
-    <h2 class="bereich-titel" id="eigene-inhalte-titel">Eigene Inhalte</h2>
-    <div id="inhalte-eigene" class="eigenliste"></div>
+    <section class="inhaltsbereich bereich-meine" aria-labelledby="eigene-inhalte-titel">
+      <h2 class="bereich-titel" id="eigene-inhalte-titel">Meine Inhalte</h2>
+      <div id="inhalte-eigene" class="eigenliste"></div>
+    </section>
 
+    <section class="inhaltsbereich bereich-allgemein" aria-labelledby="allgemeine-inhalte-titel">
     <div class="section-head">
-      <h2>Inhalte entdecken</h2>
+      <h2 id="allgemeine-inhalte-titel">Allgemeine Inhalte</h2>
       <span class="hint prinzip">
         <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 4: Redaktion als Daueraufgabe">4</span><span class="p-tip" data-align="right"><span class="p-kicker">Strukturprinzip 4</span><span class="p-title">Redaktion als Daueraufgabe</span><span class="p-text">Jeder Inhalt ist fachlich geprüft und benennbar verantwortet. Ein Redaktionskonzept regelt für alle Kanäle, wer erstellt, prüft und freigibt und wie Widersprüche zwischen den Kanälen vermieden werden. Der Betrieb ist als Daueraufgabe angelegt, nicht als einmalige Initiative: Verwaiste Angebote richten mehr Schaden an als nie gestartete.</span><span class="p-src">Feinkonzept 5.4.1 · Risiko „Die KI-Werkstatt zwischen Aufbau und Alltag“ (Kapitel 9)</span></span>
         Redaktionell geprüft und laufend aktualisiert
@@ -1257,6 +1306,7 @@
       </div>
       </div>
     </div>
+    </section>
   </section>
   </div><!-- view-inhalte -->
 
