@@ -570,11 +570,8 @@
 
   .hub{padding-bottom:64px;}
   .hub-split{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:28px;}
-  .lauf-split{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:0 0 22px;}
-  .lauf-split.eine{grid-template-columns:1fr;}
-  .lauf-karte{border:1px solid var(--line);border-radius:12px;padding:16px 16px 8px;}
-  .lauf-karte h3{margin:0 0 6px;font-size:20px;}
-  .lauf-karte .grid{grid-template-columns:1fr;}
+  .lauf-hub{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:0 0 22px;}
+  .lauf-hub .hub-tile{width:100%;min-height:168px;}
   .hub-zone{padding:18px;border:1px solid var(--line);border-radius:12px;}
   section.hub-zone{padding:18px;}
   .hub-zone h2{font-size:22px;margin:0 0 12px;}
@@ -634,7 +631,7 @@
     nav{display:none;}
   }
   @media (max-width:640px){
-    .grid,.paths,.impulse-grid,.hub-grid,.hub-split,.lauf-split{grid-template-columns:1fr;}
+    .grid,.paths,.impulse-grid,.hub-grid,.hub-split,.lauf-hub{grid-template-columns:1fr;}
     .fgroup .flabel{flex-basis:100%;}
     .p-tip{width:min(330px,88vw);left:0;right:auto;}
     .p-tip[data-align="right"]{left:0;right:auto;}
@@ -999,24 +996,26 @@
     <section class="inhaltsbereich bereich-allgemein" aria-labelledby="allgemeine-inhalte-titel">
     <div class="section-head">
       <h2 id="allgemeine-inhalte-titel">Allgemeine Inhalte</h2>
-      <p class="meta-line">Was Sie öffnen, bleibt hier: begonnen oder abgeschlossen. Meine Inhalte enthält nur, was Sie erstellt haben oder ausdrücklich bearbeiten dürfen.</p>
+      <p class="meta-line">Zwei Kacheln führen zu dem, was Sie geöffnet oder abgeschlossen haben. Darunter bleiben die übrigen Inhalte. Meine Inhalte enthält nur, was Sie erstellt haben oder ausdrücklich bearbeiten dürfen.</p>
       <span class="hint prinzip">
         <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 4: Redaktion als Daueraufgabe">4</span><span class="p-tip" data-align="right"><span class="p-kicker">Strukturprinzip 4</span><span class="p-title">Redaktion als Daueraufgabe</span><span class="p-text">Jeder Inhalt ist fachlich geprüft und benennbar verantwortet. Ein Redaktionskonzept regelt für alle Kanäle, wer erstellt, prüft und freigibt und wie Widersprüche zwischen den Kanälen vermieden werden. Der Betrieb ist als Daueraufgabe angelegt, nicht als einmalige Initiative: Verwaiste Angebote richten mehr Schaden an als nie gestartete.</span><span class="p-src">Feinkonzept 5.4.1 · Risiko „Die KI-Werkstatt zwischen Aufbau und Alltag“ (Kapitel 9)</span></span>
         Redaktionell geprüft und laufend aktualisiert
       </span>
     </div>
 
-    <div class="lauf-split" id="lauf-split">
-      <section class="lauf-karte" id="lauf-begonnen" hidden>
-        <h3 id="begonnen-titel">Begonnen</h3>
-        <p class="meta-line">Geöffnet, noch nicht abgeschlossen.</p>
-        <div id="inhalte-begonnen" class="grid"></div>
-      </section>
-      <section class="lauf-karte" id="lauf-abgeschlossen" hidden>
-        <h3 id="abgeschlossen-titel">Abgeschlossen</h3>
-        <p class="meta-line">Von Ihnen als abgeschlossen markiert.</p>
-        <div id="inhalte-abgeschlossen" class="grid"></div>
-      </section>
+    <div class="lauf-hub" id="lauf-hub">
+      <button type="button" class="hub-tile" data-view-jump="lauf-begonnen">
+        <span class="zahl-badge" id="zahl-begonnen">0</span>
+        <span class="hub-titel">Begonnene Inhalte</span>
+        <span class="hub-text">Geöffnet, noch nicht abgeschlossen.</span>
+        <span class="go">Inhalte öffnen</span>
+      </button>
+      <button type="button" class="hub-tile" data-view-jump="lauf-abgeschlossen">
+        <span class="zahl-badge" id="zahl-abgeschlossen">0</span>
+        <span class="hub-titel">Abgeschlossene Inhalte</span>
+        <span class="hub-text">Von Ihnen als abgeschlossen markiert.</span>
+        <span class="go">Inhalte öffnen</span>
+      </button>
     </div>
     <h3 class="bereich-titel" id="uebrige-titel">Übrige Inhalte</h3>
 
@@ -1449,6 +1448,21 @@
   </section>
   </section>
   </div><!-- view-inhalte -->
+
+  <div id="view-lauf-begonnen" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="inhalte" data-anker="allgemeine-inhalte-titel">← Allgemeine Inhalte</button>
+    <h1>Begonnene Inhalte</h1>
+    <p>Dieselben Kacheln wie bei den übrigen Inhalten. Ein Klick öffnet den Inhalt, ohne ihn nach Meine Inhalte zu kopieren.</p>
+    <div id="inhalte-begonnen" class="grid"></div>
+    <p class="meta-line" id="begonnen-leer" hidden>Noch nichts begonnen. Ein allgemeiner Inhalt erscheint hier, sobald Sie ihn öffnen.</p>
+  </div>
+  <div id="view-lauf-abgeschlossen" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="inhalte" data-anker="allgemeine-inhalte-titel">← Allgemeine Inhalte</button>
+    <h1>Abgeschlossene Inhalte</h1>
+    <p>Dieselben Kacheln wie bei den übrigen Inhalten. Als abgeschlossen markiert, und bei Bedarf wieder als begonnen.</p>
+    <div id="inhalte-abgeschlossen" class="grid"></div>
+    <p class="meta-line" id="abgeschlossen-leer" hidden>Noch nichts abgeschlossen.</p>
+  </div>
 
   <div id="view-faq" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="home">Zurück</button>

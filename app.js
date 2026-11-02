@@ -694,6 +694,7 @@ function showView(name, opt) {
   if (name === "admin") renderAdmin();
   if (name === "leitfaden") { /* statisches HTML */ }
   if (name === "inhalte" && typeof window.filtern === "function") window.filtern();
+  if (name === "lauf-begonnen" || name === "lauf-abgeschlossen") renderFortschritt();
   markNav(name, opt.anker || "");
   if (opt.anker) {
     var ziel = document.getElementById(opt.anker);
@@ -717,6 +718,10 @@ function markNav(name, anker) {
     if (herkunft) anker = herkunft.anker || "";
   }
   if (name === "statistik" || name.indexOf("mod-") === 0) bereich = "redaktion";
+  if (name === "lauf-begonnen" || name === "lauf-abgeschlossen") {
+    bereich = "inhalte";
+    anker = "allgemeine-inhalte-titel";
+  }
   document.querySelectorAll("header nav a").forEach(function (a) {
     var an = false;
     if (a.dataset.anker) an = bereich === "inhalte" && anker === a.dataset.anker;
@@ -743,7 +748,7 @@ function renderHub() {
   var box = document.getElementById("hub-kacheln");
   if (!box) return;
   var kacheln = [
-    ["meine", "", "Meine Inhalte", "Erstellt, bereitgestellt oder begonnen."],
+    ["meine", "", "Meine Inhalte", "Nur, was Sie erstellt haben oder bearbeiten dürfen."],
     ["inhalte", "allgemeine-inhalte-titel", "Allgemeine Inhalte", "Inhalte entdecken."],
     ["inhalte", "impulse-titel", "Impulse", "Kurze Beiträge aus dem Dienstalltag."],
     ["inhalte", "live-titel", "Live-Sessions", "Offenes Format. Die Teilnahme folgt später."],
@@ -842,6 +847,8 @@ function herkunftSetzen(id) {
     home: { id: "home", nav: "home", anker: "", spur: [start] },
     meine: { id: "meine", nav: "meine", anker: "", spur: [start, spurSchritt("Meine Inhalte", "meine")] },
     allgemein: { id: "allgemein", nav: "inhalte", anker: "allgemeine-inhalte-titel", spur: [start, spurSchritt("Allgemeine Inhalte", "inhalte", "allgemeine-inhalte-titel")] },
+    begonnen: { id: "begonnen", nav: "inhalte", anker: "allgemeine-inhalte-titel", spur: [start, spurSchritt("Allgemeine Inhalte", "inhalte", "allgemeine-inhalte-titel"), spurSchritt("Begonnene Inhalte", "lauf-begonnen")] },
+    abgeschlossen: { id: "abgeschlossen", nav: "inhalte", anker: "allgemeine-inhalte-titel", spur: [start, spurSchritt("Allgemeine Inhalte", "inhalte", "allgemeine-inhalte-titel"), spurSchritt("Abgeschlossene Inhalte", "lauf-abgeschlossen")] },
     impulse: { id: "impulse", nav: "inhalte", anker: "impulse-titel", spur: [start, spurSchritt("Impulse", "inhalte", "impulse-titel")] },
     live: { id: "live", nav: "inhalte", anker: "live-titel", spur: [start, spurSchritt("Live-Sessions", "inhalte", "live-titel")] },
     community: { id: "community", nav: "inhalte", anker: "community-titel", spur: [start, spurSchritt("Community", "inhalte", "community-titel")] },
@@ -860,6 +867,8 @@ function herkunftAusElement(el) {
   if (el.closest("#view-mod-freigabe")) return "freigabe";
   if (el.closest("#view-mod-kommentare")) return "kommentare";
   if (el.closest("#view-mod-pruefung")) return "pruefung";
+  if (el.closest("#view-lauf-begonnen, #inhalte-begonnen")) return "begonnen";
+  if (el.closest("#view-lauf-abgeschlossen, #inhalte-abgeschlossen")) return "abgeschlossen";
   if (el.closest("#katalog-grid, .bereich-allgemein")) return "allgemein";
   if (el.closest("#view-faq")) return "faq";
   if (el.closest("#live")) return "live";
@@ -1434,17 +1443,16 @@ function renderFortschritt() {
   var fertig = liste("abgeschlossen");
   var boxB = document.getElementById("inhalte-begonnen");
   var boxA = document.getElementById("inhalte-abgeschlossen");
-  var secB = document.getElementById("lauf-begonnen");
-  var secA = document.getElementById("lauf-abgeschlossen");
-  var split = document.getElementById("lauf-split");
+  var leerB = document.getElementById("begonnen-leer");
+  var leerA = document.getElementById("abgeschlossen-leer");
+  var zahlB = document.getElementById("zahl-begonnen");
+  var zahlA = document.getElementById("zahl-abgeschlossen");
   if (boxB) boxB.innerHTML = begonnen.map(kachelMarkup).join("");
   if (boxA) boxA.innerHTML = fertig.map(kachelMarkup).join("");
-  if (secB) secB.hidden = begonnen.length === 0;
-  if (secA) secA.hidden = fertig.length === 0;
-  if (split) {
-    split.hidden = begonnen.length === 0 && fertig.length === 0;
-    split.classList.toggle("eine", begonnen.length === 0 || fertig.length === 0);
-  }
+  if (leerB) leerB.hidden = begonnen.length > 0;
+  if (leerA) leerA.hidden = fertig.length > 0;
+  if (zahlB) zahlB.textContent = String(begonnen.length);
+  if (zahlA) zahlA.textContent = String(fertig.length);
 }
 
 function modSammeln() {
@@ -2154,7 +2162,7 @@ function init() {
       sichern();
       if (window.filtern) window.filtern();
       renderPlayer();
-      toast(state.fortschritt[aktuell] === "abgeschlossen" ? "Unter Allgemeine Inhalte als abgeschlossen geführt." : "Wieder unter Begonnen.");
+      toast(state.fortschritt[aktuell] === "abgeschlossen" ? "Liegt jetzt unter Abgeschlossene Inhalte." : "Liegt wieder unter Begonnene Inhalte.");
     }
     if (action === "edit-recht") {
       var inhaltId = act.dataset.id;
