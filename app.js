@@ -436,6 +436,8 @@ function leerZustand() {
     prominent: "berichte",
     moderationsrechte: { hb: true, jw: true, th: true, rd: false, al: false },
     extra: { start: 0, null: 0, bereits: 0, frage: 0, inhalte: {} },
+    fortschritt: {},
+    editRechte: {},
     stichprobe: {},
     pruefdatum: {}
   };
@@ -617,35 +619,49 @@ function darfFreigeben() {
   return state.rolle === "redaktion" && moderationsrecht("hb");
 }
 
-var BEREITGESTELLT = { "grenzen-daten": 1, "ergebnis-pruefen": 1 };
 var TEILNAHME_START = { sprachmodelle: 1, halluzinationen: 1 };
 
-function kannBearbeitenInhalt(c) {
+function istUrheber(c) {
   if (!c) return false;
-  if ((state.eigene || []).some(function (e) { return e.id === c.id; })) return true;
-  if (c.autor === "Henning Beckmann") return true;
-  if (c.autorRolle === "creator") return true;
-  return false;
+  if (c.autorId === "hb" || c.autor === "Henning Beckmann") return true;
+  return (state.eigene || []).some(function (e) { return e.id === c.id && (!e.autor || e.autor === "Henning Beckmann" || e.autorId === "hb"); });
 }
 
-function nimmtTeil(c) {
+function hatEditRecht(c) {
   if (!c) return false;
-  if (TEILNAHME_START[c.id]) return true;
-  return !!(state.extra && state.extra.inhalte && state.extra.inhalte[c.id]);
+  var rechte = (state.editRechte && state.editRechte[c.id]) || {};
+  return !!rechte.hb;
+}
+
+function kannBearbeitenInhalt(c) {
+  return istUrheber(c) || hatEditRecht(c);
+}
+
+function fortschrittVon(c) {
+  if (!c || kannBearbeitenInhalt(c)) return "";
+  var stand = state.fortschritt && state.fortschritt[c.id];
+  if (stand === "abgeschlossen" || stand === "begonnen") return stand;
+  if (TEILNAHME_START[c.id]) return "begonnen";
+  return "";
+}
+
+function merkeBegonnen(c) {
+  if (!c || c.status !== "veroeffentlicht" || kannBearbeitenInhalt(c)) return;
+  if (fortschrittVon(c) === "abgeschlossen") return;
+  state.fortschritt = state.fortschritt || {};
+  if (state.fortschritt[c.id] === "begonnen") return;
+  state.fortschritt[c.id] = "begonnen";
+  sichern();
 }
 
 function istEigen(c) {
-  if (!c) return false;
-  if (kannBearbeitenInhalt(c)) return true;
-  if (BEREITGESTELLT[c.id]) return true;
-  if (nimmtTeil(c)) return true;
-  return false;
+  return kannBearbeitenInhalt(c);
 }
 
 function meinArt(c) {
-  if (kannBearbeitenInhalt(c)) return "Erstellt";
-  if (c && BEREITGESTELLT[c.id]) return "Bereitgestellt";
-  return "Teilnahme";
+  if (istUrheber(c)) return "Erstellt";
+  if (hatEditRecht(c)) return "Darf bearbeiten";
+  return "";
 }
 
 function showView(name, opt) {
@@ -881,7 +897,11 @@ function oeffneInhalt(id, kurz, anker, el) {
   playerKurz = !!kurz;
   detailModus = "lesen";
   selbstGeprueft = false;
-  if (c.status === "veroeffentlicht") bumpInhalt(id);
+  if (c.status === "veroeffentlicht") {
+    bumpInhalt(id);
+    merkeBegonnen(c);
+    if (typeof window.filtern === "function") window.filtern();
+  }
   showView("player", { anker: anker || "" });
 }
 
@@ -920,6 +940,16 @@ function kommentarBlock(c) {
     + "<div class=\"dhead\"><h2>Kommentar zu diesem Inhalt</h2><span>" + zahl + "</span></div>"
     + (kommentare || "<p class=\"meta-line\">Noch kein Kommentar. Die erste Rückfrage steht unter Ihrem Namen.</p>")
     + "<form class=\"comment-form\" id=\"kommentar-form\"><label class=\"field\"><span>Rückfrage unter Ihrem Namen</span><textarea name=\"text\" required rows=\"3\" placeholder=\"Was ist unklar geblieben?\"></textarea></label><button class=\"btn-solid\" type=\"submit\">Kommentar senden</button></form></div>";
+}
+
+function editRechtKasten(c) {
+  if (!istUrheber(c)) return "";
+  var zeilen = PERSONEN.filter(function (p) { return p.id !== "hb"; }).map(function (p) {
+    var rechte = (state.editRechte && state.editRechte[c.id]) || {};
+    var an = !!rechte[p.id];
+    return "<div class=\"listrow\"><div><strong>" + esc(p.name) + "</strong><div class=\"meta-line\">" + esc(p.stelle) + "</div></div><div>" + (an ? "darf bearbeiten" : "nur lesen") + "</div><button type=\"button\" class=\"btn-line\" data-action=\"edit-recht\" data-person=\"" + esc(p.id) + "\" data-id=\"" + esc(c.id) + "\" aria-pressed=\"" + (an ? "true" : "false") + "\">" + (an ? "Recht entziehen" : "Recht geben") + "</button></div>";
+  }).join("");
+  return "<div class=\"form-card\"><h2>Wer darf bearbeiten</h2><p>Sie haben den Inhalt erstellt. Andere dürfen ihn nur bearbeiten, wenn Sie das Recht hier vergeben.</p><div class=\"list\">" + zeilen + "</div></div>";
 }
 
 function moderationKasten(c) {
@@ -973,7 +1003,14 @@ function renderPlayer() {
   var pflicht = c.pflicht ? "<span class=\"lvl impulstag\">Vor der Nutzung</span>" : "";
   var kanon = c.grundlagen ? "<span class=\"lvl basis\">Grundlagenkanon</span>" : "";
   var status = c.status !== "veroeffentlicht" ? "<span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span>" : "";
-  var bearbeiten = istEigen(c) ? stiftKnopf(c.id, true) : "";
+  var bearbeiten = kannBearbeitenInhalt(c) ? stiftKnopf(c.id, true) : "";
+  var stand = fortschrittVon(c);
+  var lauf = "";
+  if (c.status === "veroeffentlicht" && !kannBearbeitenInhalt(c)) {
+    lauf = stand === "abgeschlossen"
+      ? "<div class=\"button-row\"><span class=\"st veroeffentlicht\">Abgeschlossen</span><button type=\"button\" class=\"btn-line\" data-action=\"fortschritt\" data-stand=\"begonnen\">Wieder als begonnen</button></div>"
+      : "<div class=\"button-row\"><button type=\"button\" class=\"btn-line\" data-action=\"fortschritt\" data-stand=\"abgeschlossen\">Als abgeschlossen markieren</button></div>";
+  }
   root.innerHTML = krumenHtml(c.titel)
     + "<div class=\"badges\">" + status + (c.niveau ? "<span class=\"lvl " + esc(c.niveau) + "\">" + esc(c.niveauLabel) + "</span>" : "") + kanon + pflicht + "<span class=\"dur\">" + esc(c.format) + " · " + esc(c.dauer) + "</span></div>"
     + "<div class=\"titelzeile\"><h1>" + esc(c.titel) + "</h1>" + bearbeiten + "</div>"
@@ -992,6 +1029,8 @@ function renderPlayer() {
     + praxis
     + fehler
     + moderationKasten(c)
+    + editRechtKasten(c)
+    + lauf
     + "<div class=\"button-row\"><button type=\"button\" class=\"btn-line\" data-action=\"zum-kommentar\">Zum Kommentar</button></div>"
     + kommentarBlock(c);
 }
@@ -1301,10 +1340,16 @@ function kachelMarkup(c) {
   var thema = (c.thema || []).join(" ");
   var ziel = (c.ziel || []).join(" ");
   var geliked = state.feedback[c.id] === "up";
+  var art = meinArt(c);
+  if (!art) {
+    var stand = fortschrittVon(c);
+    if (stand === "abgeschlossen") art = "Abgeschlossen";
+    else if (stand === "begonnen") art = "Begonnen";
+  }
   return "<article class=\"tile " + farbe + "\" tabindex=\"0\" data-id=\"" + esc(c.id) + "\" data-werkzeug=\"" + esc(c.werkzeugKey || "") + "\" data-thema=\"" + esc(thema) + "\" data-format=\"" + esc(c.formatKey || "") + "\" data-niveau=\"" + esc(c.niveau || "") + "\" data-zielgruppe=\"" + esc(ziel) + "\">"
     + (istEigen(c) ? stiftKnopf(c.id, false) : "")
     + "<div class=\"thumb\"><span class=\"fmt\">" + esc(c.format || "Inhalt") + " · " + esc(c.dauer) + "</span></div>"
-    + "<div class=\"tile-body\"><div class=\"badges\"><span class=\"lvl " + esc(c.niveau || "basis") + "\">" + esc(c.niveauLabel) + "</span><span class=\"st " + esc(c.status) + "\">" + esc(meinArt(c)) + "</span></div>"
+    + "<div class=\"tile-body\"><div class=\"badges\"><span class=\"lvl " + esc(c.niveau || "basis") + "\">" + esc(c.niveauLabel) + "</span>" + (art ? "<span class=\"st " + esc(c.status) + "\">" + esc(art) + "</span>" : "") + "</div>"
     + "<h3>" + esc(c.titel) + "</h3><p>" + esc(c.teaser || "") + "</p>"
     + "<div class=\"tile-foot\"><button type=\"button\" class=\"likebtn" + (geliked ? " liked" : "") + "\" data-bewerten=\"" + esc(c.id) + "\" aria-pressed=\"" + (geliked ? "true" : "false") + "\" aria-label=\"Hat mir weitergeholfen\"><span class=\"cnt\">" + feedbackSumme(c.id).up + "</span></button>"
     + "<button type=\"button\" class=\"textbtn kommentar-link\" data-open=\"" + esc(c.id) + "\" data-kommentar=\"1\">" + label + "</button></div></div></article>";
@@ -1373,10 +1418,33 @@ function renderEigene() {
   }
   document.querySelectorAll("#impulse-alle [data-open]").forEach(function (b) {
     var c = byId(b.dataset.open);
-    var zeigen = !!(c && c.status === "veroeffentlicht" && !istEigen(c));
+    var zeigen = !!(c && c.status === "veroeffentlicht" && !istEigen(c) && !fortschrittVon(c));
     if (zeigen && q && b.textContent.toLowerCase().indexOf(q) === -1) zeigen = false;
     if (b.parentElement) b.parentElement.hidden = !zeigen;
   });
+}
+
+function renderFortschritt() {
+  function liste(stand) {
+    return alle().filter(function (c) {
+      return c.status === "veroeffentlicht" && fortschrittVon(c) === stand;
+    });
+  }
+  var begonnen = liste("begonnen");
+  var fertig = liste("abgeschlossen");
+  var boxB = document.getElementById("inhalte-begonnen");
+  var boxA = document.getElementById("inhalte-abgeschlossen");
+  var secB = document.getElementById("lauf-begonnen");
+  var secA = document.getElementById("lauf-abgeschlossen");
+  var split = document.getElementById("lauf-split");
+  if (boxB) boxB.innerHTML = begonnen.map(kachelMarkup).join("");
+  if (boxA) boxA.innerHTML = fertig.map(kachelMarkup).join("");
+  if (secB) secB.hidden = begonnen.length === 0;
+  if (secA) secA.hidden = fertig.length === 0;
+  if (split) {
+    split.hidden = begonnen.length === 0 && fertig.length === 0;
+    split.classList.toggle("eine", begonnen.length === 0 || fertig.length === 0);
+  }
 }
 
 function modSammeln() {
@@ -1682,13 +1750,14 @@ function initFilter() {
       if (treffer && q && k.textContent.toLowerCase().indexOf(q) === -1) treffer = false;
       if (treffer) {
         var inhalt = byId(k.dataset.id);
-        if (inhalt && istEigen(inhalt)) treffer = false;
+        if (inhalt && (istEigen(inhalt) || fortschrittVon(inhalt))) treffer = false;
       }
       k.hidden = !treffer;
       if (treffer) sichtbar++;
       verankereKachel(k);
     });
     renderEigene();
+    renderFortschritt();
     chips.forEach(function (c) {
       if (c.dataset.value === "alle") {
         var leer = auswahl[c.dataset.group].length === 0;
@@ -1698,7 +1767,7 @@ function initFilter() {
     });
     var allgemein = kacheln.filter(function (k) {
       var inhalt = byId(k.dataset.id);
-      return !(inhalt && istEigen(inhalt));
+      return !(inhalt && (istEigen(inhalt) || fortschrittVon(inhalt)));
     }).length;
     if (anzahlAktiv === 0 && !q) fcount.textContent = "Alle " + allgemein + " allgemeinen Inhalte werden angezeigt.";
     else if (sichtbar === 0) fcount.textContent = "Kein allgemeiner Inhalt entspricht dieser Auswahl.";
@@ -2066,7 +2135,40 @@ function init() {
         else liste.insertAdjacentHTML("beforeend", schrittFeld(anzahl, { t: "", d: "" }));
       }
     }
-    if (action === "bearbeiten") { editorId = act.dataset.id; editorVorgabe = ""; detailModus = "bearbeiten"; aktuell = editorId; showView("player"); }
+    if (action === "bearbeiten") {
+      var zielInhalt = byId(act.dataset.id);
+      if (!kannBearbeitenInhalt(zielInhalt)) {
+        toast("Nur die erstellende Person oder jemand mit Edit-Recht kann das bearbeiten.");
+        return;
+      }
+      editorId = act.dataset.id;
+      editorVorgabe = "";
+      detailModus = "bearbeiten";
+      aktuell = editorId;
+      showView("player");
+    }
+    if (action === "fortschritt") {
+      if (!aktuell || kannBearbeitenInhalt(byId(aktuell))) return;
+      state.fortschritt = state.fortschritt || {};
+      state.fortschritt[aktuell] = act.dataset.stand === "abgeschlossen" ? "abgeschlossen" : "begonnen";
+      sichern();
+      if (window.filtern) window.filtern();
+      renderPlayer();
+      toast(state.fortschritt[aktuell] === "abgeschlossen" ? "Unter Allgemeine Inhalte als abgeschlossen geführt." : "Wieder unter Begonnen.");
+    }
+    if (action === "edit-recht") {
+      var inhaltId = act.dataset.id;
+      var personId = act.dataset.person;
+      var inhaltRecht = byId(inhaltId);
+      if (!istUrheber(inhaltRecht) || !personId || personId === "hb") return;
+      state.editRechte = state.editRechte || {};
+      state.editRechte[inhaltId] = state.editRechte[inhaltId] || {};
+      state.editRechte[inhaltId][personId] = !state.editRechte[inhaltId][personId];
+      sichern();
+      renderPlayer();
+      var wen = PERSONEN.filter(function (p) { return p.id === personId; })[0];
+      toast((wen ? wen.name : "Die Person") + (state.editRechte[inhaltId][personId] ? " darf diesen Inhalt bearbeiten." : " hat kein Edit-Recht mehr."));
+    }
     if (action === "review") { aktuell = act.dataset.id; detailModus = "lesen"; oeffneInhalt(act.dataset.id); }
     if (action === "passwort") {
       oeffneAusbau("Zugang", "Ein Passwort der KI-Werkstatt gibt es nicht. Zurücksetzen und Sperre liegen beim Behördenkonto über ADFS.");

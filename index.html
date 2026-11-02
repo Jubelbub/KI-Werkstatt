@@ -570,6 +570,11 @@
 
   .hub{padding-bottom:64px;}
   .hub-split{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:28px;}
+  .lauf-split{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:0 0 22px;}
+  .lauf-split.eine{grid-template-columns:1fr;}
+  .lauf-karte{border:1px solid var(--line);border-radius:12px;padding:16px 16px 8px;}
+  .lauf-karte h3{margin:0 0 6px;font-size:20px;}
+  .lauf-karte .grid{grid-template-columns:1fr;}
   .hub-zone{padding:18px;border:1px solid var(--line);border-radius:12px;}
   section.hub-zone{padding:18px;}
   .hub-zone h2{font-size:22px;margin:0 0 12px;}
@@ -629,7 +634,7 @@
     nav{display:none;}
   }
   @media (max-width:640px){
-    .grid,.paths,.impulse-grid,.hub-grid,.hub-split{grid-template-columns:1fr;}
+    .grid,.paths,.impulse-grid,.hub-grid,.hub-split,.lauf-split{grid-template-columns:1fr;}
     .fgroup .flabel{flex-basis:100%;}
     .p-tip{width:min(330px,88vw);left:0;right:auto;}
     .p-tip[data-align="right"]{left:0;right:auto;}
@@ -994,12 +999,26 @@
     <section class="inhaltsbereich bereich-allgemein" aria-labelledby="allgemeine-inhalte-titel">
     <div class="section-head">
       <h2 id="allgemeine-inhalte-titel">Allgemeine Inhalte</h2>
-      <p class="meta-line">Inhalte entdecken. Die Kommentarzahl steht an der Kachel und öffnet genau diesen Inhalt.</p>
+      <p class="meta-line">Was Sie öffnen, bleibt hier: begonnen oder abgeschlossen. Meine Inhalte enthält nur, was Sie erstellt haben oder ausdrücklich bearbeiten dürfen.</p>
       <span class="hint prinzip">
         <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 4: Redaktion als Daueraufgabe">4</span><span class="p-tip" data-align="right"><span class="p-kicker">Strukturprinzip 4</span><span class="p-title">Redaktion als Daueraufgabe</span><span class="p-text">Jeder Inhalt ist fachlich geprüft und benennbar verantwortet. Ein Redaktionskonzept regelt für alle Kanäle, wer erstellt, prüft und freigibt und wie Widersprüche zwischen den Kanälen vermieden werden. Der Betrieb ist als Daueraufgabe angelegt, nicht als einmalige Initiative: Verwaiste Angebote richten mehr Schaden an als nie gestartete.</span><span class="p-src">Feinkonzept 5.4.1 · Risiko „Die KI-Werkstatt zwischen Aufbau und Alltag“ (Kapitel 9)</span></span>
         Redaktionell geprüft und laufend aktualisiert
       </span>
     </div>
+
+    <div class="lauf-split" id="lauf-split">
+      <section class="lauf-karte" id="lauf-begonnen" hidden>
+        <h3 id="begonnen-titel">Begonnen</h3>
+        <p class="meta-line">Geöffnet, noch nicht abgeschlossen.</p>
+        <div id="inhalte-begonnen" class="grid"></div>
+      </section>
+      <section class="lauf-karte" id="lauf-abgeschlossen" hidden>
+        <h3 id="abgeschlossen-titel">Abgeschlossen</h3>
+        <p class="meta-line">Von Ihnen als abgeschlossen markiert.</p>
+        <div id="inhalte-abgeschlossen" class="grid"></div>
+      </section>
+    </div>
+    <h3 class="bereich-titel" id="uebrige-titel">Übrige Inhalte</h3>
 
     <p class="banner" id="pfadhinweis" hidden></p>
     <div class="filters prinzip" aria-label="Inhalte filtern">
@@ -1533,7 +1552,7 @@
   <div id="view-meine" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="home">Zurück</button>
     <h1>Meine Inhalte</h1>
-    <p class="meta-line">Erstellt, bereitgestellt oder begonnen. Dieselben Kacheln wie beim Entdecken, klar von den allgemeinen Inhalten getrennt.</p>
+    <p class="meta-line">Nur Inhalte, die Sie erstellt haben oder für die Ihnen die erstellende Person die Bearbeitung erlaubt hat. Geöffnetes und Abgeschlossenes bleibt unter Allgemeine Inhalte.</p>
     <section class="anlegen" aria-labelledby="anlegen-titel">
       <h2 id="anlegen-titel">Inhalt erstellen</h2>
       <p>Inhalt, Impuls oder Live-Session. Der Entwurf bleibt bei Ihnen, bis Sie ihn zur Freigabe geben. Ein Stift an der Kachel und in der Ansicht bedeutet: das können Sie bearbeiten.</p>
