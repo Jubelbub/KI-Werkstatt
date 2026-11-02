@@ -416,7 +416,7 @@ function inhalt(c) {
 
 function leerZustand() {
   return {
-    rolle: "beschaeftigte",
+    rolle: "teilnehmende",
     einfach: false,
     behoerde: "LAFP NRW",
     feedback: {},
@@ -440,6 +440,7 @@ function laden() {
       if (roh[k] !== undefined) basis[k] = roh[k];
     });
   } catch (e) { /* Prototyp bleibt mit dem Ausgangsstand nutzbar. */ }
+  if (basis.rolle === "beschaeftigte" || basis.rolle === "creator") basis.rolle = "teilnehmende";
   return basis;
 }
 
@@ -557,32 +558,54 @@ function mitBegriffen(text) {
 }
 
 function rolleLabel(r) {
-  return { beschaeftigte: "Teilnehmer", creator: "Bearbeiten", redaktion: "Freigabe", admin: "Verwaltung" }[r] || "Teilnehmer";
+  return { teilnehmende: "Teilnehmende mit Erstellen", redaktion: "Moderation", admin: "Administration" }[r] || "Teilnehmende mit Erstellen";
 }
 
 function rolleHinweis(r) {
   return {
-    beschaeftigte: "Teilnehmer: Sie sehen die Lerninhalte.",
-    creator: "Bearbeiten: Sie können eigene Inhalte ändern.",
-    redaktion: "Freigabe: Sie sehen Beiträge, die auf eine Entscheidung warten.",
-    admin: "Verwaltung: Sie sehen zusätzlich den Betrieb."
+    teilnehmende: "Teilnehmende mit Erstellen: Sie lernen und können Inhalte anlegen.",
+    redaktion: "Moderation: Sie sehen Beiträge, die auf eine Entscheidung warten.",
+    admin: "Administration: Sie sehen zusätzlich den Betrieb."
   }[r] || "";
 }
 
 function darfBearbeiten() {
-  return state.rolle === "creator" || state.rolle === "redaktion" || state.rolle === "admin";
+  return state.rolle === "teilnehmende" || state.rolle === "redaktion" || state.rolle === "admin";
 }
 
 function darfFreigeben() {
   return state.rolle === "redaktion" || state.rolle === "admin";
 }
 
-function istEigen(c) {
+var BEREITGESTELLT = { "grenzen-daten": 1, "ergebnis-pruefen": 1 };
+var TEILNAHME_START = { sprachmodelle: 1, halluzinationen: 1 };
+
+function kannBearbeitenInhalt(c) {
   if (!c) return false;
   if ((state.eigene || []).some(function (e) { return e.id === c.id; })) return true;
   if (c.autor === "Henning Beckmann") return true;
-  if (darfBearbeiten() && c.autorRolle === "creator") return true;
+  if (c.autorRolle === "creator") return true;
   return false;
+}
+
+function nimmtTeil(c) {
+  if (!c) return false;
+  if (TEILNAHME_START[c.id]) return true;
+  return !!(state.extra && state.extra.inhalte && state.extra.inhalte[c.id]);
+}
+
+function istEigen(c) {
+  if (!c) return false;
+  if (kannBearbeitenInhalt(c)) return true;
+  if (BEREITGESTELLT[c.id]) return true;
+  if (nimmtTeil(c)) return true;
+  return false;
+}
+
+function meinArt(c) {
+  if (kannBearbeitenInhalt(c)) return "Erstellt";
+  if (c && BEREITGESTELLT[c.id]) return "Bereitgestellt";
+  return "Teilnahme";
 }
 
 function showView(name, opt) {
@@ -606,6 +629,7 @@ function showView(name, opt) {
   if (name === "statistik") renderStatistik();
   if (name === "admin") renderAdmin();
   if (name === "leitfaden") { /* statisches HTML */ }
+  if (name === "inhalte" && typeof window.filtern === "function") window.filtern();
   markNav(name, opt.anker || "");
   if (opt.anker) {
     var ziel = document.getElementById(opt.anker);
@@ -631,7 +655,8 @@ function markNav(name, anker) {
 
 function hubKachel(k) {
   var anker = k[1] ? " data-anker=\"" + k[1] + "\"" : "";
-  return "<button type=\"button\" class=\"hub-tile\" data-view-jump=\"" + k[0] + "\"" + anker + "><span class=\"hub-titel\">" + k[2] + "</span><span class=\"hub-text\">" + k[3] + "</span><span class=\"go\">Öffnen</span></button>";
+  var text = k[3] ? "<span class=\"hub-text\">" + k[3] + "</span>" : "";
+  return "<button type=\"button\" class=\"hub-tile\" data-view-jump=\"" + k[0] + "\"" + anker + "><span class=\"hub-titel\">" + k[2] + "</span>" + text + "<span class=\"go\">Öffnen</span></button>";
 }
 
 function renderHub() {
@@ -639,10 +664,10 @@ function renderHub() {
   var allgemein = document.getElementById("hub-allgemein");
   var box = document.getElementById("hub-kacheln");
   if (meine) {
-    meine.innerHTML = hubKachel(["inhalte", "eigene-inhalte-titel", "Ihre Beiträge", "Nur Ihre eigenen Inhalte. Die allgemeinen Inhalte liegen im Bereich daneben."]);
+    meine.innerHTML = hubKachel(["inhalte", "eigene-inhalte-titel", "Meine Inhalte", ""]);
   }
   if (allgemein) {
-    allgemein.innerHTML = hubKachel(["inhalte", "allgemeine-inhalte-titel", "Inhalte entdecken", "Geprüfte Inhalte für alle, mit Filtern und denselben Kacheln."]);
+    allgemein.innerHTML = hubKachel(["inhalte", "allgemeine-inhalte-titel", "Allgemeine Inhalte", "Inhalte entdecken"]);
   }
   if (!box) return;
   var kacheln = [
@@ -651,8 +676,8 @@ function renderHub() {
     ["community", "", "Aus der Community", "Vorschau auf den späteren Austausch. Am einzelnen Inhalt können Sie schon kommentieren."],
     ["live", "", "Live-Session", "Offenes Format. Die Teilnahme selbst folgt später."]
   ];
-  if (darfFreigeben()) kacheln.push(["redaktion", "", "Freigabe", "Beiträge, die auf eine Entscheidung warten."]);
-  if (state.rolle === "admin") kacheln.push(["admin", "", "Verwaltung", "Rollen, Anbindung und Betrieb."]);
+  if (darfFreigeben()) kacheln.push(["redaktion", "", "Moderation", "Beiträge, die auf eine Entscheidung warten."]);
+  if (state.rolle === "admin") kacheln.push(["admin", "", "Administration", "Rollen, Anbindung und Betrieb."]);
   box.innerHTML = kacheln.map(hubKachel).join("");
 }
 
@@ -662,8 +687,8 @@ function renderNav() {
     ["impulse", "Impulse", "impulse", ""],
     ["faq", "FAQ", "faq", ""]
   ];
-  if (darfBearbeiten()) items.push(["bearbeiten", "Bearbeiten", "meine", ""]);
-  if (darfFreigeben()) items.push(["freigabe", "Freigabe", "redaktion", ""]);
+  if (darfBearbeiten()) items.push(["erstellen", "Erstellen", "meine", ""]);
+  if (darfFreigeben()) items.push(["moderation", "Moderation", "redaktion", ""]);
   var nav = document.querySelector("header nav");
   nav.innerHTML = items.map(function (it) {
     return "<a href=\"#" + it[0] + "\" data-nav=\"" + it[0] + "\" data-view=\"" + it[2] + "\" data-anker=\"" + it[3] + "\">" + it[1] + "</a>";
@@ -752,14 +777,21 @@ function renderPlayer() {
   if (!c) { root.innerHTML = "<p>Inhalt nicht gefunden.</p>"; return; }
   var felder = (c.felder || []).join(", ") || "nicht gesetzt";
   var stage = "";
-  if (c.medien === "poltube") {
-    stage = "<div class=\"stage\"><div class=\"video-fake\"><div class=\"playbig\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\"><polygon points=\"9 6 19 12 9 18\" fill=\"#fff\"/></svg></div><p class=\"video-caption\">PolTube · " + esc(c.titel) + "</p></div><p class=\"stage-note\">Eingebettete Wiedergabe. Die Datei liegt in PolTube, nicht in der KI-Werkstatt. Zum Prototyp gehört eine Textfassung, damit der Inhalt ohne Ton nutzbar ist.</p><div class=\"transcript\"><h3>Textfassung</h3><p>" + mitBegriffen(c.teaser) + "</p></div></div>";
-  } else if (c.medien === "h5p" && c.h5p) {
-    stage = "<div class=\"stage h5p\"><p class=\"entry-kicker\">Interaktives Element · H5P · Typ Frage</p><h3 id=\"h5p-frage\">" + esc(c.h5p.frage) + "</h3><div class=\"h5p-options\">" + c.h5p.optionen.map(function (o, i) {
-      return "<button type=\"button\" class=\"h5p-opt\" data-h5p=\"" + i + "\">" + esc(o.t) + "</button>";
-    }).join("") + "</div><p id=\"h5p-hinweis\" class=\"stage-note\" hidden></p></div>";
+  if (c.medien === "poltube" || c.medien === "iframe") {
+    var rahmen = c.iframe
+      ? "<iframe class=\"video-frame\" title=\"Video: " + esc(c.titel) + "\" src=\"" + esc(c.iframe) + "\"></iframe>"
+      : "<iframe class=\"video-frame\" title=\"Video: " + esc(c.titel) + "\" srcdoc=\"&lt;!DOCTYPE html&gt;&lt;title&gt;Video&lt;/title&gt;&lt;body style='margin:0;background:#0d4a63;color:#fff;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh'&gt;Video&lt;/body&gt;\"></iframe>";
+    stage = "<div class=\"stage\"><p class=\"entry-kicker\">Video · iFrame</p>" + rahmen + "<div class=\"transcript\"><h3>Textfassung</h3><p>" + mitBegriffen(c.teaser) + "</p></div></div>";
+  } else if (c.medien === "h5p") {
+    var h5pDatei = c.dateiname || (c.id + ".h5p");
+    var h5pInhalt = (c.h5p)
+      ? "<h3 id=\"h5p-frage\">" + esc(c.h5p.frage) + "</h3><div class=\"h5p-options\">" + c.h5p.optionen.map(function (o, i) {
+        return "<button type=\"button\" class=\"h5p-opt\" data-h5p=\"" + i + "\">" + esc(o.t) + "</button>";
+      }).join("") + "</div><p id=\"h5p-hinweis\" class=\"stage-note\" hidden></p>"
+      : "<p>" + mitBegriffen(c.teaser) + "</p>";
+    stage = "<div class=\"stage h5p\"><p class=\"entry-kicker\">H5P-Datei</p><p><strong>" + esc(h5pDatei) + "</strong></p>" + h5pInhalt + "</div>";
   } else {
-    stage = "<div class=\"stage\"><p>" + mitBegriffen(c.teaser) + "</p></div>";
+    stage = "<div class=\"stage\"><p class=\"entry-kicker\">Strukturierter Text</p><p>" + mitBegriffen(c.text || c.teaser) + "</p></div>";
   }
   var praxis = "";
   if (c.praxis && (c.praxis.rolle || c.praxis.taetigkeit)) {
@@ -857,7 +889,8 @@ function renderProfil() {
 function renderEditor() {
   var c = editorId ? byId(editorId) : null;
   var root = document.getElementById("view-editor");
-  var v = c || { titel: "", formatKey: "lernmodul", niveau: "basis", felder: [], werkzeugKey: "sprachmodell", dauerMin: 8, ergebnis: "", lernziel: "", praxis: { rolle: "", taetigkeit: "", nutzen: "", grenze: "" }, glossarOk: false, glossar: [], medien: "text", anwendungsbezogen: true, poltube: "" };
+  var v = c || { titel: "", formatKey: "lernmodul", niveau: "basis", felder: [], werkzeugKey: "sprachmodell", dauerMin: 8, ergebnis: "", lernziel: "", praxis: { rolle: "", taetigkeit: "", nutzen: "", grenze: "" }, glossarOk: false, glossar: [], medien: "text", anwendungsbezogen: true, iframe: "", text: "", dateiname: "" };
+  if (v.medien === "poltube") v.medien = "iframe";
   var p = v.praxis || { rolle: "", taetigkeit: "", nutzen: "", grenze: "" };
   function sel(name, wert, opts) {
     return "<label class=\"field\"><span>" + name + "</span><select name=\"" + wert + "\">" + opts.map(function (o) {
@@ -891,12 +924,24 @@ function renderEditor() {
     + "<label class=\"field\"><span>Grenze</span><input name=\"grenze\" value=\"" + esc(p.grenze || "") + "\"></label>"
     + "<label class=\"checkline\"><input type=\"checkbox\" name=\"glossarOk\"" + (v.glossarOk ? " checked" : "") + "> Alle Fachbegriffe und Anglizismen sind im Glossar erklärt</label>"
     + "<label class=\"field\"><span>Begriffe, kommagetrennt</span><input name=\"glossar\" value=\"" + esc((v.glossar || []).join(", ")) + "\"></label>"
-    + sel("Medienbaustein", "medien", [["text", "Strukturierter Text"], ["h5p", "H5P-Frage im System"], ["poltube", "Video aus PolTube"]])
-    + "<div id=\"upload-block\"><label class=\"field\"><span>Datei zuordnen</span><input name=\"datei\" type=\"file\" accept=\"video/*,application/pdf\"><span class=\"hint\">Im Prototyp wird die Datei nicht übertragen. In der Umsetzung liegt sie in PolTube; hier bleibt nur der Dateiname als Zuordnung.</span></label>"
-    + "<label class=\"field\"><span>PolTube-Kennung</span><input name=\"poltube\" value=\"" + esc(v.poltube || "") + "\" placeholder=\"z. B. pt-2041\"></label></div>"
-    + "<p id=\"dateiname\" class=\"meta-line\"></p>"
+    + sel("Medienbaustein", "medien", [["text", "Strukturierter Text"], ["h5p", "H5P-Datei"], ["iframe", "Video als iFrame"]])
+    + "<div id=\"medien-text\"><label class=\"field\"><span>Text</span><textarea name=\"text\" rows=\"8\">" + esc(v.text || "") + "</textarea></label></div>"
+    + "<div id=\"medien-h5p\"><label class=\"field\"><span>H5P-Datei</span><input name=\"datei\" type=\"file\" accept=\".h5p,application/zip\"><span class=\"hint\">Die Datei wird im Prototyp nicht übertragen. Es bleibt der Dateiname.</span></label><p id=\"dateiname\" class=\"meta-line\">" + esc(v.dateiname || "") + "</p></div>"
+    + "<div id=\"medien-video\"><label class=\"field\"><span>Adresse des iFrames</span><input name=\"iframe\" type=\"url\" value=\"" + esc(v.iframe || "") + "\" placeholder=\"https://…\"><span class=\"hint\">Im MVP ist das die einzige Video-Option.</span></label></div>"
     + "<div class=\"button-row\"><button class=\"btn-line\" type=\"submit\" name=\"ziel\" value=\"entwurf\">Entwurf speichern</button><button class=\"btn-solid\" type=\"submit\" name=\"ziel\" value=\"review\">Zur Prüfung geben</button></div>"
     + "</form>";
+  function zeigeMedien() {
+    var wert = (root.querySelector("[name=medien]") || {}).value || "text";
+    var text = root.querySelector("#medien-text");
+    var h5p = root.querySelector("#medien-h5p");
+    var video = root.querySelector("#medien-video");
+    if (text) text.hidden = wert !== "text";
+    if (h5p) h5p.hidden = wert !== "h5p";
+    if (video) video.hidden = wert !== "iframe";
+  }
+  var medienWahl = root.querySelector("[name=medien]");
+  if (medienWahl) medienWahl.addEventListener("change", zeigeMedien);
+  zeigeMedien();
 }
 
 function leseEditor(form, ziel) {
@@ -922,7 +967,7 @@ function leseEditor(form, ziel) {
     werkzeugKey: werkzeugKey,
     thema: ["grundlagen"],
     ziel: felder.map(function (f) { return f === "Ermittlung" ? "ermittlung" : f === "Führung" ? "fuehrung" : "verwaltung"; }),
-    medien: data.get("medien"),
+    medien: (function () { var m = data.get("medien"); return m === "poltube" ? "iframe" : m; })(),
     anwendungsbezogen: true,
     praxis: {
       rolle: String(data.get("rolle") || "").trim(),
@@ -932,9 +977,16 @@ function leseEditor(form, ziel) {
     },
     glossarOk: data.get("glossarOk") === "on",
     glossar: String(data.get("glossar") || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean),
-    poltube: String(data.get("poltube") || "").trim(),
+    text: String(data.get("text") || "").trim(),
+    iframe: String(data.get("iframe") || "").trim(),
+    dateiname: (function () {
+      var anzeige = document.getElementById("dateiname");
+      if (anzeige && anzeige.dataset.datei) return anzeige.dataset.datei;
+      var alt = editorId ? byId(editorId) : null;
+      return (alt && alt.dateiname) || "";
+    })(),
     schritte: [{ t: "Erster Schritt aus Ihrem Entwurf", d: "Die Redaktion prüft Vollständigkeit, Niveau und Umfang." }],
-    kern: ["Entwurf aus der Rolle Content Creator."],
+    kern: ["Entwurf aus der Rolle Teilnehmende mit Erstellen."],
     autor: "Henning Beckmann",
     autorRolle: "creator",
     status: ziel,
@@ -978,7 +1030,7 @@ function renderMeine() {
     var fb = feedbackSumme(c.id);
     return "<div class=\"listrow\"><div><strong>" + esc(c.titel) + "</strong><div class=\"meta-line\">Fassung " + esc(c.fassung || "1") + " · " + esc(c.dauer) + "</div></div><div><span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span></div><div class=\"meta-line\">" + fb.up + " weitergeholfen · " + fb.down + " nicht · " + aufrufeInhalt(c) + " Aufrufe</div><button type=\"button\" class=\"btn-line\" data-action=\"bearbeiten\" data-id=\"" + esc(c.id) + "\">Bearbeiten</button></div>";
   }).join("");
-  root.innerHTML = "<p class=\"eyebrow\">Content Creator</p><h1>Meine Inhalte</h1>"
+  root.innerHTML = "<p class=\"eyebrow\">Teilnehmende mit Erstellen</p><h1>Erstellen</h1>"
     + "<p>Rückmeldung zu Aufrufen und Ein-Klick-Feedback steht hier, nicht in einer separaten Mail. Eine Mail würde in der Umsetzung denselben Stand spiegeln.</p>"
     + "<div class=\"list\">" + (rows || "<p>Noch keine eigenen Inhalte.</p>") + "</div>"
     + "<div class=\"button-row\"><button type=\"button\" class=\"btn-solid\" data-action=\"neu\">Neue Lerneinheit</button><button type=\"button\" class=\"btn-line\" data-view-jump=\"leitfaden\">Leitfaden öffnen</button></div>";
@@ -1002,10 +1054,10 @@ function renderEigene() {
     var oeffnen = c.status === "veroeffentlicht"
       ? "<button type=\"button\" class=\"textbtn\" data-open=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong></button>"
       : "<strong>" + esc(c.titel) + "</strong>";
-    var edit = darfBearbeiten()
+    var edit = kannBearbeitenInhalt(c)
       ? "<button type=\"button\" class=\"btn-line\" data-action=\"bearbeiten\" data-id=\"" + esc(c.id) + "\">Bearbeiten</button>"
       : "";
-    return "<div class=\"listrow\"><div>" + oeffnen + "<div class=\"meta-line\">" + esc(statusLabel(c.status)) + " · " + esc(c.dauer) + "</div></div>" + edit + "</div>";
+    return "<div class=\"listrow\"><div>" + oeffnen + "<div class=\"meta-line\">" + esc(meinArt(c)) + " · " + esc(statusLabel(c.status)) + " · " + esc(c.dauer) + "</div></div>" + edit + "</div>";
   }
   function treffer(c) {
     return !q || (c.titel + " " + (c.teaser || "")).toLowerCase().indexOf(q) >= 0;
@@ -1020,7 +1072,7 @@ function renderEigene() {
   if (box) {
     box.innerHTML = inhalte.length
       ? inhalte.map(zeile).join("")
-      : "<p>" + (q ? "Kein Treffer unter Meine Inhalte." : "Noch keine eigenen Inhalte.") + "</p>";
+      : "<p>" + (q ? "Kein Treffer unter Meine Inhalte." : "Noch keine Inhalte.") + "</p>";
   }
   var ibox = document.getElementById("impulse-eigene");
   if (ibox) ibox.innerHTML = impulse.length ? impulse.map(zeile).join("") : "<p>Noch keine eigenen Impulse.</p>";
@@ -1049,7 +1101,7 @@ function renderRedaktion() {
   var stufen = { basis: 0, aufbau: 0, spezial: 0 };
   alle().forEach(function (c) { if (c.status === "veroeffentlicht" && stufen[c.niveau] !== undefined) stufen[c.niveau]++; });
   root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"home\">Zurück</button>"
-    + "<h1>Freigabe</h1>"
+    + "<h1>Moderation</h1>"
     + "<p>Diese Beiträge warten auf eine Entscheidung.</p>"
     + "<div class=\"rowlist\">" + (rows || "<p>Keine offenen Inhalte.</p>") + "</div>"
     + "<h2>Überfällige Prüfdaten</h2><div class=\"rowlist\">" + (faellig || "<p>Kein Prüfdatum ist älter als ein halbes Jahr.</p>") + "</div>"
@@ -1070,7 +1122,7 @@ function renderReview() {
   var punkte = mangel(c);
   var lis = punkte.length ? punkte.map(function (p) { return "<li class=\"bad\">" + esc(p) + "</li>"; }).join("") : "<li class=\"ok\">Pflichtmerkmale vollständig. Freigabe ist möglich.</li>";
   var gesperrt = punkte.length > 0;
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"redaktion\">← Freigabe</button>"
+  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"redaktion\">← Moderation</button>"
     + "<p class=\"eyebrow\">Qualitätsprüfung</p><h1>" + esc(c.titel) + "</h1>"
     + "<p><span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span> · Fassung " + esc(c.fassung || "1") + " · " + esc(c.autor || "") + "</p>"
     + (c.vorher ? "<p class=\"meta-line\">Frühere Fassung: " + esc(c.vorher) + "</p>" : "")
@@ -1094,7 +1146,7 @@ function renderStatistik() {
   var zeilen = alle().filter(function (c) { return c.status === "veroeffentlicht"; }).map(function (c) {
     return "<div class=\"listrow\"><div>" + esc(c.titel) + "</div><div>" + aufrufeInhalt(c) + "</div><div>" + feedbackSumme(c.id).up + " / " + feedbackSumme(c.id).down + "</div></div>";
   }).join("");
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"redaktion\">← Freigabe</button>"
+  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"redaktion\">← Moderation</button>"
     + "<p class=\"eyebrow\">Aggregiert, nicht personenbezogen</p><h1>Aufrufzahlen</h1>"
     + "<div class=\"kpi\"><div><strong>" + start + "</strong><span>Einstiegsseite</span></div><div><strong>" + p0 + "</strong><span>Pfad ohne Vorwissen</span></div><div><strong>" + p1 + "</strong><span>Pfad mit Vorkenntnis</span></div><div><strong>" + p2 + "</strong><span>Pfad konkrete Frage</span></div></div>"
     + "<div class=\"listrow head\"><div>Inhalt</div><div>Aufrufe</div><div>Feedback + / −</div></div>" + zeilen;
@@ -1106,20 +1158,19 @@ function renderAdmin() {
     + "<p>Konzeptanzeige für die Umsetzungsstelle. Keine echte Betriebsschnittstelle und keine personenbezogene Verwaltung.</p>"
     + "<h2>Rollen</h2>"
     + "<div class=\"list\">"
-    + rolleZeile("Beschäftigte/r", "Lernen, FAQ, eigene Kommentare, Meldung", true)
-    + rolleZeile("Content Creator", "Entwurf anlegen, H5P-Frage, PolTube zuordnen, zur Prüfung geben", true)
-    + rolleZeile("Redaktion", "Review, Freigabe, Veröffentlichung, Einstiegsseite, Aufrufzahlen", true)
-    + rolleZeile("Gegenzeichnende Stelle", "Erlaubnisantworten vor Veröffentlichung", true)
+    + rolleZeile("Teilnehmende mit Erstellen", "Lernen und Inhalte anlegen, H5P als Datei, Video als iFrame, Text als Texteingabe", true)
+    + rolleZeile("Moderation", "Review, Freigabe, Veröffentlichung, Einstiegsseite, Aufrufzahlen", true)
     + rolleZeile("Administration", "Rollen, Integrationen, Betrieb", true)
-    + rolleZeile("Moderation", "Vorgesehen. Foren, die sie moderiert, folgen in der späteren Ausbaustufe.", false)
+    + rolleZeile("Gegenzeichnende Stelle", "Erlaubnisantworten vor Veröffentlichung", true)
+    + rolleZeile("Forenmoderation", "Vorgesehen. Foren folgen in der späteren Ausbaustufe.", false)
     + "</div>"
     + "<p class=\"hint\">Konten kommen aus dem Identity-Management. Eine manuelle Anlage ist im Prototyp nicht vorgesehen.</p>"
     + "<button type=\"button\" class=\"btn-line\" disabled>Konto anlegen</button>"
     + "<h2 id=\"integrationen\">Integrationen</h2>"
     + "<div class=\"rowlist\">"
     + "<div class=\"rowitem\"><strong>ADFS</strong><span>Anmeldung über das Behördenkonto. Im Prototyp ohne echtes Verzeichnis.</span></div>"
-    + "<div class=\"rowitem\"><strong>PolTube / Vimp</strong><span>Videos werden eingebettet. Token und API liegen bei der Digitalen Bildung, nicht im Prototyp.</span></div>"
-    + "<div class=\"rowitem\"><strong>H5P</strong><span>Inhaltstyp Frage, analog zu Moodle. Weitere Typen folgen nach der Klärung in den ersten sechs Wochen.</span></div>"
+    + "<div class=\"rowitem\"><strong>Video</strong><span>Im MVP nur ein iFrame. Keine Videodatei in der Werkstatt.</span></div>"
+    + "<div class=\"rowitem\"><strong>H5P</strong><span>Wird als Datei gepflegt. Inhaltstyp Frage, analog zu Moodle.</span></div>"
     + "<div class=\"rowitem\"><strong>Moodle-Webservice</strong><span>Für Zertifikate der späteren Ausbaustufe vorgesehen, hier nicht angebunden.</span></div>"
     + "<div class=\"rowitem\"><strong>KI-HiPoS</strong><span>Leichte Sprache und Textvorschläge sind spätere Ausbaustufe.</span><button type=\"button\" class=\"btn-line\" disabled>Ergebnisse prüfen</button></div>"
     + "</div>"
@@ -1472,7 +1523,7 @@ function init() {
       renderHub();
       renderProfilKnopf();
       pmenu.hidden = true;
-      var ziel = { creator: "home", redaktion: "redaktion", admin: "admin", beschaeftigte: "home" }[state.rolle];
+      var ziel = { teilnehmende: "home", redaktion: "redaktion", admin: "admin" }[state.rolle] || "home";
       showView(ziel);
       if (window.filtern) window.filtern();
       else renderEigene();
@@ -1569,7 +1620,10 @@ function init() {
   document.body.addEventListener("change", function (e) {
     if (e.target.name === "datei" && e.target.files && e.target.files[0]) {
       var p = document.getElementById("dateiname");
-      if (p) p.textContent = "Zugeordnet, nicht hochgeladen: " + e.target.files[0].name;
+      if (p) {
+        p.dataset.datei = e.target.files[0].name;
+        p.textContent = e.target.files[0].name;
+      }
     }
   });
 
@@ -1616,7 +1670,7 @@ function init() {
       state.override[aktuell] = Object.assign({}, state.override[aktuell] || {}, { vorher: "Zurückgegeben: " + grund.trim() });
       sichern();
       syncKacheln();
-      toast("Zurück an den Content Creator, Status Entwurf.");
+      toast("Zurück an die einreichende Person, Status Entwurf.");
       showView("redaktion");
     }
     if (action === "freigeben") {
@@ -1699,7 +1753,7 @@ function init() {
       editorId = obj.id;
       speichereInhalt(obj);
       showView("meine");
-      toast(ziel === "review" ? "Zur Prüfung gegeben. Die Redaktion sieht den Inhalt im Dashboard." : "Entwurf gespeichert.");
+      toast(ziel === "review" ? "Zur Prüfung gegeben. Die Moderation sieht den Inhalt." : "Entwurf gespeichert.");
     }
     if (e.target.id === "pin-form") {
       e.preventDefault();
@@ -1760,9 +1814,9 @@ function init() {
   document.getElementById("impuls-anbieten").addEventListener("click", function () {
     dialog({
       titel: "Impuls anbieten",
-      html: "<p>Es braucht Erfahrung aus dem Alltag, keinen Expertenstatus. Auch ein misslungener Versuch ist ein Beitrag. Anlegen und Einreichen läuft in der Rolle Content Creator, die Freigabe bei der Redaktion.</p>",
+      html: "<p>Es braucht Erfahrung aus dem Alltag, keinen Expertenstatus. Auch ein misslungener Versuch ist ein Beitrag. Anlegen können alle Teilnehmenden. Die Moderation entscheidet über die Veröffentlichung.</p>",
       aktionen: [
-        { label: "Als Content Creator anlegen", fn: function () { state.rolle = "creator"; sichern(); renderNav(); renderProfilKnopf(); editorId = null; showView("editor"); } },
+        { label: "Impuls anlegen", fn: function () { editorId = null; showView("editor"); } },
         { label: "Schließen", zweite: true }
       ]
     });

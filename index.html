@@ -631,6 +631,7 @@
   }
   .video-fake .playbig{position:absolute;top:50%;left:50%;transform:translate(-50%,-70%);}
   .video-caption{color:#fff;font-weight:bold;}
+  .video-frame{width:100%;height:320px;border:0;border-radius:10px;background:#0d4a63;display:block;}
   .stage-note{font-size:14px;margin-top:12px;}
   .transcript h3,.praxis h3,.fehler h3,.h5p h3{color:var(--text-title);font-size:16px;margin-bottom:8px;}
   .steps{list-style:none;display:grid;gap:12px;margin:16px 0;}
@@ -795,15 +796,14 @@
         <span class="avatar" id="avatar">HB</span>
         <span class="profile-label">
           <span id="profile-name">Henning Beckmann</span>
-          <span class="profile-role" id="profile-role">Teilnehmer</span>
+          <span class="profile-role" id="profile-role">Teilnehmende mit Erstellen</span>
         </span>
       </button>
       <div class="profile-menu" id="profile-menu" hidden>
         <span class="menu-label">Rolle</span>
-        <button type="button" data-rolle="beschaeftigte">Teilnehmer<span class="menu-erklaerung">Sie sehen die Lerninhalte.</span></button>
-        <button type="button" data-rolle="creator">Bearbeiten<span class="menu-erklaerung">Sie können eigene Inhalte ändern.</span></button>
-        <button type="button" data-rolle="redaktion">Freigabe<span class="menu-erklaerung">Sie sehen Beiträge, die auf eine Entscheidung warten.</span></button>
-        <button type="button" data-rolle="admin">Verwaltung<span class="menu-erklaerung">Sie sehen zusätzlich den Betrieb.</span></button>
+        <button type="button" data-rolle="teilnehmende">Teilnehmende mit Erstellen<span class="menu-erklaerung">Sie lernen und können Inhalte anlegen.</span></button>
+        <button type="button" data-rolle="redaktion">Moderation<span class="menu-erklaerung">Sie sehen Beiträge, die auf eine Entscheidung warten.</span></button>
+        <button type="button" data-rolle="admin">Administration<span class="menu-erklaerung">Sie sehen zusätzlich den Betrieb.</span></button>
         <span class="menu-label">Konto</span>
         <button type="button" id="menu-profil">Mein Profil</button>
         <button type="button" id="einfach-toggle" aria-pressed="false">Einfache Sprache</button>
@@ -934,7 +934,7 @@
 
     <section class="inhaltsbereich bereich-allgemein" aria-labelledby="allgemeine-inhalte-titel">
     <div class="section-head">
-      <h2 id="allgemeine-inhalte-titel">Allgemeine Inhalte</h2>
+      <h2 id="allgemeine-inhalte-titel">Inhalte entdecken</h2>
       <span class="hint prinzip">
         <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 4: Redaktion als Daueraufgabe">4</span><span class="p-tip" data-align="right"><span class="p-kicker">Strukturprinzip 4</span><span class="p-title">Redaktion als Daueraufgabe</span><span class="p-text">Jeder Inhalt ist fachlich geprüft und benennbar verantwortet. Ein Redaktionskonzept regelt für alle Kanäle, wer erstellt, prüft und freigibt und wie Widersprüche zwischen den Kanälen vermieden werden. Der Betrieb ist als Daueraufgabe angelegt, nicht als einmalige Initiative: Verwaiste Angebote richten mehr Schaden an als nie gestartete.</span><span class="p-src">Feinkonzept 5.4.1 · Risiko „Die KI-Werkstatt zwischen Aufbau und Alltag“ (Kapitel 9)</span></span>
         Redaktionell geprüft und laufend aktualisiert
@@ -944,7 +944,7 @@
     <p class="banner" id="pfadhinweis" hidden></p>
     <div class="filters prinzip" aria-label="Inhalte filtern">
       <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 3: Auffindbar nach Rolle und Vorwissen">3</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 3</span><span class="p-title">Auffindbar nach Rolle und Vorwissen</span><span class="p-text">Dieselbe Sammlung, vier Zugänge: Thema, Format, Niveau und Zielgruppe. Wer nur zehn Minuten hat, findet ebenso etwas wie jemand, der ein Thema vertiefen will. Filterkombinationen ohne Treffer sind kein Fehler, sondern ein Hinweis an die Redaktion, wo das Angebot noch Lücken hat.</span><span class="p-src">Feinkonzept 5.4.1 und 5.4.2 · operative Ziele HF 6.2</span></span>
-      <p class="filter-lead">Grenzen Sie die allgemeinen Inhalte ein. Die Kacheln darunter bleiben dieselben.</p>
+      <p class="filter-lead">Grenzen Sie die Inhalte ein. Die Kacheln darunter bleiben dieselben.</p>
       <div class="filter-status">
         <span class="fcount" id="fcount" role="status" aria-live="polite">Alle 10 Inhalte werden angezeigt.</span>
         <button class="freset" id="freset" hidden>Filter zurücksetzen</button>
