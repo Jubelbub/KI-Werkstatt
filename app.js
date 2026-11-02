@@ -705,7 +705,7 @@ function showView(name, opt) {
   if (name === "leitfaden") { /* statisches HTML */ }
   if (name === "inhalte" && typeof window.filtern === "function") window.filtern();
   if (name === "impulse") renderImpulse();
-  if (name === "live" || name === "live-verfuegbar" || name === "live-teilgenommen") renderLive();
+  if (name === "live") renderLive();
   if (name === "community" || name === "community-mit" || name === "community-frei") renderCommunity();
   if (name === "lauf-begonnen" || name === "lauf-abgeschlossen" || name === "impuls-begonnen" || name === "impuls-abgeschlossen") renderFortschritt();
   markNav(name, opt.anker || "");
@@ -733,7 +733,6 @@ function markNav(name, anker) {
   if (name === "statistik" || name.indexOf("mod-") === 0) bereich = "redaktion";
   if (name === "lauf-begonnen" || name === "lauf-abgeschlossen") bereich = "inhalte";
   if (name === "impuls-begonnen" || name === "impuls-abgeschlossen") bereich = "impulse";
-  if (name === "live-verfuegbar" || name === "live-teilgenommen") bereich = "live";
   if (name === "community-mit" || name === "community-frei") bereich = "community";
   document.querySelectorAll("header nav a").forEach(function (a) {
     var an = false;
@@ -866,8 +865,6 @@ function herkunftSetzen(id) {
     "impuls-begonnen": { id: "impuls-begonnen", nav: "impulse", anker: "", spur: [start, spurSchritt("Impulse", "impulse"), spurSchritt("Begonnene Impulse", "impuls-begonnen")] },
     "impuls-abgeschlossen": { id: "impuls-abgeschlossen", nav: "impulse", anker: "", spur: [start, spurSchritt("Impulse", "impulse"), spurSchritt("Abgeschlossene Impulse", "impuls-abgeschlossen")] },
     live: { id: "live", nav: "live", anker: "", spur: [start, spurSchritt("Live-Sessions", "live")] },
-    "live-verfuegbar": { id: "live-verfuegbar", nav: "live", anker: "", spur: [start, spurSchritt("Live-Sessions", "live"), spurSchritt("Verfügbare Live-Sessions", "live-verfuegbar")] },
-    "live-teilgenommen": { id: "live-teilgenommen", nav: "live", anker: "", spur: [start, spurSchritt("Live-Sessions", "live"), spurSchritt("Teilgenommen", "live-teilgenommen")] },
     community: { id: "community", nav: "community", anker: "", spur: [start, spurSchritt("Community", "community")] },
     "community-mit": { id: "community-mit", nav: "community", anker: "", spur: [start, spurSchritt("Community", "community"), spurSchritt("Mitwirkung", "community-mit")] },
     "community-frei": { id: "community-frei", nav: "community", anker: "", spur: [start, spurSchritt("Community", "community"), spurSchritt("Verfügbare Communitys", "community-frei")] },
@@ -890,8 +887,6 @@ function herkunftAusElement(el) {
   if (el.closest("#view-mod-pruefung")) return "pruefung";
   if (el.closest("#view-lauf-begonnen, #inhalte-begonnen")) return "begonnen";
   if (el.closest("#view-lauf-abgeschlossen, #inhalte-abgeschlossen")) return "abgeschlossen";
-  if (el.closest("#view-live-verfuegbar")) return "live-verfuegbar";
-  if (el.closest("#view-live-teilgenommen")) return "live-teilgenommen";
   if (el.closest("#view-live, #live")) return "live";
   if (el.closest("#view-community-mit")) return "community-mit";
   if (el.closest("#view-community-frei")) return "community-frei";
@@ -1533,8 +1528,6 @@ function renderLive() {
   if (boxMit) boxMit.innerHTML = mit.map(function (s) { return liveKarte(s, true); }).join("");
   if (leerFrei) leerFrei.hidden = frei.length > 0;
   if (leerMit) leerMit.hidden = mit.length > 0;
-  document.querySelectorAll(".zahl-live-frei").forEach(function (el) { el.textContent = String(frei.length); });
-  document.querySelectorAll(".zahl-live-dabei").forEach(function (el) { el.textContent = String(mit.length); });
 }
 
 function communityKarte(c) {
@@ -2285,7 +2278,7 @@ function init() {
       state.liveTeilnahme[liveId] = true;
       sichern();
       renderLive();
-      toast("Die Session liegt jetzt unter Teilgenommen.");
+      toast("Die Session steht jetzt unter Teilgenommen.");
     }
     if (action === "community-mit") {
       var communityId = act.dataset.id;

@@ -1407,26 +1407,20 @@
   <div id="view-live" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="home">Zurück</button>
     <h1 id="live-titel">Live-Sessions</h1>
-    <p>Nur zwei Bereiche: verfügbare Sessions und Sessions, an denen Sie teilgenommen haben.</p>
-    <div class="lauf-hub" id="live-hub">
-      <button type="button" class="hub-tile" data-view-jump="live-verfuegbar" data-herkunft="live-verfuegbar">
-        <span class="zahl-badge zahl-live-frei">0</span>
-        <span class="hub-titel">Verfügbare Live-Sessions</span>
-        <span class="hub-text">Termine, an denen Sie noch nicht teilgenommen haben.</span>
-        <span class="go">Sessions öffnen</span>
-      </button>
-      <button type="button" class="hub-tile" data-view-jump="live-teilgenommen" data-herkunft="live-teilgenommen">
-        <span class="zahl-badge zahl-live-dabei">0</span>
-        <span class="hub-titel">Teilgenommen</span>
-        <span class="hub-text">Sessions, an denen Sie dabei waren.</span>
-        <span class="go">Teilnahmen öffnen</span>
-      </button>
-    </div>
-    <section class="inhaltsbereich bereich-live" id="live" aria-labelledby="live-titel">
+    <p>Zwei Bereiche auf dieser Seite: verfügbare Sessions und Sessions, an denen Sie teilgenommen haben.</p>
+    <section class="inhaltsbereich bereich-live" id="live" aria-labelledby="live-frei-titel">
       <div class="prinzip p-wrap">
         <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 8: Offene Formate, digital und analog">8</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 8</span><span class="p-title">Offene Formate, digital und analog</span><span class="p-text">Neben den jederzeit abrufbaren Inhalten stehen feste offene Formate: Sprechstunden, Live-Sessions und Hackathons. Sie werden bewusst um Formate in Präsenz ergänzt, weil digitale Werkzeuge nicht ausschließlich mit digitalen Formaten begleitet werden sollten, ohne dass zwischenmenschliche Beziehungen verloren gehen.</span><span class="p-src">Feinkonzept 5.4.2 und 5.4.3 · analoge Ergänzung: Krutwage/Port</span></span>
-        <p>Aufzeichnungen einer Session bleiben Lektionen. Hier führen Sie nur die Termine.</p>
+        <p>Aufzeichnungen einer Session bleiben Lektionen. Hier stehen nur die Termine.</p>
       </div>
+      <h2 class="bereich-titel" id="live-frei-titel">Verfügbare Live-Sessions</h2>
+      <p class="meta-line">Termine, an denen Sie noch nicht teilgenommen haben.</p>
+      <div id="live-verfuegbar-liste"></div>
+      <p class="meta-line" id="live-verfuegbar-leer" hidden>Zurzeit keine weitere Session.</p>
+      <h2 class="bereich-titel" id="live-dabei-titel">Teilgenommen</h2>
+      <p class="meta-line">Sessions, an denen Sie dabei waren.</p>
+      <div id="live-teilgenommen-liste"></div>
+      <p class="meta-line" id="live-teilgenommen-leer" hidden>Noch keine Teilnahme.</p>
     </section>
   </div>
 
@@ -1457,20 +1451,6 @@
     <p>Dieselben Kacheln wie bei den Lektionen.</p>
     <div id="impulse-abgeschlossen" class="grid"></div>
     <p class="meta-line" id="impuls-abgeschlossen-leer" hidden>Noch kein abgeschlossener Impuls.</p>
-  </div>
-  <div id="view-live-verfuegbar" class="view" hidden>
-    <button type="button" class="backlink" data-view-jump="live">← Live-Sessions</button>
-    <h1>Verfügbare Live-Sessions</h1>
-    <p>Termine, an denen Sie noch nicht teilgenommen haben.</p>
-    <div id="live-verfuegbar-liste"></div>
-    <p class="meta-line" id="live-verfuegbar-leer" hidden>Zurzeit keine weitere Session.</p>
-  </div>
-  <div id="view-live-teilgenommen" class="view" hidden>
-    <button type="button" class="backlink" data-view-jump="live">← Live-Sessions</button>
-    <h1>Teilgenommen</h1>
-    <p>Live-Sessions, an denen Sie teilgenommen haben.</p>
-    <div id="live-teilgenommen-liste"></div>
-    <p class="meta-line" id="live-teilgenommen-leer" hidden>Noch keine Teilnahme.</p>
   </div>
   <div id="view-community-mit" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="community">← Community</button>
