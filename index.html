@@ -483,6 +483,7 @@
     display:inline-block;border:1px solid var(--blue-light);border-radius:7px;
     color:var(--blue-light);font-size:14px;font-weight:bold;
     padding:9px 20px;transition:all .15s;
+    background:transparent;font-family:inherit;cursor:pointer;
   }
   .btn-line:hover{background:var(--blue-light);color:var(--bg-dark);}
 
@@ -546,9 +547,151 @@
     .live{grid-template-columns:1fr;}
     .live-date{border-right:none;border-bottom:1px solid var(--line);padding:0 0 14px;}
   }
+
+  [hidden]{display:none !important;}
+  .skip{position:absolute;left:-999px;top:0;}
+  .skip:focus{left:16px;top:12px;z-index:80;background:var(--accent);color:var(--bg-dark);padding:8px 12px;font-weight:bold;}
+  .profile-label{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;text-align:left;}
+  .profile-role{font-size:11px;color:var(--text-muted);font-weight:normal;}
+  .profile-menu{
+    position:absolute;right:0;top:calc(100% + 10px);width:280px;
+    background:var(--bg-card);border:1px solid var(--line);border-radius:8px;
+    padding:8px;box-shadow:0 8px 24px rgba(0,0,0,0.35);z-index:40;
+  }
+  .profile-menu button{
+    display:block;width:100%;text-align:left;background:transparent;border:none;
+    color:var(--text-body);font-family:inherit;font-size:14px;padding:8px 10px;border-radius:6px;cursor:pointer;
+  }
+  .profile-menu button:hover,.profile-menu button.active{background:var(--bg-card-hover);color:var(--text-title);}
+  .profile-menu .menu-label{display:block;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-muted);padding:8px 10px 4px;}
+  body.sso nav,body.sso .profile,body.sso .pmode-btn{visibility:hidden;}
+  .hello{color:var(--text-title);font-size:15px;margin-bottom:8px;}
+  .entry-row{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:22px;}
+  .entry-card{
+    background:var(--bg-card);border:1px solid var(--line);border-radius:10px;
+    padding:22px;position:relative;
+  }
+  .entry-card.open{grid-column:1 / -1;}
+  .entry-kicker{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;font-weight:bold;color:var(--accent);margin-bottom:8px;}
+  .entry-card h3{color:var(--text-title);font-size:17px;margin-bottom:8px;}
+  .entry-card p{font-size:14px;margin-bottom:14px;}
+  .entry-actions{display:flex;flex-wrap:wrap;gap:10px;}
+  .orient-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:8px;}
+  .orient-steps article{background:var(--bg-dark);border-radius:8px;padding:14px;}
+  .orient-steps h4{color:var(--text-title);font-size:15px;margin-bottom:6px;}
+  .orient-steps p{margin:0;font-size:14px;}
+  #pfadhinweis,#suchpanel{margin:0 0 18px;}
+  #suchpanel{background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:8px 14px 14px;}
+  .tile,.imp,.thread{cursor:pointer;}
+  .view h1{color:var(--text-title);font-size:32px;line-height:1.2;margin:6px 0 12px;}
+  .view h2{margin:26px 0 12px;}
+  .backlink{background:none;border:none;color:var(--blue-light);font:inherit;font-weight:bold;font-size:14px;cursor:pointer;padding:18px 0 8px;}
+  .ergebnis-zeile{font-size:17px;color:var(--text-title);margin-bottom:8px;}
+  .meta-line{font-size:13.5px;color:var(--text-muted);margin-bottom:6px;}
+  .stage,.praxis,.fehler,.form-card,.ausbau-box,.banner{
+    background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin:16px 0;
+  }
+  .banner{border-left:3px solid var(--accent);}
+  .video-fake{
+    min-height:220px;border-radius:8px;background:linear-gradient(150deg,#0D4A63,#009ED4);
+    position:relative;display:flex;align-items:flex-end;padding:16px;
+  }
+  .video-fake .playbig{position:absolute;top:50%;left:50%;transform:translate(-50%,-70%);}
+  .video-caption{color:#fff;font-weight:bold;}
+  .stage-note{font-size:14px;margin-top:12px;}
+  .transcript h3,.praxis h3,.fehler h3,.h5p h3{color:var(--text-title);font-size:16px;margin-bottom:8px;}
+  .steps{list-style:none;display:grid;gap:12px;margin:16px 0;}
+  .steps li{background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;}
+  .steps h3{color:var(--text-title);font-size:16px;margin-bottom:6px;}
+  .praxis dl,.gloss{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;}
+  .praxis dt,.gloss dt{color:var(--text-title);font-weight:bold;font-size:13px;}
+  .praxis dd,.gloss dd{font-size:14px;}
+  .gloss{margin-top:12px;}
+  .fehler{border-left:3px solid var(--accent);}
+  .checkline{display:flex;gap:10px;align-items:flex-start;margin:14px 0;font-size:15px;}
+  .button-row{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 20px;}
+  .comment-form{margin-top:12px;}
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+  .field span,.field legend{font-size:13px;color:var(--text-title);font-weight:bold;}
+  .field input,.field textarea,.field select,fieldset.field{
+    background:var(--bg-dark);border:1px solid var(--line);border-radius:8px;color:var(--text-title);
+    font:inherit;font-size:15px;padding:10px 12px;
+  }
+  fieldset.field{padding:12px;}
+  .hint{font-weight:normal;color:var(--text-muted);font-size:13px;}
+  .niveaus{border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+  .niveaus legend{padding:0 6px;color:var(--text-title);font-weight:bold;}
+  .niveaus label{display:flex;flex-direction:column;gap:6px;background:var(--bg-dark);border:1px solid var(--line);border-radius:8px;padding:12px;cursor:pointer;}
+  .niveaus label:has(input:checked){border-color:var(--accent);}
+  .niveaus strong{color:var(--text-title);}
+  .niveaus span{font-size:13px;}
+  .term{background:none;border:none;border-bottom:1px dashed var(--blue-light);color:var(--text-title);font:inherit;cursor:help;padding:0;}
+  .term-pop{
+    position:absolute;z-index:70;width:320px;max-width:88vw;background:var(--bg-card);
+    border:1px solid var(--accent);border-radius:8px;padding:12px 14px;box-shadow:0 12px 32px rgba(0,0,0,.45);
+  }
+  .term-pop strong{display:block;color:var(--text-title);margin-bottom:4px;}
+  .term-pop span{font-size:13.5px;line-height:1.45;}
+  .summary-list{margin:12px 0 18px 18px;}
+  .summary-list li{margin:6px 0;}
+  .facebtns{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+  .facebtn{
+    background:var(--bg-card);border:1px solid var(--line);border-radius:999px;color:var(--text-body);
+    font:inherit;font-size:14px;padding:8px 14px;cursor:pointer;
+  }
+  .facebtn.active,.facebtn:hover{border-color:var(--accent);color:var(--text-title);}
+  .rowlist,.list{margin:8px 0 16px;}
+  .rowitem,.listrow{
+    width:100%;text-align:left;background:var(--bg-card);border:1px solid var(--line);border-radius:10px;
+    color:var(--text-body);font:inherit;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;
+  }
+  button.rowitem{cursor:pointer;}
+  button.rowitem:hover{border-color:rgba(201,224,238,.35);}
+  .listrow strong,.rowitem strong{color:var(--text-title);}
+  .listrow.head{background:transparent;border:none;color:var(--text-muted);font-size:12px;letter-spacing:1px;text-transform:uppercase;}
+  .st{font-size:11px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;border-radius:4px;padding:3px 8px;}
+  .st.entwurf{border:1px solid var(--text-muted);color:var(--text-body);}
+  .st.review{background:var(--blue-dynamic);color:#062033;}
+  .st.freigabe{background:var(--blue-mid);color:#fff;}
+  .st.veroeffentlicht{background:var(--accent);color:var(--bg-dark);}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0 18px;}
+  .kpi div{background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:14px;}
+  .kpi strong{display:block;color:var(--text-title);font-size:22px;}
+  .kpi span{font-size:13px;color:var(--text-muted);}
+  .pruef{margin:12px 0 12px 18px;}
+  .pruef .ok{color:var(--text-title);}
+  .pruef .bad{color:var(--accent-secondary);}
+  .ausbau{
+    display:inline-flex;align-items:center;font-size:11px;font-weight:bold;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:2px 8px;
+  }
+  .textbtn{background:none;border:none;color:var(--blue-light);font:inherit;font-size:13px;cursor:pointer;padding:0;}
+  .faq-meta{color:var(--text-muted);font-size:13px;}
+  .modal{position:fixed;inset:0;background:rgba(8,16,28,.72);z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .modal-card{width:min(560px,100%);background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:22px;}
+  .modal-card h2{color:var(--text-title);font-size:20px;margin-bottom:10px;}
+  .modal-note{color:var(--text-muted);font-size:13.5px;margin-top:10px;}
+  .modal-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
+  .toast{
+    position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:90;
+    background:var(--bg-card);border:1px solid var(--accent);color:var(--text-title);
+    border-radius:999px;padding:10px 16px;box-shadow:0 8px 24px rgba(0,0,0,.35);
+  }
+  button:disabled{opacity:.45;cursor:not-allowed;}
+  header nav a[aria-current="page"]{color:var(--text-title);border-bottom-color:var(--accent);}
+  @media (max-width:980px){
+    .entry-row,.kpi,.praxis dl,.gloss,.niveaus,.orient-steps{grid-template-columns:1fr 1fr;}
+    nav{display:flex;flex-wrap:wrap;gap:8px 14px;}
+    .header-inner{height:auto;min-height:68px;padding:10px 0;flex-wrap:wrap;}
+  }
+  @media (max-width:640px){
+    .entry-row,.kpi,.praxis dl,.gloss,.niveaus,.orient-steps{grid-template-columns:1fr;}
+    .view h1{font-size:28px;}
+  }
 </style>
 </head>
 <body>
+<a class="skip" href="#inhalt">Zum Inhalt springen</a>
 
 <header>
   <div class="wrap header-inner">
@@ -569,49 +712,115 @@
       Strukturprinzipien
     </button>
     <div class="profile">
-      <button class="profile-btn" aria-describedby="profile-tip">
-        <span class="avatar">HB</span>
-        Henning Beckmann
+      <button class="profile-btn" id="profile-btn" aria-expanded="false" aria-controls="profile-menu">
+        <span class="avatar" id="avatar">HB</span>
+        <span class="profile-label">
+          <span id="profile-name">Henning Beckmann</span>
+          <span class="profile-role" id="profile-role">Beschäftigte/r</span>
+        </span>
       </button>
-      <div class="profile-tip" id="profile-tip" role="tooltip">
-        <strong>Persönliches Profil</strong>
-        Profile zur besseren Vernetzung — etwa mit Kompetenzangaben und Ansprechpartnerfunktion — folgen in der nächsten Ausbaustufe.
+      <div class="profile-menu" id="profile-menu" hidden>
+        <span class="menu-label">Prototyp-Rolle</span>
+        <button type="button" data-rolle="beschaeftigte">Beschäftigte/r</button>
+        <button type="button" data-rolle="creator">Content Creator</button>
+        <button type="button" data-rolle="redaktion">Redaktion</button>
+        <button type="button" data-rolle="admin">Administration</button>
+        <span class="menu-label">Konto</span>
+        <button type="button" id="menu-profil">Mein Profil</button>
+        <button type="button" id="einfach-toggle" aria-pressed="false">Einfache Sprache</button>
+        <button type="button" id="menu-abmelden">Abmelden</button>
       </div>
     </div>
   </div>
 </header>
 
-<div class="wrap">
+<div class="wrap" id="inhalt">
+
+  <div id="view-sso" class="view" hidden>
+    <div class="hero">
+      <div class="eyebrow">Behördenkonto · ADFS</div>
+      <h1>Anmeldung über das vorhandene Konto</h1>
+      <p class="sub">Henning Beckmann wird über das Active Directory erkannt. Die KI-Werkstatt legt kein eigenes Passwort an und kein zweites Konto.</p>
+      <div class="form-card">
+        <p><strong style="color:var(--text-title)">Henning Beckmann</strong><br>LAFP NRW · Rolle im Prototyp danach wählbar</p>
+        <p class="hint">In der Umsetzung weist die Berechtigung die Rolle zu. Der Prototyp lässt den Wechsel nur, damit der Durchstich durch alle Rollen sichtbar wird.</p>
+        <button type="button" class="btn-solid" id="sso-go">Mit diesem Konto fortfahren</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-home" class="view">
 
   <!-- HERO -->
   <div class="hero">
+    <p class="hello" id="hello" hidden data-einfach="Guten Tag. Sie müssen die KI-Werkstatt nicht nutzen. Das ist freiwillig.">Guten Tag, Henning Beckmann. Die Nutzung ist freiwillig.</p>
     <div class="eyebrow">Lernen · Wissen · Austausch</div>
     <h1>KI verstehen und sicher anwenden — direkt aus dem Arbeitsalltag heraus.</h1>
     <p class="sub">Die KI-Werkstatt ergänzt die bestehende Fortbildung um eine jederzeit verfügbare Lern- und Wissensumgebung: kurze Einheiten, verlässliche Antworten, kollegialer Austausch und Impulse aus der Praxis.</p>
 
     <div class="search" role="search">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-      <input type="text" placeholder="Wonach suchen Sie? z. B. Transkription, Prompt, EU-KI-Verordnung …" aria-label="Suche in der KI-Werkstatt">
-      <button type="button">Suchen</button>
+      <input id="suche" type="text" placeholder="Wonach suchen Sie? z. B. Transkription, Prompt, EU-KI-Verordnung …" aria-label="Suche in der KI-Werkstatt">
+      <button type="button" id="suche-btn">Suchen</button>
     </div>
 
     <div class="paths prinzip">
       <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 2: Lernwege statt Kursräume">2</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 2</span><span class="p-title">Lernwege statt Kursräume</span><span class="p-text">Der Einstieg erfolgt nicht über einen Kurskatalog, sondern über die eigene Ausgangslage. Dahinter stehen kurze Einheiten, die einzeln aktualisiert werden können, gebündelt zu Lernwegen nach Rolle und Vorwissen. Der Pflichtanteil bleibt auf das rechtlich Erforderliche nach der EU-KI-Verordnung begrenzt.</span><span class="p-src">Feinkonzept 5.4.2 · Belegdichte: <b>breit getragen</b></span></span>
-      <div class="path" tabindex="0">
+      <div class="path" tabindex="0" data-pfad="anfang">
         <h3>Ich fange bei null an</h3>
         <p>Erste Schritte ohne Vorwissen — verständlich erklärt, in kurzen Einheiten.</p>
         <span class="go">Einstieg starten →</span>
       </div>
-      <div class="path" tabindex="0">
+      <div class="path" tabindex="0" data-pfad="bereits">
         <h3>Ich nutze KI bereits</h3>
         <p>Vertiefung für den eigenen Aufgabenbereich — von Auswertung bis Recht.</p>
         <span class="go">Passende Inhalte finden →</span>
       </div>
-      <div class="path" tabindex="0">
+      <div class="path" tabindex="0" data-pfad="frage">
         <h3>Ich habe eine konkrete Frage</h3>
-        <p>Antworten über Suche, FAQ oder direkt aus der Community.</p>
-        <span class="go">Frage stellen →</span>
+        <p>Antworten über Suche, FAQ oder Glossar. Foren folgen später.</p>
+        <span class="go">Frage klären →</span>
       </div>
+    </div>
+
+    <div class="entry-row">
+      <article class="entry-card" id="orient-card">
+        <p class="entry-kicker">Orientierung · 3 Minuten</p>
+        <h3>Zweck, Freiwilligkeit, Aufbau</h3>
+        <p data-einfach="Ein kurzes Video und derselbe Text daneben. So sehen Sie, was die KI-Werkstatt ist.">Ein kurzes Video mit derselben Aussage als Text. Beides steht auf der Einstiegsseite, ohne weiteren Weg.</p>
+        <button type="button" class="btn-line" id="orient-btn" aria-expanded="false" aria-controls="orient-panel">Orientierung anzeigen</button>
+        <div id="orient-panel" hidden>
+          <div class="orient-steps">
+            <article>
+              <h4>Zweck</h4>
+              <p>Beschäftigte bauen KI-Wissen auf. Kolleginnen und Kollegen teilen eigene Praxisbeispiele.</p>
+            </article>
+            <article>
+              <h4>Freiwilligkeit</h4>
+              <p>Die Nutzung ist freiwillig. Es gibt keinen Einstufungstest und keine Pflichtreihenfolge.</p>
+            </article>
+            <article>
+              <h4>Aufbau</h4>
+              <p>Inhalte tragen genau eine Niveaustufe: Basis, Aufbau oder Spezial. Die Stufe gehört zum Inhalt, nicht zur Person.</p>
+            </article>
+          </div>
+        </div>
+      </article>
+      <article class="entry-card" id="sofort-card">
+        <p class="entry-kicker">Sofort starten · unter 10 Minuten</p>
+        <h3 id="sofort-titel">Berichte zusammenfassen: mein Vorgehen Schritt für Schritt</h3>
+        <p id="sofort-text">Ein Praxisbeitrag aus der Rubrik Impulse, direkt von der Einstiegsseite.</p>
+        <button type="button" class="btn-solid" id="sofort-btn">Praxisbeitrag starten</button>
+      </article>
+      <article class="entry-card">
+        <p class="entry-kicker">Vor der ersten Nutzung</p>
+        <h3>Erlaubnis und Prüfschritte</h3>
+        <p>Zwei Hinweise, die von hier in ein bis zwei Klicks erreichbar sind.</p>
+        <div class="entry-actions">
+          <button type="button" class="btn-line" data-action="faq-sprung" data-faq="erlaubnis">Erlaubnisfragen</button>
+          <button type="button" class="btn-line" data-open="grenzen-daten">Was nicht hineingehört</button>
+        </div>
+      </article>
     </div>
   </div>
 
@@ -658,7 +867,18 @@
         <button class="chip" data-group="zielgruppe" data-value="fuehrung" aria-pressed="false">Führung</button>
         <button class="chip" data-group="zielgruppe" data-value="verwaltung" aria-pressed="false">Verwaltung</button>
       </div>
+      <div class="fgroup" role="group" aria-label="Werkzeug">
+        <span class="flabel">Werkzeug</span>
+        <button class="chip active" data-group="werkzeug" data-value="alle" aria-pressed="true">Alle</button>
+        <button class="chip" data-group="werkzeug" data-value="sprachmodell" aria-pressed="false">Sprachmodell</button>
+        <button class="chip" data-group="werkzeug" data-value="transkription" aria-pressed="false">Transkription</button>
+        <button class="chip" data-group="werkzeug" data-value="auswertung" aria-pressed="false">Auswertung</button>
+        <button class="chip" data-group="werkzeug" data-value="keins" aria-pressed="false">Ohne Werkzeug</button>
+      </div>
     </div>
+
+    <p class="banner" id="pfadhinweis" hidden></p>
+    <div id="suchpanel" hidden></div>
 
     <div class="filter-status">
       <span class="fcount" id="fcount" role="status" aria-live="polite">Alle 10 Inhalte werden angezeigt.</span>
@@ -667,7 +887,7 @@
 
     <div class="grid">
 
-      <article class="tile t1" data-thema="einsatzfelder" data-format="video" data-niveau="basis" data-zielgruppe="ermittlung">
+      <article class="tile t1" tabindex="0" data-id="transkription" data-werkzeug="transkription" data-thema="einsatzfelder" data-format="video" data-niveau="basis" data-zielgruppe="ermittlung">
         <div class="thumb">
           <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9E0EE" stroke-width="1.6"><polygon points="9 6 19 12 9 18" fill="#C9E0EE" stroke="none"/></svg>
           <span class="fmt">Video · 8 Min.</span>
@@ -689,7 +909,7 @@
         </div>
       </article>
 
-      <article class="tile t2" data-thema="grundlagen" data-format="lernmodul" data-niveau="basis" data-zielgruppe="ermittlung fuehrung verwaltung">
+      <article class="tile t2" tabindex="0" data-id="sprachmodelle" data-werkzeug="sprachmodell" data-thema="grundlagen" data-format="lernmodul" data-niveau="basis" data-zielgruppe="ermittlung fuehrung verwaltung">
         <div class="thumb">
           <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9E0EE" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
           <span class="fmt">Lernmodul · 25 Min.</span>
@@ -711,7 +931,7 @@
         </div>
       </article>
 
-      <article class="tile t3" data-thema="recht" data-format="artikel" data-niveau="aufbau" data-zielgruppe="ermittlung fuehrung verwaltung">
+      <article class="tile t3" tabindex="0" data-id="eu-ki" data-werkzeug="keins" data-thema="recht" data-format="artikel" data-niveau="aufbau" data-zielgruppe="ermittlung fuehrung verwaltung">
         <div class="thumb">
           <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9E0EE" stroke-width="1.6"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M9 13h7M9 17h7"/></svg>
           <span class="fmt">Artikel · 6 Min.</span>
@@ -733,7 +953,7 @@
         </div>
       </article>
 
-      <article class="tile t4" data-thema="grundlagen" data-format="video" data-niveau="aufbau" data-zielgruppe="ermittlung verwaltung">
+      <article class="tile t4" tabindex="0" data-id="prompt" data-werkzeug="sprachmodell" data-thema="grundlagen" data-format="video" data-niveau="aufbau" data-zielgruppe="ermittlung verwaltung">
         <div class="thumb">
           <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9E0EE" stroke-width="1.6"><polygon points="9 6 19 12 9 18" fill="#C9E0EE" stroke="none"/></svg>
           <span class="fmt">Video · 12 Min.</span>
@@ -755,7 +975,7 @@
         </div>
       </article>
 
-      <article class="tile t5" data-thema="einsatzfelder" data-format="live" data-niveau="spezial" data-zielgruppe="ermittlung">
+      <article class="tile t5" tabindex="0" data-id="sprachanalyse" data-werkzeug="auswertung" data-thema="einsatzfelder" data-format="live" data-niveau="spezial" data-zielgruppe="ermittlung">
         <div class="thumb">
           <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9E0EE" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3.2"/></svg>
           <span class="fmt">Aufzeichnung · 45 Min.</span>
@@ -777,7 +997,7 @@
         </div>
       </article>
 
-      <article class="tile t6" data-thema="grundlagen ethik" data-format="artikel" data-niveau="basis" data-zielgruppe="ermittlung fuehrung verwaltung">
+      <article class="tile t6" tabindex="0" data-id="halluzinationen" data-werkzeug="sprachmodell" data-thema="grundlagen ethik" data-format="artikel" data-niveau="basis" data-zielgruppe="ermittlung fuehrung verwaltung">
         <div class="thumb">
           <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9E0EE" stroke-width="1.6"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M9 13h7M9 17h7"/></svg>
           <span class="fmt">Artikel · 5 Min.</span>
@@ -799,7 +1019,7 @@
         </div>
       </article>
 
-      <article class="tile t7" data-thema="einsatzfelder" data-format="impuls" data-niveau="basis" data-zielgruppe="ermittlung">
+      <article class="tile t7" tabindex="0" data-id="impuls-auswertung" data-werkzeug="auswertung" data-thema="einsatzfelder" data-format="impuls" data-niveau="basis" data-zielgruppe="ermittlung">
         <div class="thumb">
           <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9E0EE" stroke-width="1.6"><path d="M12 3a6 6 0 0 0-3.5 10.9V17h7v-3.1A6 6 0 0 0 12 3z"/><path d="M9.5 20h5"/></svg>
           <span class="fmt">Impuls · 45 Min.</span>
@@ -821,7 +1041,7 @@
         </div>
       </article>
 
-      <article class="tile t8" data-thema="grundlagen" data-format="lernmodul" data-niveau="aufbau" data-zielgruppe="fuehrung">
+      <article class="tile t8" tabindex="0" data-id="fuehrung" data-werkzeug="keins" data-thema="grundlagen" data-format="lernmodul" data-niveau="aufbau" data-zielgruppe="fuehrung">
         <div class="thumb">
           <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9E0EE" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
           <span class="fmt">Lernmodul · 30 Min.</span>
@@ -843,7 +1063,7 @@
         </div>
       </article>
 
-      <article class="tile t9" data-thema="einsatzfelder" data-format="video" data-niveau="basis" data-zielgruppe="verwaltung">
+      <article class="tile t9" tabindex="0" data-id="schriftverkehr" data-werkzeug="sprachmodell" data-thema="einsatzfelder" data-format="video" data-niveau="basis" data-zielgruppe="verwaltung">
         <div class="thumb">
           <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9E0EE" stroke-width="1.6"><polygon points="9 6 19 12 9 18" fill="#C9E0EE" stroke="none"/></svg>
           <span class="fmt">Video · 7 Min.</span>
@@ -865,7 +1085,7 @@
         </div>
       </article>
 
-      <article class="tile t10" data-thema="ethik recht" data-format="artikel" data-niveau="spezial" data-zielgruppe="ermittlung fuehrung">
+      <article class="tile t10" tabindex="0" data-id="verzerrungen" data-werkzeug="auswertung" data-thema="ethik recht" data-format="artikel" data-niveau="spezial" data-zielgruppe="ermittlung fuehrung">
         <div class="thumb">
           <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9E0EE" stroke-width="1.6"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M9 13h7M9 17h7"/></svg>
           <span class="fmt">Artikel · 11 Min.</span>
@@ -884,6 +1104,45 @@
               22 Kommentare
             </span>
           </div>
+        </div>
+      </article>
+
+      <article class="tile t1" tabindex="0" data-id="grenzen-daten" data-werkzeug="sprachmodell" data-thema="grundlagen recht" data-format="artikel" data-niveau="basis" data-zielgruppe="ermittlung fuehrung verwaltung">
+        <div class="thumb">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9E0EE" stroke-width="1.6"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M9 13h7M9 17h7"/></svg>
+          <span class="fmt">Artikel · 6 Min.</span>
+        </div>
+        <div class="tile-body">
+          <div class="badges"><span class="lvl basis">Basis</span><span class="lvl impulstag">Vor der Nutzung</span></div>
+          <h3>Was nicht in das Werkzeug gehört</h3>
+          <p>Eine kurze Grenze vor der ersten Nutzung: welche Angaben draußen bleiben und wo die Regelung steht.</p>
+          <div class="tile-foot"><span class="meta-ic">Grundlagenkanon</span></div>
+        </div>
+      </article>
+
+      <article class="tile t2" tabindex="0" data-id="ergebnis-pruefen" data-werkzeug="sprachmodell" data-thema="grundlagen" data-format="lernmodul" data-niveau="basis" data-zielgruppe="ermittlung fuehrung verwaltung">
+        <div class="thumb">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9E0EE" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+          <span class="fmt">Lernmodul · 8 Min.</span>
+        </div>
+        <div class="tile-body">
+          <div class="badges"><span class="lvl basis">Basis</span></div>
+          <h3>Ergebnisse prüfen, bevor sie weitergehen</h3>
+          <p>Der eine Schritt, der aus einem Entwurf ein Ergebnis macht, das Sie selbst verantworten können.</p>
+          <div class="tile-foot"><span class="meta-ic">Grundlagenkanon · H5P</span></div>
+        </div>
+      </article>
+
+      <article class="tile t4" tabindex="0" data-id="alltag-grenzen" data-werkzeug="keins" data-thema="grundlagen" data-format="artikel" data-niveau="basis" data-zielgruppe="ermittlung fuehrung verwaltung">
+        <div class="thumb">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9E0EE" stroke-width="1.6"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M9 13h7M9 17h7"/></svg>
+          <span class="fmt">Artikel · 7 Min.</span>
+        </div>
+        <div class="tile-body">
+          <div class="badges"><span class="lvl basis">Basis</span></div>
+          <h3>Wo KI im Arbeitsalltag an Grenzen stößt</h3>
+          <p>Vier Grenzen, die in jedem Tätigkeitsfeld gelten — knapp genug für den Arbeitstag.</p>
+          <div class="tile-foot"><span class="meta-ic">Grundlagenkanon</span></div>
         </div>
       </article>
 
@@ -958,7 +1217,7 @@
 
     <div class="impulse-grid">
 
-      <article class="imp" tabindex="0">
+      <article class="imp" tabindex="0" data-open="impuls-auswertung">
         <span class="imp-fmt">Live-Session · 45 Min.</span>
         <h3>Wie wir im Ermittlungsteam die Auswertung umgestellt haben</h3>
         <p>Vier Monate Praxis, ehrlich bilanziert: der erste Fehlversuch, die Kurskorrektur und was die Kollegen heute anders machen.</p>
@@ -971,7 +1230,7 @@
         </div>
       </article>
 
-      <article class="imp" tabindex="0">
+      <article class="imp" tabindex="0" data-open="skeptikerin">
         <span class="imp-fmt podcast">Podcast · 18 Min.</span>
         <h3>„Ich war die Skeptikerin im Team" — ein Erfahrungsbericht</h3>
         <p>Was den Ausschlag gab, wo die Vorbehalte berechtigt waren und welche Fragen bis heute offen sind.</p>
@@ -984,7 +1243,7 @@
         </div>
       </article>
 
-      <article class="imp" tabindex="0">
+      <article class="imp" tabindex="0" data-open="berichte">
         <span class="imp-fmt tutorial">Tutorial · 9 Min.</span>
         <h3>Berichte zusammenfassen: mein Vorgehen Schritt für Schritt</h3>
         <p>Aufgezeichnet am eigenen Arbeitsplatz — einschließlich der Prüfschritte, die vor jeder Weitergabe erfolgen.</p>
@@ -1004,7 +1263,7 @@
         <h3>Sie arbeiten bereits mit KI? Werden Sie Impulsgeberin oder Impulsgeber.</h3>
         <p>Es braucht keinen Expertenstatus — es braucht Erfahrung aus dem Alltag. Auch der Bericht über einen misslungenen Versuch ist ein wertvoller Impuls. Die Redaktion unterstützt bei Aufbereitung, Aufnahme und Veröffentlichung.</p>
       </div>
-      <button class="btn-solid">Impuls anbieten</button>
+      <button class="btn-solid" type="button" id="impuls-anbieten">Impuls anbieten</button>
     </div>
   </section>
 
@@ -1012,17 +1271,37 @@
   <section id="faq">
     <div class="section-head">
       <h2>Häufige Fragen zum Einstieg</h2>
-      <span class="hint">Der schnellste Weg zu einer verlässlichen Antwort</span>
+      <span class="hint">Der schnellste Weg zu einer verlässlichen Antwort · Geprüft am steht an jedem Eintrag</span>
     </div>
     <div class="faq-list">
 
-      <div class="faq-item open">
+      <div class="faq-item open" data-faq="start" data-geprueft="12.08.2026">
         <button class="faq-q" aria-expanded="true">
           Brauche ich Vorwissen, um hier zu starten?
           <span class="plus">+</span>
         </button>
         <div class="faq-a" style="max-height:200px;">
           <p>Nein. Die Basis-Inhalte setzen kein Vorwissen voraus und erklären alles von Grund auf. Wer bereits Erfahrung mitbringt, steigt direkt in die Aufbau- und Spezial-Inhalte ein.</p>
+        </div>
+      </div>
+
+      <div class="faq-item" data-faq="erlaubnis" data-geprueft="02.10.2026" data-gegen="fachlich gegengezeichnet">
+        <button class="faq-q" aria-expanded="false">
+          Welches Werkzeug darf ich wofür nutzen?
+          <span class="plus">+</span>
+        </button>
+        <div class="faq-a">
+          <p>Orientierend: Nutzen Sie nur Werkzeuge, die Ihre Behörde für den konkreten Zweck freigegeben hat. Dieser Eintrag ersetzt die Regelung nicht. Maßgeblich bleibt die für das Werkzeug benannte Dienstanweisung. Die Antwort ist von der fachlich zuständigen Stelle gegengezeichnet.</p>
+        </div>
+      </div>
+
+      <div class="faq-item" data-faq="reduziert" data-geprueft="20.10.2026" data-gegen="Gegenzeichnung offen, reduzierte Verweisform">
+        <button class="faq-q" aria-expanded="false">
+          Darf ich einen Vorgang in ein frei verfügbares Sprachmodell geben?
+          <span class="plus">+</span>
+        </button>
+        <div class="faq-a">
+          <p>Für diese Frage liegt noch keine gegengezeichnete Antwort vor. Bis dahin gilt nur der Verweis: Maßgeblich ist die für das Werkzeug benannte Regelung Ihrer Behörde. Eine orientierende Antwort steht hier bewusst nicht.</p>
         </div>
       </div>
 
@@ -1083,7 +1362,7 @@
   <section id="community">
     <div class="section-head">
       <h2>Aus der Community</h2>
-      <span class="hint">Fragen stellen, Erfahrungen teilen, voneinander lernen</span>
+      <span class="hint">Vorschau · Leitforen folgen in der späteren Ausbaustufe</span>
     </div>
     <div class="community-wrap prinzip">
       <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 7: Beteiligung über Behördengrenzen hinweg">7</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 7</span><span class="p-title">Beteiligung über Behördengrenzen hinweg</span><span class="p-text">Fragen werden nicht an eine zentrale Stelle gerichtet, sondern in die Fläche. Kolleginnen und Kollegen aus ganz Nordrhein-Westfalen antworten einander, fachlich gekennzeichnete Personen ergänzen, wo es in die Tiefe geht. Wer mitgestaltet, trägt das Ergebnis mit.</span><span class="p-src">Feinkonzept 5.4.3 · operatives Ziel HF 6.2: Lernen voneinander, auch über Behördengrenzen hinweg</span></span>
@@ -1132,7 +1411,7 @@
       <aside class="community-side">
         <h3>Ihre Frage ist hier richtig.</h3>
         <p>Ob Grundsatzfrage oder Spezialfall: In der Community antworten Kolleginnen und Kollegen aus ganz NRW — und gekennzeichnete Fachleute, wenn es fachlich in die Tiefe geht.</p>
-        <a class="btn-line" href="#community">Zur Community →</a>
+        <button type="button" class="btn-line" id="community-mehr">Was später kommt</button>
       </aside>
     </div>
   </section>
@@ -1148,172 +1427,66 @@
       </div>
       <div class="live-info">
         <span class="tag"><span class="dot"></span>Live-Session</span>
+        <span class="ausbau">spätere Ausbaustufe</span>
         <h3>Fragen &amp; Antworten: KI-gestützte Auswertung in der Praxis</h3>
         <p>Mit Fachleuten aus Technik und Recht · Donnerstag, 10:00–11:00 Uhr · Aufzeichnung anschließend in der Werkstatt verfügbar.</p>
       </div>
-      <button class="btn-solid">Teilnehmen</button>
+      <button class="btn-solid" type="button" id="live-btn">Teilnehmen</button>
       </div>
     </div>
   </section>
+
+  </div><!-- view-home -->
+
+  <div id="view-player" class="view" hidden></div>
+  <div id="view-summary" class="view" hidden></div>
+  <div id="view-glossar" class="view" hidden></div>
+  <div id="view-profil" class="view" hidden></div>
+  <div id="view-meine" class="view" hidden></div>
+  <div id="view-editor" class="view" hidden></div>
+  <div id="view-leitfaden" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="meine">← Meine Inhalte</button>
+    <p class="eyebrow">Rahmen für neue Inhalte</p>
+    <h1>Leitfaden</h1>
+    <p>Der Anforderungskatalog nennt einen Leitfaden mit acht Ausschlusskriterien. Die ausformulierte Liste liegt nicht im MVP-Entwurf. Der Prototyp sperrt die Freigabe an den Merkmalen, die Katalog und Journeys für den Start benennen.</p>
+    <ol class="steps">
+      <li><h3>Genau eine Niveaustufe</h3><p>Basis, Aufbau oder Spezial. In der Einordnungshilfe entsprechen sie Anfänger, Fortgeschritten und Experte. Die Stufe beschreibt den Inhalt, nicht die Person. Keine Einstufung, keine Zugangssperre, keine Pflichtreihenfolge.</p></li>
+      <li><h3>Anwendungsfeld</h3><p>Ermittlung, Führung oder Verwaltung, auch mehrere. Unbesetzte Felder bleiben in der Übersicht als Lücke sichtbar und werden nicht mit Fremdinhalt gefüllt.</p></li>
+      <li><h3>Dauer und Ergebnis vorab</h3><p>Neue Einheiten bleiben beim Richtwert von höchstens 10 Minuten. Dauer und Ergebnis stehen am Inhalt, bevor er startet.</p></li>
+      <li><h3>Praxisbeispiel mit vier Merkmalen</h3><p>Bei anwendungsbezogenen Inhalten: benannte Rolle, konkrete Tätigkeit, Nutzen und Grenze.</p></li>
+      <li><h3>Begriffe erklärt</h3><p>Fremdwörter, Abkürzungen und Anglizismen stehen im Glossar. Ohne diese Kennzeichnung gibt es keine Freigabe.</p></li>
+      <li><h3>Fehlversuch ohne Abwertung</h3><p>Wo ein typischer Fehlversuch gezeigt wird, ist er normal und hat einen Korrekturhinweis. Keine Drohkulisse, keine Abwertung bisheriger Arbeitsweisen.</p></li>
+      <li><h3>Passendes Format</h3><p>Begriffe und Regeln als strukturierter Text. Bedienabläufe als bebilderte Schrittfolge oder als Bildschirmaufzeichnung mit Bordmitteln. Ohne Termin, Begleitung oder Beschaffung.</p></li>
+      <li><h3>Fassungsstand</h3><p>Das Prüfdatum setzt die Redaktion bei der Freigabe. Frühere Fassungen bleiben benannt.</p></li>
+    </ol>
+    <div class="form-card">
+      <h2>Grundlagenkanon</h2>
+      <p>Fünf bis sieben Module mit Lernziel, Geltungsbereich und Fassungsstand. Im Prototyp sichtbar: Wie Sprachmodelle Texte erzeugen, Halluzinationen erkennen, Was nicht in das Werkzeug gehört, Ergebnisse prüfen, Wo KI an Grenzen stößt. Dazu die Einordnung von Artikel 4 als Wissensartikel. Ein Zertifikat darüber läuft später über Moodle.</p>
+    </div>
+  </div>
+  <div id="view-redaktion" class="view" hidden></div>
+  <div id="view-review" class="view" hidden></div>
+  <div id="view-statistik" class="view" hidden></div>
+  <div id="view-admin" class="view" hidden></div>
 
 </div>
 
 <footer>
   <div class="wrap footer-inner">
     <span>KI-Werkstatt Polizei NRW · Landesamt für Ausbildung, Fortbildung und Personalangelegenheiten</span>
-    <span class="disclaimer">Konzeptvisualisierung zur Veranschaulichung der Funktionslogik — keine finale Gestaltung.</span>
+    <span class="disclaimer">Konzeptvisualisierung zur Veranschaulichung der Funktionslogik — keine finale Gestaltung. MVP-Umfang nach Entwurf; die spätere Ausbaustufe ist gekennzeichnet und nicht ausführbar.</span>
   </div>
 </footer>
 
-<script>
-  // FAQ-Akkordeon
-  document.querySelectorAll('.faq-q').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      var item = btn.parentElement;
-      var answer = item.querySelector('.faq-a');
-      var isOpen = item.classList.contains('open');
-      document.querySelectorAll('.faq-item.open').forEach(function(o){
-        o.classList.remove('open');
-        o.querySelector('.faq-a').style.maxHeight = null;
-        o.querySelector('.faq-q').setAttribute('aria-expanded','false');
-      });
-      if(!isOpen){
-        item.classList.add('open');
-        answer.style.maxHeight = answer.scrollHeight + 'px';
-        btn.setAttribute('aria-expanded','true');
-      }
-    });
-  });
-
-  // ---------- Filterung "Inhalte entdecken" ----------
-  // Regel: innerhalb einer Gruppe ODER-Verknüpfung, zwischen den Gruppen UND-Verknüpfung.
-  // "Alle" hebt die Auswahl der jeweiligen Gruppe auf.
-  var GRUPPEN = ['thema','format','niveau','zielgruppe'];
-  var kacheln = Array.prototype.slice.call(document.querySelectorAll('.grid .tile'));
-  var chips   = Array.prototype.slice.call(document.querySelectorAll('.chip[data-group]'));
-  var fcount  = document.getElementById('fcount');
-  var freset  = document.getElementById('freset');
-  var empty   = document.getElementById('empty');
-
-  function aktiveWerte(gruppe){
-    return chips
-      .filter(function(c){
-        return c.dataset.group === gruppe
-            && c.dataset.value !== 'alle'
-            && c.classList.contains('active');
-      })
-      .map(function(c){ return c.dataset.value; });
-  }
-
-  function passt(kachel, gruppe, werte){
-    if(werte.length === 0){ return true; }              // Gruppe filtert nicht
-    var eigene = (kachel.dataset[gruppe] || '').split(' ');
-    return werte.some(function(w){ return eigene.indexOf(w) !== -1; });
-  }
-
-  function filtern(){
-    var auswahl = {};
-    var anzahlAktiv = 0;
-    GRUPPEN.forEach(function(g){
-      auswahl[g] = aktiveWerte(g);
-      anzahlAktiv += auswahl[g].length;
-    });
-
-    var sichtbar = 0;
-    kacheln.forEach(function(k){
-      var treffer = GRUPPEN.every(function(g){ return passt(k, g, auswahl[g]); });
-      k.hidden = !treffer;
-      if(treffer){ sichtbar++; }
-    });
-
-    // "Alle"-Chip je Gruppe spiegelt den Zustand der Gruppe
-    chips.forEach(function(c){
-      if(c.dataset.value === 'alle'){
-        var leer = auswahl[c.dataset.group].length === 0;
-        c.classList.toggle('active', leer);
-        c.setAttribute('aria-pressed', leer ? 'true' : 'false');
-      }
-    });
-
-    // Statuszeile, Zurücksetzen-Schaltfläche und Leerzustand
-    if(anzahlAktiv === 0){
-      fcount.textContent = 'Alle ' + kacheln.length + ' Inhalte werden angezeigt.';
-    } else if(sichtbar === 0){
-      fcount.textContent = 'Kein Inhalt entspricht dieser Auswahl.';
-    } else if(sichtbar === 1){
-      fcount.innerHTML = '<strong>1</strong> von ' + kacheln.length + ' Inhalten entspricht Ihrer Auswahl.';
-    } else {
-      fcount.innerHTML = '<strong>' + sichtbar + '</strong> von ' + kacheln.length + ' Inhalten entsprechen Ihrer Auswahl.';
-    }
-    freset.hidden = (anzahlAktiv === 0);
-    empty.hidden  = (sichtbar > 0);
-  }
-
-  chips.forEach(function(chip){
-    chip.addEventListener('click', function(){
-      var gruppe = chip.dataset.group;
-      if(chip.dataset.value === 'alle'){
-        // Auswahl der Gruppe vollständig aufheben
-        chips.forEach(function(c){
-          if(c.dataset.group === gruppe && c.dataset.value !== 'alle'){
-            c.classList.remove('active');
-            c.setAttribute('aria-pressed','false');
-          }
-        });
-      } else {
-        var an = chip.classList.toggle('active');
-        chip.setAttribute('aria-pressed', an ? 'true' : 'false');
-      }
-      filtern();
-
-    });
-  });
-
-  function zuruecksetzen(){
-    chips.forEach(function(c){
-      if(c.dataset.value !== 'alle'){
-        c.classList.remove('active');
-        c.setAttribute('aria-pressed','false');
-      }
-    });
-    filtern();
-    document.getElementById('inhalte').scrollIntoView({block:'start'});
-  }
-  freset.addEventListener('click', zuruecksetzen);
-  document.getElementById('empty-reset').addEventListener('click', zuruecksetzen);
-
-  filtern();
-
-  // Like-Buttons (einmalig, rein visuell)
-  document.querySelectorAll('.likebtn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      var cnt = btn.querySelector('.cnt');
-      var n = parseInt(cnt.textContent, 10);
-      if(btn.classList.contains('liked')){
-        btn.classList.remove('liked');
-        cnt.textContent = n - 1;
-      } else {
-        btn.classList.add('liked');
-        cnt.textContent = n + 1;
-      }
-    });
-  });
-
-  // ---------- Erklärebene "Strukturprinzipien" ----------
-  var pmode = document.getElementById('pmode');
-  pmode.addEventListener('click', function(){
-    var an = document.body.classList.toggle('pmode');
-    pmode.setAttribute('aria-pressed', an ? 'true' : 'false');
-  });
-  // Markierungen sind mit der Tastatur bedienbar; Escape schaltet die Ebene ab.
-  document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape' && document.body.classList.contains('pmode')){
-      document.body.classList.remove('pmode');
-      pmode.setAttribute('aria-pressed','false');
-    }
-  });
-
-</script>
-
+<div id="dialog" class="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+    <h2 id="dialog-title"></h2>
+    <div id="dialog-body"></div>
+    <div class="modal-actions" id="dialog-actions"></div>
+    <button type="button" class="textbtn" id="dialog-close">Schließen</button>
+  </div>
+</div>
+<div id="toast" class="toast" hidden role="status"></div>
+<script src="app.js"></script>
 </body>
 </html>
