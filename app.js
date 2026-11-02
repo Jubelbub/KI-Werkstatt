@@ -2144,11 +2144,19 @@ function initFaq() {
     }
     var antwort = item.querySelector(".faq-a");
     if (antwort && !antwort.querySelector(".faq-meta")) {
+      var fuss = document.createElement("div");
+      fuss.className = "faq-fuss";
       var meta = document.createElement("p");
       meta.className = "faq-meta";
+      meta.textContent = "Geprüft am " + (item.dataset.geprueft || "12.08.2026");
+      fuss.appendChild(meta);
       var gegen = item.dataset.gegen || "";
-      meta.textContent = "Geprüft am " + (item.dataset.geprueft || "12.08.2026") + (gegen ? " · " + gegen : "");
-      antwort.appendChild(meta);
+      if (gegen) {
+        var lage = document.createElement("span");
+        lage.className = "faq-lage" + (/offen/i.test(gegen) ? " offen" : "");
+        lage.textContent = gegen;
+        fuss.appendChild(lage);
+      }
       var melden = document.createElement("button");
       melden.type = "button";
       melden.className = "textbtn";
@@ -2156,7 +2164,8 @@ function initFaq() {
       melden.addEventListener("click", function () {
         meldungOeffnen("FAQ " + item.dataset.faq);
       });
-      antwort.appendChild(melden);
+      fuss.appendChild(melden);
+      antwort.appendChild(fuss);
     }
   });
   document.querySelectorAll(".faq-q").forEach(function (btn) {

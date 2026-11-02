@@ -465,29 +465,46 @@
   .c-reply{margin-left:46px;}
 
   /* FAQ */
-  .faq-list{max-width:820px;}
-  .faq-item{border-bottom:1px solid var(--line);}
-  .faq-item:first-child{border-top:1px solid var(--line);}
+  .faq-seite > p{max-width:68ch;margin-bottom:22px;}
+  .faq-list{display:flex;flex-direction:column;gap:12px;}
+  .faq-item{
+    position:relative;
+    background:var(--bg-card);border:1px solid var(--line);border-radius:10px;
+    overflow:hidden;
+  }
+  .faq-item.open{border-color:rgba(201,224,238,.4);}
+  .faq-item.open::before{
+    content:"";position:absolute;left:0;top:16px;bottom:16px;width:3px;
+    background:var(--accent);border-radius:0 3px 3px 0;
+  }
   .faq-q{
-    width:100%;display:flex;align-items:center;justify-content:space-between;gap:20px;
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:18px;
     background:transparent;border:none;cursor:pointer;
-    padding:18px 4px;text-align:left;
-    color:var(--text-title);font-family:inherit;font-size:16px;font-weight:bold;
-    transition:color .12s;
+    padding:18px 20px;text-align:left;
+    color:var(--text-title);font-family:inherit;font-size:17px;font-weight:bold;line-height:1.35;
   }
-  .faq-q:hover{color:#fff;}
+  .faq-q:hover{background:var(--bg-card-hover);}
   .faq-q .plus{
-    flex-shrink:0;width:24px;height:24px;border-radius:50%;
-    border:1px solid rgba(201,224,238,0.35);
+    flex-shrink:0;width:32px;height:32px;border-radius:50%;
+    border:1px solid var(--line);color:var(--blue-light);
     display:flex;align-items:center;justify-content:center;
-    font-size:15px;font-weight:normal;color:var(--blue-light);
-    transition:transform .18s, background .18s;
+    transition:transform .18s, border-color .18s, background .18s;
   }
-  .faq-item.open .plus{transform:rotate(45deg);background:var(--bg-card);}
-  .faq-a{
-    max-height:0;overflow:hidden;transition:max-height .22s ease;
+  .faq-q .plus svg{stroke:currentColor;}
+  .faq-item.open .plus{transform:rotate(180deg);border-color:var(--blue-light);background:rgba(0,104,143,.25);}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .22s ease;}
+  .faq-item.open .faq-a{max-height:none;}
+  .faq-a > p{padding:0 20px 8px 20px;font-size:15.5px;max-width:72ch;color:var(--text-body);}
+  .faq-fuss{
+    display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;
+    margin:8px 20px 0;padding:12px 0 16px;border-top:1px solid var(--line);
   }
-  .faq-a p{padding:0 40px 18px 4px;font-size:15px;max-width:720px;}
+  .faq-fuss .textbtn{margin-left:auto;}
+  .faq-lage{
+    font-size:12.5px;font-weight:bold;line-height:1.3;
+    color:var(--bg-dark);background:var(--accent);border-radius:999px;padding:4px 10px;
+  }
+  .faq-lage.offen{background:var(--blue-dynamic);color:#062033;}
 
   /* Community */
   .community-wrap{
@@ -1463,20 +1480,17 @@
 
   <div id="view-faq" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="home">Zurück</button>
-  <!-- FAQ -->
-  <section id="faq">
-    <div class="section-head">
-      <h2>Häufige Fragen zum Einstieg</h2>
-      <span class="hint">Der schnellste Weg zu einer verlässlichen Antwort · Geprüft am steht an jedem Eintrag</span>
-    </div>
+  <section id="faq" class="faq-seite">
+    <h1>Häufige Fragen</h1>
+    <p>Der schnellste Weg zu einer verlässlichen Antwort. An jedem Eintrag steht, wann er geprüft wurde.</p>
     <div class="faq-list">
 
       <div class="faq-item open" data-faq="start" data-geprueft="12.08.2026">
         <button class="faq-q" aria-expanded="true">
           Brauche ich Vorwissen, um hier zu starten?
-          <span class="plus">+</span>
+          <span class="plus" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
         </button>
-        <div class="faq-a" style="max-height:200px;">
+        <div class="faq-a">
           <p>Nein. Die Basis-Inhalte setzen kein Vorwissen voraus und erklären alles von Grund auf. Wer bereits Erfahrung mitbringt, steigt direkt in die Aufbau- und Spezial-Inhalte ein.</p>
         </div>
       </div>
@@ -1484,7 +1498,7 @@
       <div class="faq-item" data-faq="erlaubnis" data-geprueft="02.10.2026" data-gegen="fachlich gegengezeichnet">
         <button class="faq-q" aria-expanded="false">
           Welches Werkzeug darf ich wofür nutzen?
-          <span class="plus">+</span>
+          <span class="plus" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
         </button>
         <div class="faq-a">
           <p>Orientierend: Nutzen Sie nur Werkzeuge, die Ihre Behörde für den konkreten Zweck freigegeben hat. Dieser Eintrag ersetzt die Regelung nicht. Maßgeblich bleibt die für das Werkzeug benannte Dienstanweisung. Die Antwort ist von der fachlich zuständigen Stelle gegengezeichnet.</p>
@@ -1494,7 +1508,7 @@
       <div class="faq-item" data-faq="reduziert" data-geprueft="20.10.2026" data-gegen="Gegenzeichnung offen, reduzierte Verweisform">
         <button class="faq-q" aria-expanded="false">
           Darf ich einen Vorgang in ein frei verfügbares Sprachmodell geben?
-          <span class="plus">+</span>
+          <span class="plus" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
         </button>
         <div class="faq-a">
           <p>Für diese Frage liegt noch keine gegengezeichnete Antwort vor. Bis dahin gilt nur der Verweis: Maßgeblich ist die für das Werkzeug benannte Regelung Ihrer Behörde. Eine orientierende Antwort steht hier bewusst nicht.</p>
@@ -1504,7 +1518,7 @@
       <div class="faq-item">
         <button class="faq-q" aria-expanded="false">
           Ersetzt die KI-Werkstatt die bisherige Fortbildung?
-          <span class="plus">+</span>
+          <span class="plus" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
         </button>
         <div class="faq-a">
           <p>Nein. Die Werkstatt ergänzt die bestehenden Fortbildungsformate um eine jederzeit verfügbare Lern- und Wissensumgebung. Formale Fortbildungen finden weiterhin wie gewohnt statt.</p>
@@ -1514,7 +1528,7 @@
       <div class="faq-item">
         <button class="faq-q" aria-expanded="false">
           Wie finde ich Inhalte zu meinem Aufgabenbereich?
-          <span class="plus">+</span>
+          <span class="plus" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
         </button>
         <div class="faq-a">
           <p>Über die Suche oder die Filter nach Thema, Format, Niveau und Zielgruppe. Jeder Inhalt ist entsprechend gekennzeichnet, sodass Sie in wenigen Klicks beim passenden Angebot sind.</p>
@@ -1524,7 +1538,7 @@
       <div class="faq-item">
         <button class="faq-q" aria-expanded="false">
           Kann ich Fragen stellen, wenn ich nicht weiterkomme?
-          <span class="plus">+</span>
+          <span class="plus" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
         </button>
         <div class="faq-a">
           <p>Ja, jederzeit — in der Community. Dort antworten Kolleginnen und Kollegen sowie gekennzeichnete Fachleute. Es gibt keine falschen Fragen: Der Austausch lebt davon, dass auch Grundsätzliches gefragt wird.</p>
@@ -1534,7 +1548,7 @@
       <div class="faq-item">
         <button class="faq-q" aria-expanded="false">
           Muss ich Fachfrau oder Fachmann sein, um einen Impuls beizutragen?
-          <span class="plus">+</span>
+          <span class="plus" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
         </button>
         <div class="faq-a">
           <p>Nein. Impulsgeberinnen und Impulsgeber berichten aus ihrer eigenen Praxis, nicht aus einer Expertenrolle heraus. Gerade der Bericht darüber, was nicht funktioniert hat, hilft anderen weiter. Die Redaktion unterstützt bei der Aufbereitung, sodass kein technischer Aufwand entsteht.</p>
@@ -1544,7 +1558,7 @@
       <div class="faq-item">
         <button class="faq-q" aria-expanded="false">
           Wie aktuell sind die Inhalte?
-          <span class="plus">+</span>
+          <span class="plus" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
         </button>
         <div class="faq-a">
           <p>Alle Inhalte werden redaktionell geprüft und laufend aktualisiert. Bei wesentlichen Änderungen — etwa neuen Systemen oder rechtlichen Entwicklungen — werden die betroffenen Inhalte überarbeitet und sichtbar gekennzeichnet.</p>
