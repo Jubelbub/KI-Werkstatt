@@ -1002,20 +1002,8 @@
 
   <div id="view-inhalte" class="view" hidden>
   <button type="button" class="backlink" data-view-jump="home">Zurück</button>
-  <section id="inhalte">
     <h1>Lektionen</h1>
-    <p>Nur Lektionen. Impulse, Live-Sessions und Community haben jeweils eine eigene Seite.</p>
-
-    <section class="inhaltsbereich bereich-allgemein" aria-labelledby="allgemeine-inhalte-titel">
-    <div class="section-head">
-      <h2 id="lektionen-titel">Lektionen</h2>
-      <p class="meta-line">Begonnene und abgeschlossene Lektionen öffnen Sie über die Kacheln. Darunter stehen die verfügbaren Lektionen.</p>
-      <span class="hint prinzip">
-        <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 4: Redaktion als Daueraufgabe">4</span><span class="p-tip" data-align="right"><span class="p-kicker">Strukturprinzip 4</span><span class="p-title">Redaktion als Daueraufgabe</span><span class="p-text">Jeder Inhalt ist fachlich geprüft und benennbar verantwortet. Ein Redaktionskonzept regelt für alle Kanäle, wer erstellt, prüft und freigibt und wie Widersprüche zwischen den Kanälen vermieden werden. Der Betrieb ist als Daueraufgabe angelegt, nicht als einmalige Initiative: Verwaiste Angebote richten mehr Schaden an als nie gestartete.</span><span class="p-src">Feinkonzept 5.4.1 · Risiko „Die KI-Werkstatt zwischen Aufbau und Alltag“ (Kapitel 9)</span></span>
-        Redaktionell geprüft und laufend aktualisiert
-      </span>
-    </div>
-
+    <p>Nur Lektionen. Begonnene und abgeschlossene Lektionen öffnen Sie über die Kacheln.</p>
     <div class="lauf-hub" id="lauf-hub">
       <button type="button" class="hub-tile" data-view-jump="lauf-begonnen" data-herkunft="begonnen">
         <span class="zahl-badge zahl-begonnen">0</span>
@@ -1030,7 +1018,12 @@
         <span class="go">Lektionen öffnen</span>
       </button>
     </div>
-    <h3 class="bereich-titel" id="uebrige-titel">Verfügbare Lektionen</h3>
+    <section class="inhaltsbereich bereich-allgemein" id="inhalte" aria-labelledby="uebrige-titel">
+    <h2 class="bereich-titel" id="uebrige-titel">Verfügbare Lektionen</h2>
+    <p class="meta-line prinzip">
+      <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 4: Redaktion als Daueraufgabe">4</span><span class="p-tip" data-align="right"><span class="p-kicker">Strukturprinzip 4</span><span class="p-title">Redaktion als Daueraufgabe</span><span class="p-text">Jeder Inhalt ist fachlich geprüft und benennbar verantwortet. Ein Redaktionskonzept regelt für alle Kanäle, wer erstellt, prüft und freigibt und wie Widersprüche zwischen den Kanälen vermieden werden. Der Betrieb ist als Daueraufgabe angelegt, nicht als einmalige Initiative: Verwaiste Angebote richten mehr Schaden an als nie gestartete.</span><span class="p-src">Feinkonzept 5.4.1 · Risiko „Die KI-Werkstatt zwischen Aufbau und Alltag“ (Kapitel 9)</span></span>
+      Redaktionell geprüft und laufend aktualisiert
+    </p>
 
     <p class="banner" id="pfadhinweis" hidden></p>
     <div class="search bereich-suche" role="search">
@@ -1355,8 +1348,6 @@
     </div>
 
     </section>
-
-  </section>
   </div><!-- view-inhalte -->
 
   <div id="view-impulse" class="view" hidden>
@@ -1405,7 +1396,7 @@
     <button type="button" class="backlink" data-view-jump="home">Zurück</button>
     <h1 id="community-titel">Community</h1>
     <p>Zwei Bereiche auf dieser Seite: Bereiche, an denen Sie mitwirken, und verfügbare Communitys.</p>
-    <section class="inhaltsbereich bereich-community" id="community" aria-labelledby="community-mit-titel">
+    <div id="community" aria-labelledby="community-mit-titel">
       <div class="community-wrap prinzip">
         <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 7: Beteiligung über Behördengrenzen hinweg">7</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 7</span><span class="p-title">Beteiligung über Behördengrenzen hinweg</span><span class="p-text">Fragen werden nicht an eine zentrale Stelle gerichtet, sondern in die Fläche. Kolleginnen und Kollegen aus ganz Nordrhein-Westfalen antworten einander, fachlich gekennzeichnete Personen ergänzen, wo es in die Tiefe geht. Wer mitgestaltet, trägt das Ergebnis mit.</span><span class="p-src">Feinkonzept 5.4.3 · operatives Ziel HF 6.2: Lernen voneinander, auch über Behördengrenzen hinweg</span></span>
         <aside class="community-side">
@@ -1424,14 +1415,14 @@
       <div id="community-frei-liste"></div>
       <p class="meta-line" id="community-frei-leer" hidden>Keine weitere Community.</p>
       <p class="meta-line" id="community-filter-leer" hidden>Keine Community entspricht dieser Auswahl.</p>
-    </section>
+    </div>
   </div>
 
   <div id="view-live" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="home">Zurück</button>
     <h1 id="live-titel">Live-Sessions</h1>
     <p>Zwei Bereiche auf dieser Seite: Sessions, an denen Sie teilgenommen haben, und verfügbare Sessions.</p>
-    <section class="inhaltsbereich bereich-live" id="live" aria-labelledby="live-dabei-titel">
+    <div id="live" aria-labelledby="live-dabei-titel">
       <div class="prinzip p-wrap">
         <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 8: Offene Formate, digital und analog">8</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 8</span><span class="p-title">Offene Formate, digital und analog</span><span class="p-text">Neben den jederzeit abrufbaren Inhalten stehen feste offene Formate: Sprechstunden, Live-Sessions und Hackathons. Sie werden bewusst um Formate in Präsenz ergänzt, weil digitale Werkzeuge nicht ausschließlich mit digitalen Formaten begleitet werden sollten, ohne dass zwischenmenschliche Beziehungen verloren gehen.</span><span class="p-src">Feinkonzept 5.4.2 und 5.4.3 · analoge Ergänzung: Krutwage/Port</span></span>
         <p>Aufzeichnungen einer Session bleiben Lektionen. Hier stehen nur die Termine.</p>
@@ -1446,7 +1437,7 @@
       <div id="live-verfuegbar-liste"></div>
       <p class="meta-line" id="live-verfuegbar-leer" hidden>Zurzeit keine weitere Session.</p>
       <p class="meta-line" id="live-filter-leer" hidden>Keine Live-Session entspricht dieser Auswahl.</p>
-    </section>
+    </div>
   </div>
 
   <div id="view-lauf-begonnen" class="view" hidden>
