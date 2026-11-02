@@ -694,7 +694,10 @@ function showView(name, opt) {
   if (name === "admin") renderAdmin();
   if (name === "leitfaden") { /* statisches HTML */ }
   if (name === "inhalte" && typeof window.filtern === "function") window.filtern();
-  if (name === "lauf-begonnen" || name === "lauf-abgeschlossen") renderFortschritt();
+  if (name === "lauf-begonnen" || name === "lauf-abgeschlossen") {
+    renderFortschritt();
+    laufZurueck(name);
+  }
   markNav(name, opt.anker || "");
   if (opt.anker) {
     var ziel = document.getElementById(opt.anker);
@@ -719,8 +722,11 @@ function markNav(name, anker) {
   }
   if (name === "statistik" || name.indexOf("mod-") === 0) bereich = "redaktion";
   if (name === "lauf-begonnen" || name === "lauf-abgeschlossen") {
-    bereich = "inhalte";
-    anker = "allgemeine-inhalte-titel";
+    if (herkunft && herkunft.nav === "meine") bereich = "meine";
+    else {
+      bereich = "inhalte";
+      anker = "allgemeine-inhalte-titel";
+    }
   }
   document.querySelectorAll("header nav a").forEach(function (a) {
     var an = false;
@@ -748,7 +754,7 @@ function renderHub() {
   var box = document.getElementById("hub-kacheln");
   if (!box) return;
   var kacheln = [
-    ["meine", "", "Meine Inhalte", "Nur, was Sie erstellt haben oder bearbeiten dürfen."],
+    ["meine", "", "Meine Inhalte", "Erstellt, begonnen oder abgeschlossen."],
     ["inhalte", "allgemeine-inhalte-titel", "Allgemeine Inhalte", "Inhalte entdecken."],
     ["inhalte", "impulse-titel", "Impulse", "Kurze Beiträge aus dem Dienstalltag."],
     ["inhalte", "live-titel", "Live-Sessions", "Offenes Format. Die Teilnahme folgt später."],
@@ -849,6 +855,8 @@ function herkunftSetzen(id) {
     allgemein: { id: "allgemein", nav: "inhalte", anker: "allgemeine-inhalte-titel", spur: [start, spurSchritt("Allgemeine Inhalte", "inhalte", "allgemeine-inhalte-titel")] },
     begonnen: { id: "begonnen", nav: "inhalte", anker: "allgemeine-inhalte-titel", spur: [start, spurSchritt("Allgemeine Inhalte", "inhalte", "allgemeine-inhalte-titel"), spurSchritt("Begonnene Inhalte", "lauf-begonnen")] },
     abgeschlossen: { id: "abgeschlossen", nav: "inhalte", anker: "allgemeine-inhalte-titel", spur: [start, spurSchritt("Allgemeine Inhalte", "inhalte", "allgemeine-inhalte-titel"), spurSchritt("Abgeschlossene Inhalte", "lauf-abgeschlossen")] },
+    "meine-begonnen": { id: "meine-begonnen", nav: "meine", anker: "", spur: [start, spurSchritt("Meine Inhalte", "meine"), spurSchritt("Begonnene Inhalte", "lauf-begonnen")] },
+    "meine-abgeschlossen": { id: "meine-abgeschlossen", nav: "meine", anker: "", spur: [start, spurSchritt("Meine Inhalte", "meine"), spurSchritt("Abgeschlossene Inhalte", "lauf-abgeschlossen")] },
     impulse: { id: "impulse", nav: "inhalte", anker: "impulse-titel", spur: [start, spurSchritt("Impulse", "inhalte", "impulse-titel")] },
     live: { id: "live", nav: "inhalte", anker: "live-titel", spur: [start, spurSchritt("Live-Sessions", "inhalte", "live-titel")] },
     community: { id: "community", nav: "inhalte", anker: "community-titel", spur: [start, spurSchritt("Community", "inhalte", "community-titel")] },
@@ -867,8 +875,12 @@ function herkunftAusElement(el) {
   if (el.closest("#view-mod-freigabe")) return "freigabe";
   if (el.closest("#view-mod-kommentare")) return "kommentare";
   if (el.closest("#view-mod-pruefung")) return "pruefung";
-  if (el.closest("#view-lauf-begonnen, #inhalte-begonnen")) return "begonnen";
-  if (el.closest("#view-lauf-abgeschlossen, #inhalte-abgeschlossen")) return "abgeschlossen";
+  if (el.closest("#view-lauf-begonnen, #inhalte-begonnen")) {
+    return herkunft && herkunft.id === "meine-begonnen" ? "meine-begonnen" : "begonnen";
+  }
+  if (el.closest("#view-lauf-abgeschlossen, #inhalte-abgeschlossen")) {
+    return herkunft && herkunft.id === "meine-abgeschlossen" ? "meine-abgeschlossen" : "abgeschlossen";
+  }
   if (el.closest("#katalog-grid, .bereich-allgemein")) return "allgemein";
   if (el.closest("#view-faq")) return "faq";
   if (el.closest("#live")) return "live";
@@ -1328,6 +1340,7 @@ function speichereInhalt(obj) {
 
 function renderMeine() {
   renderEigene();
+  renderFortschritt();
 }
 
 function feedbackSumme(id) {
@@ -1445,14 +1458,31 @@ function renderFortschritt() {
   var boxA = document.getElementById("inhalte-abgeschlossen");
   var leerB = document.getElementById("begonnen-leer");
   var leerA = document.getElementById("abgeschlossen-leer");
-  var zahlB = document.getElementById("zahl-begonnen");
-  var zahlA = document.getElementById("zahl-abgeschlossen");
+  var zahlB = document.querySelectorAll(".zahl-begonnen");
+  var zahlA = document.querySelectorAll(".zahl-abgeschlossen");
   if (boxB) boxB.innerHTML = begonnen.map(kachelMarkup).join("");
   if (boxA) boxA.innerHTML = fertig.map(kachelMarkup).join("");
   if (leerB) leerB.hidden = begonnen.length > 0;
   if (leerA) leerA.hidden = fertig.length > 0;
-  if (zahlB) zahlB.textContent = String(begonnen.length);
-  if (zahlA) zahlA.textContent = String(fertig.length);
+  zahlB.forEach(function (el) { el.textContent = String(begonnen.length); });
+  zahlA.forEach(function (el) { el.textContent = String(fertig.length); });
+}
+
+function laufZurueck(name) {
+  var root = document.getElementById("view-" + name);
+  if (!root) return;
+  var back = root.querySelector(".backlink");
+  if (!back) return;
+  var vonMeine = herkunft && (herkunft.id === "meine-begonnen" || herkunft.id === "meine-abgeschlossen");
+  if (vonMeine) {
+    back.dataset.viewJump = "meine";
+    delete back.dataset.anker;
+    back.textContent = "← Meine Inhalte";
+  } else {
+    back.dataset.viewJump = "inhalte";
+    back.dataset.anker = "allgemeine-inhalte-titel";
+    back.textContent = "← Allgemeine Inhalte";
+  }
 }
 
 function modSammeln() {
@@ -2104,7 +2134,11 @@ function init() {
       return;
     }
     var jump = e.target.closest("[data-view-jump]");
-    if (jump) { showView(jump.dataset.viewJump, { anker: jump.dataset.anker || "", leise: !!jump.dataset.anker }); return; }
+    if (jump) {
+      if (jump.dataset.herkunft) herkunftSetzen(jump.dataset.herkunft);
+      showView(jump.dataset.viewJump, { anker: jump.dataset.anker || "", leise: !!jump.dataset.anker });
+      return;
+    }
     var act = e.target.closest("[data-action]");
     if (act) {
     var action = act.dataset.action;

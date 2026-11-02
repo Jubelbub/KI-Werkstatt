@@ -996,7 +996,7 @@
     <section class="inhaltsbereich bereich-allgemein" aria-labelledby="allgemeine-inhalte-titel">
     <div class="section-head">
       <h2 id="allgemeine-inhalte-titel">Allgemeine Inhalte</h2>
-      <p class="meta-line">Zwei Kacheln führen zu dem, was Sie geöffnet oder abgeschlossen haben. Darunter bleiben die übrigen Inhalte. Meine Inhalte enthält nur, was Sie erstellt haben oder ausdrücklich bearbeiten dürfen.</p>
+      <p class="meta-line">Zwei Kacheln führen zu dem, was Sie geöffnet oder abgeschlossen haben. Dieselben Kacheln stehen unter Meine Inhalte. Darunter bleiben die übrigen Inhalte.</p>
       <span class="hint prinzip">
         <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 4: Redaktion als Daueraufgabe">4</span><span class="p-tip" data-align="right"><span class="p-kicker">Strukturprinzip 4</span><span class="p-title">Redaktion als Daueraufgabe</span><span class="p-text">Jeder Inhalt ist fachlich geprüft und benennbar verantwortet. Ein Redaktionskonzept regelt für alle Kanäle, wer erstellt, prüft und freigibt und wie Widersprüche zwischen den Kanälen vermieden werden. Der Betrieb ist als Daueraufgabe angelegt, nicht als einmalige Initiative: Verwaiste Angebote richten mehr Schaden an als nie gestartete.</span><span class="p-src">Feinkonzept 5.4.1 · Risiko „Die KI-Werkstatt zwischen Aufbau und Alltag“ (Kapitel 9)</span></span>
         Redaktionell geprüft und laufend aktualisiert
@@ -1004,14 +1004,14 @@
     </div>
 
     <div class="lauf-hub" id="lauf-hub">
-      <button type="button" class="hub-tile" data-view-jump="lauf-begonnen">
-        <span class="zahl-badge" id="zahl-begonnen">0</span>
+      <button type="button" class="hub-tile" data-view-jump="lauf-begonnen" data-herkunft="begonnen">
+        <span class="zahl-badge zahl-begonnen">0</span>
         <span class="hub-titel">Begonnene Inhalte</span>
         <span class="hub-text">Geöffnet, noch nicht abgeschlossen.</span>
         <span class="go">Inhalte öffnen</span>
       </button>
-      <button type="button" class="hub-tile" data-view-jump="lauf-abgeschlossen">
-        <span class="zahl-badge" id="zahl-abgeschlossen">0</span>
+      <button type="button" class="hub-tile" data-view-jump="lauf-abgeschlossen" data-herkunft="abgeschlossen">
+        <span class="zahl-badge zahl-abgeschlossen">0</span>
         <span class="hub-titel">Abgeschlossene Inhalte</span>
         <span class="hub-text">Von Ihnen als abgeschlossen markiert.</span>
         <span class="go">Inhalte öffnen</span>
@@ -1452,7 +1452,7 @@
   <div id="view-lauf-begonnen" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="inhalte" data-anker="allgemeine-inhalte-titel">← Allgemeine Inhalte</button>
     <h1>Begonnene Inhalte</h1>
-    <p>Dieselben Kacheln wie bei den übrigen Inhalten. Ein Klick öffnet den Inhalt, ohne ihn nach Meine Inhalte zu kopieren.</p>
+    <p>Dieselben Kacheln wie bei den übrigen Inhalten. Die Liste erreichen Sie von Allgemeine Inhalte und von Meine Inhalte.</p>
     <div id="inhalte-begonnen" class="grid"></div>
     <p class="meta-line" id="begonnen-leer" hidden>Noch nichts begonnen. Ein allgemeiner Inhalt erscheint hier, sobald Sie ihn öffnen.</p>
   </div>
@@ -1566,7 +1566,7 @@
   <div id="view-meine" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="home">Zurück</button>
     <h1>Meine Inhalte</h1>
-    <p class="meta-line">Nur Inhalte, die Sie erstellt haben oder für die Ihnen die erstellende Person die Bearbeitung erlaubt hat. Geöffnetes und Abgeschlossenes bleibt unter Allgemeine Inhalte.</p>
+    <p class="meta-line">Inhalte, die Sie erstellt haben oder bearbeiten dürfen, und zusätzlich Begonnenes und Abgeschlossenes. Der Stift bleibt bei dem, was Sie erstellen oder ausdrücklich bearbeiten dürfen.</p>
     <section class="anlegen" aria-labelledby="anlegen-titel">
       <h2 id="anlegen-titel">Inhalt erstellen</h2>
       <p>Inhalt, Impuls oder Live-Session. Der Entwurf bleibt bei Ihnen, bis Sie ihn zur Freigabe geben. Ein Stift an der Kachel und in der Ansicht bedeutet: das können Sie bearbeiten.</p>
@@ -1577,6 +1577,22 @@
         <button type="button" class="btn-line" data-view-jump="leitfaden">Leitfaden öffnen</button>
       </div>
     </section>
+    <h2 id="lauf-meine-titel">Begonnen und abgeschlossen</h2>
+    <p class="meta-line">Dieselben Kacheln wie unter Allgemeine Inhalte. Ein Klick öffnet die Liste.</p>
+    <div class="lauf-hub" id="lauf-hub-meine">
+      <button type="button" class="hub-tile" data-view-jump="lauf-begonnen" data-herkunft="meine-begonnen">
+        <span class="zahl-badge zahl-begonnen">0</span>
+        <span class="hub-titel">Begonnene Inhalte</span>
+        <span class="hub-text">Geöffnet, noch nicht abgeschlossen.</span>
+        <span class="go">Inhalte öffnen</span>
+      </button>
+      <button type="button" class="hub-tile" data-view-jump="lauf-abgeschlossen" data-herkunft="meine-abgeschlossen">
+        <span class="zahl-badge zahl-abgeschlossen">0</span>
+        <span class="hub-titel">Abgeschlossene Inhalte</span>
+        <span class="hub-text">Von Ihnen als abgeschlossen markiert.</span>
+        <span class="go">Inhalte öffnen</span>
+      </button>
+    </div>
     <div id="inhalte-eigene" class="grid"></div>
     <h2 id="eigene-impulse-titel">Eigene Impulse</h2>
     <p class="meta-line">Ihre Praxisbeiträge. Unter Impulse stehen nur die veröffentlichten Beiträge, die nicht Ihnen gehören.</p>
