@@ -582,6 +582,11 @@
     font:inherit;font-size:14px;font-weight:bold;cursor:pointer;
   }
   .wegweiser button:hover,.wegweiser button[aria-current="page"]{border-color:var(--accent);}
+  .krumen{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px;font-size:14px;}
+  .krumen button{background:none;border:none;color:var(--blue-light);font:inherit;font-weight:bold;cursor:pointer;padding:4px 0;min-height:44px;}
+  .krumen button:hover{text-decoration:underline;}
+  .krumen [aria-current="page"]{color:var(--text-title);font-weight:bold;}
+  .krumen-sep{color:var(--text-muted);}
   .kommentar-link{margin-left:auto;min-height:44px;padding:8px 0;}
   .hub-tile{
     text-align:left;background:var(--bg-card);border:1px solid var(--line);border-radius:10px;
@@ -963,7 +968,7 @@
     <p>Ein Bereich für alles, was Sie lesen, anlegen oder austauschen. Die Leiste springt nur an die passende Stelle.</p>
     <nav class="wegweiser" aria-label="Sprung in den Inhalten">
       <button type="button" data-view-jump="meine">Meine Inhalte</button>
-      <button type="button" data-view-jump="inhalte" data-anker="allgemeine-inhalte-titel">Alle entdecken</button>
+      <button type="button" data-view-jump="inhalte" data-anker="allgemeine-inhalte-titel">Allgemeine Inhalte</button>
       <button type="button" data-view-jump="inhalte" data-anker="impulse-titel">Impulse</button>
       <button type="button" data-view-jump="inhalte" data-anker="live-titel">Live-Sessions</button>
       <button type="button" data-view-jump="inhalte" data-anker="community-titel">Community</button>
@@ -1551,6 +1556,9 @@
     </div>
   </div>
   <div id="view-redaktion" class="view" hidden></div>
+  <div id="view-mod-freigabe" class="view" hidden></div>
+  <div id="view-mod-kommentare" class="view" hidden></div>
+  <div id="view-mod-pruefung" class="view" hidden></div>
   <div id="view-review" class="view" hidden></div>
   <div id="view-statistik" class="view" hidden></div>
   <div id="view-admin" class="view" hidden></div>

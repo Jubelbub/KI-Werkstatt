@@ -8,6 +8,7 @@ var selbstGeprueft = false;
 var editorId = null;
 var editorVorgabe = "";
 var detailModus = "lesen";
+var herkunft = null;
 
 var GLOSSAR = [
   { begriff: "EU-KI-Verordnung", text: "Europäischer Rechtsrahmen für KI-Systeme. In den Inhalten wird Artikel 4 als Qualifizierungspflicht eingeordnet, abhängig von Aufgabe und Verantwortung." },
@@ -639,7 +640,7 @@ function showView(name, opt) {
     opt.anker = opt.anker || { impulse: "impulse-titel", community: "community-titel", live: "live-titel" }[name];
     name = "inhalte";
   }
-  if ((name === "redaktion" || name === "statistik") && !darfFreigeben()) name = "home";
+  if ((name === "redaktion" || name === "mod-freigabe" || name === "mod-kommentare" || name === "mod-pruefung" || name === "statistik") && !darfFreigeben()) name = "home";
   if ((name === "player" && detailModus === "bearbeiten" || name === "meine" || name === "leitfaden") && !darfBearbeiten()) name = "home";
   if (name === "admin" && state.rolle !== "admin") name = "home";
   document.body.classList.toggle("sso", name === "sso");
@@ -655,6 +656,7 @@ function showView(name, opt) {
   if (name === "profil") renderProfil();
   if (name === "meine") renderMeine();
   if (name === "redaktion") renderRedaktion();
+  if (name === "mod-freigabe" || name === "mod-kommentare" || name === "mod-pruefung") renderModBereich(name.replace("mod-", ""));
   if (name === "statistik") renderStatistik();
   if (name === "admin") renderAdmin();
   if (name === "leitfaden") { /* statisches HTML */ }
@@ -676,9 +678,12 @@ function showView(name, opt) {
 
 function markNav(name, anker) {
   var bereich = name;
-  if ((name === "player" && detailModus === "bearbeiten") || name === "leitfaden") bereich = "meine";
-  else if (name === "player" || name === "summary" || name === "glossar") bereich = "inhalte";
-  if (name === "statistik") bereich = "redaktion";
+  if (name === "leitfaden") bereich = "meine";
+  else if (name === "player" || name === "summary" || name === "glossar") {
+    bereich = (herkunft && herkunft.nav) || (detailModus === "bearbeiten" ? "meine" : "inhalte");
+    if (herkunft) anker = herkunft.anker || "";
+  }
+  if (name === "statistik" || name.indexOf("mod-") === 0) bereich = "redaktion";
   document.querySelectorAll("header nav a").forEach(function (a) {
     var an = false;
     if (a.dataset.anker) an = bereich === "inhalte" && anker === a.dataset.anker;
@@ -794,7 +799,57 @@ function oeffneAusbau(titel, text) {
 
 var playerKurz = false;
 
-function oeffneInhalt(id, kurz, anker) {
+function spurSchritt(label, view, anker) {
+  return { label: label, view: view, anker: anker || "" };
+}
+
+function herkunftSetzen(id) {
+  var start = spurSchritt("Startseite", "home");
+  var katalog = {
+    home: { id: "home", nav: "home", anker: "", spur: [start] },
+    meine: { id: "meine", nav: "meine", anker: "", spur: [start, spurSchritt("Meine Inhalte", "meine")] },
+    allgemein: { id: "allgemein", nav: "inhalte", anker: "allgemeine-inhalte-titel", spur: [start, spurSchritt("Allgemeine Inhalte", "inhalte", "allgemeine-inhalte-titel")] },
+    impulse: { id: "impulse", nav: "inhalte", anker: "impulse-titel", spur: [start, spurSchritt("Impulse", "inhalte", "impulse-titel")] },
+    live: { id: "live", nav: "inhalte", anker: "live-titel", spur: [start, spurSchritt("Live-Sessions", "inhalte", "live-titel")] },
+    community: { id: "community", nav: "inhalte", anker: "community-titel", spur: [start, spurSchritt("Community", "inhalte", "community-titel")] },
+    freigabe: { id: "freigabe", nav: "redaktion", anker: "", spur: [start, spurSchritt("Moderation", "redaktion"), spurSchritt("Zur Freigabe", "mod-freigabe")] },
+    kommentare: { id: "kommentare", nav: "redaktion", anker: "", spur: [start, spurSchritt("Moderation", "redaktion"), spurSchritt("Kommentare", "mod-kommentare")] },
+    pruefung: { id: "pruefung", nav: "redaktion", anker: "", spur: [start, spurSchritt("Moderation", "redaktion"), spurSchritt("Prüfdaten", "mod-pruefung")] },
+    faq: { id: "faq", nav: "faq", anker: "", spur: [start, spurSchritt("FAQ", "faq")] }
+  };
+  herkunft = katalog[id] || katalog.allgemein;
+}
+
+function herkunftAusElement(el) {
+  if (!el || !el.closest) return "";
+  if (el.closest("#view-meine, #inhalte-eigene")) return "meine";
+  if (el.closest("#impulse, #impulse-eigene")) return "impulse";
+  if (el.closest("#view-mod-freigabe")) return "freigabe";
+  if (el.closest("#view-mod-kommentare")) return "kommentare";
+  if (el.closest("#view-mod-pruefung")) return "pruefung";
+  if (el.closest("#katalog-grid, .bereich-allgemein")) return "allgemein";
+  if (el.closest("#view-faq")) return "faq";
+  if (el.closest("#live")) return "live";
+  if (el.closest("#community")) return "community";
+  if (el.closest("#view-home, #lager")) return "home";
+  return "";
+}
+
+function krumenHtml(titel) {
+  if (!herkunft) herkunftSetzen("allgemein");
+  var spur = herkunft.spur || [];
+  var zurueck = spur[spur.length - 1] || spurSchritt("Startseite", "home");
+  var ankerAttr = zurueck.anker ? " data-anker=\"" + esc(zurueck.anker) + "\"" : "";
+  var back = "<button type=\"button\" class=\"backlink\" data-view-jump=\"" + esc(zurueck.view) + "\"" + ankerAttr + ">← " + esc(zurueck.label) + "</button>";
+  var teile = spur.map(function (s) {
+    var a = s.anker ? " data-anker=\"" + esc(s.anker) + "\"" : "";
+    return "<button type=\"button\" data-view-jump=\"" + esc(s.view) + "\"" + a + ">" + esc(s.label) + "</button>";
+  });
+  teile.push("<span aria-current=\"page\">" + esc(titel) + "</span>");
+  return back + "<nav class=\"krumen\" aria-label=\"Brotkrumen\">" + teile.join("<span class=\"krumen-sep\" aria-hidden=\"true\">/</span>") + "</nav>";
+}
+
+function oeffneInhalt(id, kurz, anker, el) {
   var c = byId(id);
   if (!c) return;
   var sichtbar = c.status === "veroeffentlicht" || kannBearbeitenInhalt(c) || darfFreigeben();
@@ -802,6 +857,9 @@ function oeffneInhalt(id, kurz, anker) {
     toast("Dieser Inhalt ist noch nicht veröffentlicht.");
     return;
   }
+  var gefunden = herkunftAusElement(el);
+  if (gefunden) herkunftSetzen(gefunden);
+  else if (!herkunft) herkunftSetzen("allgemein");
   aktuell = id;
   playerKurz = !!kurz;
   detailModus = "lesen";
@@ -826,17 +884,6 @@ function kommentareVon(c) {
   });
 }
 
-function wegweiserHtml(opts) {
-  opts = opts || {};
-  var teile = [
-    "<button type=\"button\" data-view-jump=\"meine\">Meine Inhalte</button>",
-    "<button type=\"button\" data-view-jump=\"inhalte\" data-anker=\"allgemeine-inhalte-titel\">Alle entdecken</button>"
-  ];
-  if (opts.kommentar) teile.push("<button type=\"button\" data-action=\"zum-kommentar\">Zum Kommentar</button>");
-  if (opts.freigabe && darfFreigeben()) teile.push("<button type=\"button\" data-view-jump=\"redaktion\">Zur Freigabe</button>");
-  return "<nav class=\"wegweiser\" aria-label=\"Wegweiser\">" + teile.join("") + "</nav>";
-}
-
 function kommentarBlock(c) {
   var liste = kommentareVon(c);
   var kommentare = liste.map(function (k) {
@@ -850,12 +897,12 @@ function kommentarBlock(c) {
   }).join("");
   var fb = state.feedback[c.id];
   var zahl = liste.length === 1 ? "1 Beitrag" : liste.length + " Beiträge";
-  return "<div id=\"kommentar-bereich\"><h2>War das brauchbar?</h2><p class=\"meta-line\">Eine Rückmeldung, ein Klick. Die Moderation sieht nur die Summe.</p>"
+  return "<div id=\"kommentar-bereich\" class=\"form-card\"><h2>War das brauchbar?</h2><p class=\"meta-line\">Eine Rückmeldung, ein Klick. Die Moderation sieht nur die Summe.</p>"
     + "<div class=\"facebtns\"><button type=\"button\" class=\"facebtn" + (fb === "up" ? " active" : "") + "\" data-fb=\"up\" aria-pressed=\"" + (fb === "up" ? "true" : "false") + "\"><span aria-hidden=\"true\">☺</span> Hat mir weitergeholfen</button>"
     + "<button type=\"button\" class=\"facebtn" + (fb === "down" ? " active" : "") + "\" data-fb=\"down\" aria-pressed=\"" + (fb === "down" ? "true" : "false") + "\"><span aria-hidden=\"true\">☹</span> Hat mir nicht weitergeholfen</button></div>"
-    + "<div class=\"detail-right\"><div class=\"dhead\"><h2>Kommentar zu diesem Inhalt</h2><span>" + zahl + "</span></div>"
+    + "<div class=\"dhead\"><h2>Kommentar zu diesem Inhalt</h2><span>" + zahl + "</span></div>"
     + (kommentare || "<p class=\"meta-line\">Noch kein Kommentar. Die erste Rückfrage steht unter Ihrem Namen.</p>")
-    + "<form class=\"comment-form\" id=\"kommentar-form\"><label class=\"field\"><span>Rückfrage unter Ihrem Namen</span><textarea name=\"text\" required rows=\"3\" placeholder=\"Was ist unklar geblieben?\"></textarea></label><button class=\"btn-solid\" type=\"submit\">Kommentar senden</button></form></div></div>";
+    + "<form class=\"comment-form\" id=\"kommentar-form\"><label class=\"field\"><span>Rückfrage unter Ihrem Namen</span><textarea name=\"text\" required rows=\"3\" placeholder=\"Was ist unklar geblieben?\"></textarea></label><button class=\"btn-solid\" type=\"submit\">Kommentar senden</button></form></div>";
 }
 
 function moderationKasten(c) {
@@ -909,22 +956,25 @@ function renderPlayer() {
   var bearbeiten = kannBearbeitenInhalt(c)
     ? "<button type=\"button\" class=\"btn-line\" data-action=\"bearbeiten\" data-id=\"" + esc(c.id) + "\">Bearbeiten</button>"
     : "";
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"inhalte\" data-anker=\"allgemeine-inhalte-titel\">← Alle entdecken</button>"
-    + wegweiserHtml({ kommentar: true, freigabe: c.status !== "veroeffentlicht" })
+  root.innerHTML = krumenHtml(c.titel)
     + "<div class=\"badges\">" + status + (c.niveau ? "<span class=\"lvl " + esc(c.niveau) + "\">" + esc(c.niveauLabel) + "</span>" : "") + kanon + pflicht + "<span class=\"dur\">" + esc(c.format) + " · " + esc(c.dauer) + "</span></div>"
     + "<h1>" + esc(c.titel) + "</h1>"
     + "<p class=\"ergebnis-zeile\"><strong>Ergebnis:</strong> " + esc(c.ergebnis || "noch nicht benannt") + "</p>"
-    + (c.dauerMin > 10 ? "<p class=\"meta-line\">Dieser Bestandseintrag ist länger als zehn Minuten und folgt der bisherigen Kachel. Neu eingereichte Einheiten gibt die Moderation nur bis zu diesem Richtwert frei.</p>" : "")
-    + "<p class=\"meta-line\">Anwendungsfeld: " + esc(felder) + " · Werkzeug: " + esc(c.werkzeug || "—") + " · Fassung " + esc(c.fassung || "1") + " · Geprüft am " + esc(datum(c.geprueft)) + "</p>"
-    + (c.lernziel ? "<p class=\"meta-line\">Lernziel: " + esc(c.lernziel) + "</p>" : "")
-    + (c.geltungsbereich ? "<p class=\"meta-line\">Geltungsbereich: " + esc(c.geltungsbereich) + "</p>" : "")
+    + (c.dauerMin > 10 ? "<p class=\"banner\">Dieser Bestandseintrag ist länger als zehn Minuten und folgt der bisherigen Kachel. Neu eingereichte Einheiten gibt die Moderation nur bis zu diesem Richtwert frei.</p>" : "")
+    + "<div class=\"form-card\"><h2>Einordnung</h2><dl class=\"gloss\">"
+    + "<div><dt>Anwendungsfeld</dt><dd>" + esc(felder) + "</dd></div>"
+    + "<div><dt>Werkzeug</dt><dd>" + esc(c.werkzeug || "—") + "</dd></div>"
+    + "<div><dt>Fassung</dt><dd>" + esc(c.fassung || "1") + "</dd></div>"
+    + "<div><dt>Geprüft am</dt><dd>" + esc(datum(c.geprueft)) + "</dd></div>"
+    + (c.lernziel ? "<div><dt>Lernziel</dt><dd>" + esc(c.lernziel) + "</dd></div>" : "")
+    + (c.geltungsbereich ? "<div><dt>Geltungsbereich</dt><dd>" + esc(c.geltungsbereich) + "</dd></div>" : "")
+    + "</dl></div>"
     + stage
     + (schritte ? "<ol class=\"steps\">" + schritte + "</ol>" : "")
     + praxis
     + fehler
     + moderationKasten(c)
-    + "<label class=\"checkline\"><input type=\"checkbox\" id=\"selbstcheck\"> Ich habe das Ergebnis selbst geprüft. Das ist der Schritt, den ich in wenigen Minuten sehe.</label>"
-    + "<div class=\"button-row\"><button type=\"button\" class=\"btn-solid\" data-action=\"abschliessen\">Einheit abschließen</button>" + bearbeiten + "<button type=\"button\" class=\"btn-line\" data-action=\"melden\" data-ziel=\"" + esc(c.id) + "\">Inhalt melden</button></div>"
+    + "<div class=\"button-row\"><button type=\"button\" class=\"btn-line\" data-action=\"zum-kommentar\">Zum Kommentar</button>" + bearbeiten + "</div>"
     + kommentarBlock(c);
 }
 
@@ -961,7 +1011,7 @@ function renderGlossar() {
 
 function renderProfil() {
   var root = document.getElementById("view-profil");
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-action=\"zur-lernansicht\">← Zur Lernansicht</button>"
+  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"home\">← Startseite</button>"
     + "<p class=\"eyebrow\">Profil aus dem Behördenkonto</p><h1>Henning Beckmann</h1>"
     + "<p>Name und Konto kommen aus dem Active Directory. Die KI-Werkstatt legt kein zweites Konto an.</p>"
     + "<form id=\"profil-form\" class=\"form-card\">"
@@ -987,8 +1037,7 @@ function renderEditor(root) {
       return "<option value=\"" + o[0] + "\"" + (String(v[wert] || "") === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
     }).join("") + "</select></label>";
   }
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"meine\">← Meine Inhalte</button>"
-    + wegweiserHtml({ freigabe: false })
+  root.innerHTML = krumenHtml(c ? "Inhalt bearbeiten" : "Inhalt anlegen")
     + "<p class=\"eyebrow\">Dieselbe Sicht, nur die Felder</p><h1>" + (c ? "Inhalt bearbeiten" : "Neuen Inhalt anlegen") + "</h1>"
     + "<p>Speichern legt die Fassung ab. Zur Prüfung geben legt den Inhalt in die Freigabeliste. Nach der Freigabe ist er unter Allgemeine Inhalte sichtbar.</p>"
     + "<form id=\"editor-form\" class=\"form-card\">"
@@ -1206,67 +1255,73 @@ function renderEigene() {
   });
 }
 
-function renderRedaktion() {
-  var root = document.getElementById("view-redaktion");
-  var liste = alle().filter(function (c) { return c.status !== "veroeffentlicht" || c.autorRolle === "creator"; });
+function modSammeln() {
   var wartend = alle().filter(function (c) { return c.status === "review" || c.status === "freigabe"; });
   var rows = wartend.map(function (c) {
     return "<button type=\"button\" class=\"rowitem\" data-open=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong><span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span><span>Zur Freigabe</span></button>";
   }).join("");
   var gemeldet = [];
+  var hinweise = [];
   alle().forEach(function (c) {
+    var gemeldetHier = false;
     kommentareVon(c).forEach(function (k) {
       if (!k.gemeldet) return;
+      gemeldetHier = true;
       gemeldet.push("<div class=\"listrow\"><div><button type=\"button\" class=\"textbtn\" data-open=\"" + esc(c.id) + "\" data-kommentar=\"1\"><strong>" + esc(c.titel) + "</strong></button><div class=\"meta-line\">Gemeldet · " + esc(k.name) + " · " + esc(k.text) + "</div></div><button type=\"button\" class=\"btn-line\" data-action=\"kommentar-loeschen\" data-key=\"" + esc(k.key) + "\" data-id=\"" + esc(c.id) + "\">Löschen</button></div>");
     });
     var fb = state.feedback[c.id];
-    if (fb === "up" || fb === "down") {
+    var bewertet = fb === "up" || fb === "down";
+    if (bewertet) {
       gemeldet.push("<div class=\"listrow\"><div><button type=\"button\" class=\"textbtn\" data-open=\"" + esc(c.id) + "\" data-kommentar=\"1\"><strong>" + esc(c.titel) + "</strong></button><div class=\"meta-line\">Bewertung · " + (fb === "up" ? "hat weitergeholfen" : "hat nicht weitergeholfen") + "</div></div></div>");
     }
-  });
-  var faellig = alle().filter(ueberfaellig).map(function (c) {
-    return "<button type=\"button\" class=\"rowitem\" data-open=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong><span>Geprüft am " + esc(datum(c.geprueft)) + "</span></button>";
-  }).join("");
-  var meldungen = (state.meldungen || []).slice().reverse().map(function (m) {
-    return "<div class=\"listrow\"><div><strong>" + esc(m.art) + "</strong><div class=\"meta-line\">" + esc(m.ziel) + " · " + esc(m.zeit) + "</div></div><div>" + esc(m.text || "") + "</div></div>";
-  }).join("");
-  var impulse = alle().filter(function (c) { return c.impuls && c.status === "veroeffentlicht"; });
-  var stufen = { basis: 0, aufbau: 0, spezial: 0 };
-  alle().forEach(function (c) { if (c.status === "veroeffentlicht" && stufen[c.niveau] !== undefined) stufen[c.niveau]++; });
-  var hinweise = alle().filter(function (c) {
-    var gemeldetHier = kommentareVon(c).some(function (k) { return k.gemeldet; });
-    var bewertet = state.feedback[c.id] === "up" || state.feedback[c.id] === "down";
-    return gemeldetHier || bewertet;
+    if (gemeldetHier || bewertet) hinweise.push(c);
   });
   var faelligListe = alle().filter(ueberfaellig);
-  function modKachel(ziel, zahl, titel, text) {
-    return "<button type=\"button\" class=\"hub-tile\" data-action=\"mod-sprung\" data-ziel=\"" + ziel + "\">"
-      + "<span class=\"zahl-badge\">" + zahl + "</span>"
-      + "<span class=\"hub-titel\">" + esc(titel) + "</span>"
-      + "<span class=\"hub-text\">" + esc(text) + "</span>"
-      + "<span class=\"go\">Liste öffnen</span></button>";
-  }
+  var faellig = faelligListe.map(function (c) {
+    return "<button type=\"button\" class=\"rowitem\" data-open=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong><span>Geprüft am " + esc(datum(c.geprueft)) + "</span></button>";
+  }).join("");
+  return { wartend: wartend, rows: rows, hinweise: hinweise, gemeldet: gemeldet, faelligListe: faelligListe, faellig: faellig };
+}
+
+function modKachel(ziel, zahl, titel, text) {
+  return "<button type=\"button\" class=\"hub-tile\" data-view-jump=\"" + ziel + "\">"
+    + "<span class=\"zahl-badge\">" + zahl + "</span>"
+    + "<span class=\"hub-titel\">" + esc(titel) + "</span>"
+    + "<span class=\"hub-text\">" + esc(text) + "</span>"
+    + "<span class=\"go\">Bereich öffnen</span></button>";
+}
+
+function renderRedaktion() {
+  var root = document.getElementById("view-redaktion");
+  var daten = modSammeln();
   root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"home\">Zurück</button>"
-    + wegweiserHtml({})
     + "<h1>Moderation</h1>"
-    + "<p>Dieselben Inhalte wie für alle anderen. Die drei Kacheln zeigen, wo eine Entscheidung ansteht.</p>"
+    + "<p>Dieselben Inhalte wie für alle anderen. Eine Kachel öffnet genau diesen Bereich.</p>"
     + "<div class=\"hub-grid\">"
-    + modKachel("mod-freigabe", wartend.length, "Zur Freigabe", "Inhalte, die auf eine Entscheidung warten. Freigabe schaltet sie sichtbar.")
-    + modKachel("mod-kommentare", hinweise.length, "Kommentare", "Inhalte mit einer Bewertung oder einem gemeldeten Kommentar.")
-    + modKachel("mod-pruefung", faelligListe.length, "Prüfdaten", "Veröffentlichte Inhalte, deren Prüfdatum älter als ein halbes Jahr ist.")
-    + "</div>"
-    + "<h2 id=\"mod-freigabe\">Zur Freigabe</h2><p class=\"meta-line\">" + wartend.length + (wartend.length === 1 ? " Inhalt steht" : " Inhalte stehen") + " an. Der Eintrag öffnet dieselbe Detailansicht.</p>"
-    + "<div class=\"rowlist\">" + (rows || "<p>Keine offenen Inhalte.</p>") + "</div>"
-    + "<h2 id=\"mod-kommentare\">Gewertete und gemeldete Kommentare</h2><p class=\"meta-line\">" + hinweise.length + (hinweise.length === 1 ? " Inhalt hat" : " Inhalte haben") + " eine Bewertung oder einen gemeldeten Kommentar.</p><div class=\"list\">" + (gemeldet.join("") || "<p>Keine gemeldeten Kommentare.</p>") + "</div>"
-    + "<h2 id=\"mod-pruefung\">Überfällige Prüfdaten</h2><div class=\"rowlist\">" + (faellig || "<p>Kein Prüfdatum ist älter als ein halbes Jahr.</p>") + "</div>"
-    + "<h2>Neue Rückmeldungen</h2><div class=\"list\">" + (meldungen || "<p>Noch keine Meldung in dieser Sitzung. Meldungen aus FAQ und Inhalten erscheinen hier und gehen in die Quartalsprüfung ein.</p>") + "</div>"
-    + "<h2>Einstiegsseite</h2><form id=\"pin-form\" class=\"form-card\"><label class=\"field\"><span>Praxisimpuls ohne weitere Klickstrecke</span><select name=\"pin\">" + impulse.map(function (c) {
-      return "<option value=\"" + esc(c.id) + "\"" + (state.prominent === c.id ? " selected" : "") + ">" + esc(c.titel) + "</option>";
-    }).join("") + "</select></label><button class=\"btn-solid\" type=\"submit\">Auf der Einstiegsseite platzieren</button></form>"
-    + "<h2>Stufenverteilung</h2><p class=\"meta-line\">Basis " + stufen.basis + " · Aufbau " + stufen.aufbau + " · Spezial " + stufen.spezial + ". Stichprobe: etwa jeder achte Inhalt, zusätzlich der erste Inhalt einer neuen Anwendung.</p>"
-    + "<div class=\"form-card\"><p><strong>Stichprobe offen:</strong> Halluzinationen erkennen</p><button type=\"button\" class=\"btn-line\" data-action=\"stichprobe\">Als nachgeprüft markieren</button><p class=\"meta-line\">" + (state.stichprobe.halluzinationen ? "Nachgeprüft in diesem Prototyp." : "Noch offen.") + "</p></div>"
-    + "<div class=\"ausbau-box\"><h2>KI-Unterstützung der Moderation</h2><p>Nicht Teil der ersten Iteration.</p><button type=\"button\" class=\"btn-line\" disabled>Vorschläge ansehen</button></div>";
-  void liste;
+    + modKachel("mod-freigabe", daten.wartend.length, "Zur Freigabe", "Inhalte, die auf eine Entscheidung warten. Freigabe schaltet sie sichtbar.")
+    + modKachel("mod-kommentare", daten.hinweise.length, "Kommentare", "Inhalte mit einer Bewertung oder einem gemeldeten Kommentar.")
+    + modKachel("mod-pruefung", daten.faelligListe.length, "Prüfdaten", "Veröffentlichte Inhalte, deren Prüfdatum älter als ein halbes Jahr ist.")
+    + "</div>";
+}
+
+function renderModBereich(bereich) {
+  var daten = modSammeln();
+  var ziel = document.getElementById("view-mod-" + bereich);
+  if (!ziel) return;
+  var kopf = "<button type=\"button\" class=\"backlink\" data-view-jump=\"redaktion\">← Moderation</button>";
+  if (bereich === "freigabe") {
+    ziel.innerHTML = kopf
+      + "<h2 id=\"mod-freigabe\">Zur Freigabe</h2><p class=\"meta-line\">" + daten.wartend.length + (daten.wartend.length === 1 ? " Inhalt steht" : " Inhalte stehen") + " an. Der Eintrag öffnet dieselbe Detailansicht.</p>"
+      + "<div class=\"rowlist\">" + (daten.rows || "<p>Keine offenen Inhalte.</p>") + "</div>";
+    return;
+  }
+  if (bereich === "kommentare") {
+    ziel.innerHTML = kopf
+      + "<h2 id=\"mod-kommentare\">Gewertete und gemeldete Kommentare</h2><p class=\"meta-line\">" + daten.hinweise.length + (daten.hinweise.length === 1 ? " Inhalt hat" : " Inhalte haben") + " eine Bewertung oder einen gemeldeten Kommentar.</p><div class=\"list\">" + (daten.gemeldet.join("") || "<p>Keine gemeldeten Kommentare.</p>") + "</div>";
+    return;
+  }
+  ziel.innerHTML = kopf
+    + "<h2 id=\"mod-pruefung\">Überfällige Prüfdaten</h2><div class=\"rowlist\">" + (daten.faellig || "<p>Kein Prüfdatum ist älter als ein halbes Jahr.</p>") + "</div>";
 }
 
 function renderReview() {
@@ -1801,14 +1856,14 @@ function init() {
 
   document.getElementById("sofort-btn").addEventListener("click", function (e) {
     e.stopPropagation();
-    oeffneInhalt(document.getElementById("sofort-btn").dataset.sofort || "berichte", true);
+    oeffneInhalt(document.getElementById("sofort-btn").dataset.sofort || "berichte", true, "", e.currentTarget);
   });
   document.querySelectorAll(".grid").forEach(function (grid) {
     grid.addEventListener("click", function (e) {
       if (e.target.closest(".likebtn, .kommentar-link, [data-bewerten], [data-kommentar]")) return;
       var tile = e.target.closest(".tile");
       if (!tile || !tile.dataset.id) return;
-      oeffneInhalt(tile.dataset.id);
+      oeffneInhalt(tile.dataset.id, false, "", tile);
     });
     grid.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
@@ -1816,7 +1871,7 @@ function init() {
       var tile = e.target.closest(".tile");
       if (!tile || !tile.dataset.id) return;
       e.preventDefault();
-      oeffneInhalt(tile.dataset.id);
+      oeffneInhalt(tile.dataset.id, false, "", tile);
     });
   });
   document.body.addEventListener("change", function (e) {
@@ -1844,7 +1899,7 @@ function init() {
     }
     var open = e.target.closest("[data-open]");
     if (open && !e.target.closest("a")) {
-      oeffneInhalt(open.dataset.open, false, open.dataset.kommentar ? "kommentar-bereich" : "");
+      oeffneInhalt(open.dataset.open, false, open.dataset.kommentar ? "kommentar-bereich" : "", open);
       return;
     }
     var jump = e.target.closest("[data-view-jump]");
@@ -1872,7 +1927,7 @@ function init() {
         if (eingabe) eingabe.focus();
       }
     }
-    if (action === "neu") { editorId = null; editorVorgabe = ""; detailModus = "bearbeiten"; showView("player"); }
+    if (action === "neu") { editorId = null; editorVorgabe = ""; detailModus = "bearbeiten"; herkunftSetzen("meine"); showView("player"); }
     if (action === "bearbeiten") { editorId = act.dataset.id; editorVorgabe = ""; detailModus = "bearbeiten"; aktuell = editorId; showView("player"); }
     if (action === "review") { aktuell = act.dataset.id; detailModus = "lesen"; oeffneInhalt(act.dataset.id); }
     if (action === "passwort") {
@@ -1939,9 +1994,13 @@ function init() {
         state.kommentarWeg[loeschId][loeschKey] = true;
         sichern();
         var playerSicht = document.getElementById("view-player");
-        var redaktionSicht = document.getElementById("view-redaktion");
         if (playerSicht && !playerSicht.hidden && detailModus !== "bearbeiten") renderPlayer();
-        if (redaktionSicht && !redaktionSicht.hidden) renderRedaktion();
+        ["redaktion", "mod-freigabe", "mod-kommentare", "mod-pruefung"].forEach(function (name) {
+          var sicht = document.getElementById("view-" + name);
+          if (!sicht || sicht.hidden) return;
+          if (name === "redaktion") renderRedaktion();
+          else renderModBereich(name.replace("mod-", ""));
+        });
         toast("Kommentar gelöscht.");
       }
     }
@@ -2036,7 +2095,7 @@ function init() {
     var card = e.target.closest(".imp");
     if (!card || !card.dataset.open) return;
     e.preventDefault();
-    oeffneInhalt(card.dataset.open);
+    oeffneInhalt(card.dataset.open, false, "", card);
   });
 
   document.getElementById("community-mehr").addEventListener("click", function () {
@@ -2050,7 +2109,7 @@ function init() {
       titel: "Impuls anbieten",
       html: "<p>Es braucht Erfahrung aus dem Alltag, keinen Expertenstatus. Auch ein misslungener Versuch ist ein Beitrag. Anlegen können alle Teilnehmenden. Die Moderation entscheidet über die Veröffentlichung.</p>",
       aktionen: [
-        { label: "Impuls anlegen", fn: function () { editorId = null; editorVorgabe = "impuls"; detailModus = "bearbeiten"; showView("player"); } },
+        { label: "Impuls anlegen", fn: function () { editorId = null; editorVorgabe = "impuls"; detailModus = "bearbeiten"; herkunftSetzen("impulse"); showView("player"); } },
         { label: "Schließen", zweite: true }
       ]
     });
