@@ -6,6 +6,8 @@ var aktuell = null;
 var suchtext = "";
 var selbstGeprueft = false;
 var editorId = null;
+var editorVorgabe = "";
+var detailModus = "lesen";
 
 var GLOSSAR = [
   { begriff: "EU-KI-Verordnung", text: "Europäischer Rechtsrahmen für KI-Systeme. In den Inhalten wird Artikel 4 als Qualifizierungspflicht eingeordnet, abhängig von Aufgabe und Verantwortung." },
@@ -42,7 +44,10 @@ var INHALTE = [
     kern: ["Das Werkzeug schreibt einen Entwurf, keinen Vorgang.", "Namen, Zahlen und Verneinungen gegenhören.", "Weitergabe erst mit Prüfvermerk."],
     glossar: ["Transkription", "Sprachmodell"], glossarOk: true, grundlagen: false,
     verwandt: ["ergebnis-pruefen", "halluzinationen"], autor: "Redaktion KI-Werkstatt", status: "veroeffentlicht",
-    kommentare: [{ name: "T. Hoffmann", meta: "KPB Borken · vor 4 Tagen", text: "Bei Hintergrundgeräuschen wich das Transkript stark ab. Der Gegencheck an den Zahlen hat das aufgefangen." }]
+    kommentare: [
+      { name: "T. Hoffmann", meta: "KPB Borken · vor 4 Tagen", text: "Bei Hintergrundgeräuschen wich das Transkript stark ab. Der Gegencheck an den Zahlen hat das aufgefangen." },
+      { name: "Unbekannt", meta: "vor 1 Tag", text: "Das Transkript einfach übernehmen, der Gegencheck ist übertrieben.", gemeldet: true }
+    ]
   }),
   inhalt({
     id: "sprachmodelle", titel: "Grundlagen KI: Wie Sprachmodelle Texte erzeugen",
@@ -421,6 +426,8 @@ function leerZustand() {
     behoerde: "LAFP NRW",
     feedback: {},
     kommentare: {},
+    kommentarWeg: {},
+    kommentarFlags: {},
     meldungen: [],
     status: {},
     override: {},
@@ -611,21 +618,28 @@ function meinArt(c) {
 function showView(name, opt) {
   opt = opt || {};
   if (name !== "sso" && !authAktiv()) name = "sso";
-  if ((name === "redaktion" || name === "review" || name === "statistik") && !darfFreigeben()) name = "home";
-  if ((name === "editor" || name === "meine" || name === "leitfaden") && !darfBearbeiten()) name = "home";
+  if (name === "editor") { detailModus = "bearbeiten"; name = "player"; }
+  if (name === "review") { detailModus = "lesen"; name = "player"; }
+  if (name === "impulse" || name === "community" || name === "live") {
+    opt.anker = opt.anker || { impulse: "impulse-titel", community: "community-titel", live: "live-titel" }[name];
+    name = "inhalte";
+  }
+  if ((name === "redaktion" || name === "statistik") && !darfFreigeben()) name = "home";
+  if ((name === "player" && detailModus === "bearbeiten" || name === "meine" || name === "leitfaden") && !darfBearbeiten()) name = "home";
   if (name === "admin" && state.rolle !== "admin") name = "home";
   document.body.classList.toggle("sso", name === "sso");
   document.querySelectorAll(".view").forEach(function (v) {
     v.hidden = v.id !== "view-" + name;
   });
-  if (name === "player") renderPlayer();
+  if (name === "player") {
+    if (detailModus === "bearbeiten") renderEditor(document.getElementById("view-player"));
+    else renderPlayer();
+  }
   if (name === "summary") renderSummary();
   if (name === "glossar") renderGlossar();
   if (name === "profil") renderProfil();
-  if (name === "editor") renderEditor();
   if (name === "meine") renderMeine();
   if (name === "redaktion") renderRedaktion();
-  if (name === "review") renderReview();
   if (name === "statistik") renderStatistik();
   if (name === "admin") renderAdmin();
   if (name === "leitfaden") { /* statisches HTML */ }
@@ -646,11 +660,24 @@ function showView(name, opt) {
 }
 
 function markNav(name, anker) {
+  var bereich = name;
+  if ((name === "player" && detailModus === "bearbeiten") || name === "leitfaden") bereich = "meine";
+  else if (name === "player" || name === "summary" || name === "glossar") bereich = "inhalte";
+  if (name === "statistik") bereich = "redaktion";
   document.querySelectorAll("header nav a").forEach(function (a) {
-    var an = (name === "home" && a.dataset.nav === anker) || a.dataset.nav === name;
+    var an = false;
+    if (a.dataset.anker) an = bereich === "inhalte" && anker === a.dataset.anker;
+    else if (a.dataset.view === "meine") an = bereich === "meine";
+    else an = a.dataset.nav === bereich;
     if (an) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   });
+  var btn = document.getElementById("nav-inhalte-btn");
+  if (btn) {
+    var inhaltAktiv = (bereich === "inhalte" || bereich === "meine") && anker !== "live-titel" && anker !== "community-titel";
+    if (inhaltAktiv) btn.setAttribute("aria-current", "page");
+    else btn.removeAttribute("aria-current");
+  }
 }
 
 function hubKachel(k) {
@@ -660,39 +687,38 @@ function hubKachel(k) {
 }
 
 function renderHub() {
-  var meine = document.getElementById("hub-meine");
-  var allgemein = document.getElementById("hub-allgemein");
   var box = document.getElementById("hub-kacheln");
-  if (meine) {
-    meine.innerHTML = hubKachel(["inhalte", "eigene-inhalte-titel", "Meine Inhalte", ""]);
-  }
-  if (allgemein) {
-    allgemein.innerHTML = hubKachel(["inhalte", "allgemeine-inhalte-titel", "Allgemeine Inhalte", "Inhalte entdecken"]);
-  }
   if (!box) return;
   var kacheln = [
-    ["impulse", "", "Impulse aus der Praxis", "Kurze Beiträge aus dem Dienstalltag, jeder für sich."],
-    ["faq", "", "Häufige Fragen", "Verlässliche Antworten zum Einstieg, getrennt von den Inhalten."],
-    ["community", "", "Aus der Community", "Vorschau auf den späteren Austausch. Am einzelnen Inhalt können Sie schon kommentieren."],
-    ["live", "", "Live-Session", "Offenes Format. Die Teilnahme selbst folgt später."]
+    ["inhalte", "eigene-inhalte-titel", "Meine Inhalte", "Erstellt, bereitgestellt oder begonnen."],
+    ["inhalte", "allgemeine-inhalte-titel", "Allgemeine Inhalte", "Inhalte entdecken."],
+    ["inhalte", "impulse-titel", "Impulse", "Kurze Beiträge aus dem Dienstalltag."],
+    ["inhalte", "live-titel", "Live-Sessions", "Offenes Format. Die Teilnahme folgt später."],
+    ["inhalte", "community-titel", "Community", "Vorschau auf den späteren Austausch."],
+    ["faq", "", "Häufige Fragen", "Verlässliche Antworten zum Einstieg."]
   ];
-  if (darfFreigeben()) kacheln.push(["redaktion", "", "Moderation", "Beiträge, die auf eine Entscheidung warten."]);
+  if (darfFreigeben()) kacheln.push(["redaktion", "", "Moderation", "Freigaben und gemeldete Kommentare."]);
   if (state.rolle === "admin") kacheln.push(["admin", "", "Administration", "Rollen, Anbindung und Betrieb."]);
   box.innerHTML = kacheln.map(hubKachel).join("");
 }
 
 function renderNav() {
-  var items = [
-    ["inhalte", "Inhalte", "inhalte", ""],
-    ["impulse", "Impulse", "impulse", ""],
-    ["faq", "FAQ", "faq", ""]
-  ];
-  if (darfBearbeiten()) items.push(["erstellen", "Erstellen", "meine", ""]);
-  if (darfFreigeben()) items.push(["moderation", "Moderation", "redaktion", ""]);
   var nav = document.querySelector("header nav");
-  nav.innerHTML = items.map(function (it) {
-    return "<a href=\"#" + it[0] + "\" data-nav=\"" + it[0] + "\" data-view=\"" + it[2] + "\" data-anker=\"" + it[3] + "\">" + it[1] + "</a>";
-  }).join("");
+  if (!nav) return;
+  var html = "<div class=\"nav-drop\">" +
+    "<button type=\"button\" class=\"nav-drop-btn\" id=\"nav-inhalte-btn\" data-nav-toggle aria-expanded=\"false\" aria-controls=\"nav-inhalte-sub\">Inhalte</button>" +
+    "<div class=\"nav-sub\" id=\"nav-inhalte-sub\" hidden>" +
+      "<a href=\"#erstellen\" data-nav=\"meine\" data-view=\"meine\">Erstellen</a>" +
+      "<a href=\"#meine-inhalte\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"eigene-inhalte-titel\">Meine Inhalte</a>" +
+      "<a href=\"#allgemeine-inhalte\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"allgemeine-inhalte-titel\">Allgemeine Inhalte</a>" +
+      "<a href=\"#impulse\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"impulse-titel\">Impulse</a>" +
+    "</div></div>" +
+    "<a href=\"#live\" data-nav=\"live\" data-view=\"inhalte\" data-anker=\"live-titel\">Live-Sessions</a>" +
+    "<a href=\"#community\" data-nav=\"community\" data-view=\"inhalte\" data-anker=\"community-titel\">Community</a>" +
+    "<a href=\"#faq\" data-nav=\"faq\" data-view=\"faq\">FAQ</a>";
+  if (darfFreigeben()) html += "<a href=\"#redaktion\" data-nav=\"redaktion\" data-view=\"redaktion\">Moderation</a>";
+  if (state.rolle === "admin") html += "<a href=\"#admin\" data-nav=\"admin\" data-view=\"admin\">Administration</a>";
+  nav.innerHTML = html;
 }
 
 function renderProfilKnopf() {
@@ -754,21 +780,80 @@ function oeffneAusbau(titel, text) {
 
 var playerKurz = false;
 
-function oeffneInhalt(id, kurz) {
+function oeffneInhalt(id, kurz, anker) {
   var c = byId(id);
-  if (!c || c.status !== "veroeffentlicht") {
+  if (!c) return;
+  var sichtbar = c.status === "veroeffentlicht" || kannBearbeitenInhalt(c) || darfFreigeben();
+  if (!sichtbar) {
     toast("Dieser Inhalt ist noch nicht veröffentlicht.");
     return;
   }
   aktuell = id;
   playerKurz = !!kurz;
+  detailModus = "lesen";
   selbstGeprueft = false;
-  bumpInhalt(id);
-  showView("player");
+  if (c.status === "veroeffentlicht") bumpInhalt(id);
+  showView("player", { anker: anker || "" });
 }
 
 function kommentareVon(c) {
-  return (c.kommentare || []).concat(state.kommentare[c.id] || []);
+  if (!c) return [];
+  var basis = (c.kommentare || []).map(function (k, i) {
+    return Object.assign({ key: "b" + i }, k);
+  });
+  var extra = ((state.kommentare && state.kommentare[c.id]) || []).map(function (k, i) {
+    return Object.assign({ key: "e" + i }, k);
+  });
+  var weg = (state.kommentarWeg && state.kommentarWeg[c.id]) || {};
+  var flags = (state.kommentarFlags && state.kommentarFlags[c.id]) || {};
+  return basis.concat(extra).filter(function (k) { return !weg[k.key]; }).map(function (k) {
+    if (flags[k.key]) k.gemeldet = true;
+    return k;
+  });
+}
+
+function wegweiserHtml(opts) {
+  opts = opts || {};
+  var teile = [
+    "<button type=\"button\" data-view-jump=\"inhalte\" data-anker=\"eigene-inhalte-titel\">Meine Inhalte</button>",
+    "<button type=\"button\" data-view-jump=\"inhalte\" data-anker=\"allgemeine-inhalte-titel\">Alle entdecken</button>"
+  ];
+  if (opts.kommentar) teile.push("<button type=\"button\" data-action=\"zum-kommentar\">Zum Kommentar</button>");
+  if (opts.freigabe && darfFreigeben()) teile.push("<button type=\"button\" data-view-jump=\"redaktion\">Zur Freigabe</button>");
+  return "<nav class=\"wegweiser\" aria-label=\"Wegweiser\">" + teile.join("") + "</nav>";
+}
+
+function kommentarBlock(c) {
+  var liste = kommentareVon(c);
+  var kommentare = liste.map(function (k) {
+    var loesch = (darfFreigeben() || k.eigen)
+      ? "<button type=\"button\" class=\"textbtn\" data-action=\"kommentar-loeschen\" data-key=\"" + esc(k.key) + "\" data-id=\"" + esc(c.id) + "\">Löschen</button>"
+      : "";
+    var melden = k.gemeldet
+      ? "<span class=\"st review\">Gemeldet</span>"
+      : "<button type=\"button\" class=\"textbtn\" data-action=\"kommentar-melden\" data-key=\"" + esc(k.key) + "\">Melden</button>";
+    return "<div class=\"comment\" id=\"kommentar-" + esc(k.key) + "\"><div class=\"c-av a\">" + esc((k.name || "?").slice(0, 1)) + "</div><div class=\"c-body\"><div class=\"c-name\">" + esc(k.name) + " <span>" + esc(k.meta || "gerade eben") + "</span></div><div class=\"c-text\">" + esc(k.text) + "</div><div class=\"c-actions\">" + melden + loesch + "</div></div></div>";
+  }).join("");
+  var fb = state.feedback[c.id];
+  var zahl = liste.length === 1 ? "1 Beitrag" : liste.length + " Beiträge";
+  return "<div id=\"kommentar-bereich\"><h2>War das brauchbar?</h2><p class=\"meta-line\">Eine Rückmeldung, ein Klick. Die Moderation sieht nur die Summe.</p>"
+    + "<div class=\"facebtns\"><button type=\"button\" class=\"facebtn" + (fb === "up" ? " active" : "") + "\" data-fb=\"up\" aria-pressed=\"" + (fb === "up" ? "true" : "false") + "\"><span aria-hidden=\"true\">☺</span> Hat mir weitergeholfen</button>"
+    + "<button type=\"button\" class=\"facebtn" + (fb === "down" ? " active" : "") + "\" data-fb=\"down\" aria-pressed=\"" + (fb === "down" ? "true" : "false") + "\"><span aria-hidden=\"true\">☹</span> Hat mir nicht weitergeholfen</button></div>"
+    + "<div class=\"detail-right\"><div class=\"dhead\"><h2>Kommentar zu diesem Inhalt</h2><span>" + zahl + "</span></div>"
+    + (kommentare || "<p class=\"meta-line\">Noch kein Kommentar. Die erste Rückfrage steht unter Ihrem Namen.</p>")
+    + "<form class=\"comment-form\" id=\"kommentar-form\"><label class=\"field\"><span>Rückfrage unter Ihrem Namen</span><textarea name=\"text\" required rows=\"3\" placeholder=\"Was ist unklar geblieben?\"></textarea></label><button class=\"btn-solid\" type=\"submit\">Kommentar senden</button></form></div></div>";
+}
+
+function moderationKasten(c) {
+  if (!darfFreigeben() || !c || c.status === "veroeffentlicht") return "";
+  var punkte = mangel(c);
+  var lis = punkte.length
+    ? punkte.map(function (p) { return "<li class=\"bad\">" + esc(p) + "</li>"; }).join("")
+    : "<li class=\"ok\">Pflichtmerkmale vollständig. Freigabe schaltet den Inhalt sichtbar.</li>";
+  return "<div class=\"form-card mod-kasten\" id=\"freigabe-kasten\"><h2>Freigabe</h2><p>Dieselbe Ansicht wie für alle anderen. Hier kommt nur die Entscheidung dazu.</p><ul class=\"pruef\">" + lis + "</ul>"
+    + "<label class=\"field\"><span>Begründung, nötig bei Rückgabe</span><textarea id=\"freigabe-grund\" rows=\"3\"></textarea></label>"
+    + "<div class=\"button-row\"><button type=\"button\" class=\"btn-line\" data-action=\"zurueckgeben\">Zurückgeben</button>"
+    + "<button type=\"button\" class=\"btn-solid\" data-action=\"freigeben\"" + (punkte.length ? " disabled" : "") + ">Freigeben</button></div></div>";
 }
 
 function renderPlayer() {
@@ -804,28 +889,18 @@ function renderPlayer() {
   var schritte = (c.schritte || []).map(function (s, i) {
     return "<li><h3>" + (i + 1) + ". " + esc(s.t) + "</h3><p>" + mitBegriffen(s.d) + "</p></li>";
   }).join("");
-  var kommentare = kommentareVon(c).map(function (k, i) {
-    var loesch = k.eigen ? "<button type=\"button\" class=\"textbtn\" data-action=\"kommentar-loeschen\" data-index=\"" + i + "\">Löschen</button>" : "";
-    return "<div class=\"comment\"><div class=\"c-av a\">" + esc((k.name || "?").slice(0, 1)) + "</div><div class=\"c-body\"><div class=\"c-name\">" + esc(k.name) + " <span>" + esc(k.meta || "gerade eben") + "</span></div><div class=\"c-text\">" + esc(k.text) + "</div><div class=\"c-actions\">" + loesch + "</div></div></div>";
-  }).join("");
-  if (playerKurz && (c.impuls || c.formatKey === "impuls")) {
-    root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"impulse\">Zurück</button>"
-      + "<p class=\"meta-line\">" + esc(c.dauer) + "</p>"
-      + "<h1>" + esc(c.titel) + "</h1>"
-      + "<p>" + mitBegriffen(c.teaser) + "</p>"
-      + (c.ergebnis ? "<p>" + esc(c.ergebnis) + "</p>" : "")
-      + "<div class=\"detail-right\"><h2>Austausch zu diesem Impuls</h2>"
-      + kommentare
-      + "<form class=\"comment-form\" id=\"kommentar-form\"><label class=\"field\"><span>Rückfrage unter Ihrem Namen</span><textarea name=\"text\" required rows=\"3\"></textarea></label><button class=\"btn-solid\" type=\"submit\">Kommentar senden</button></form></div>";
-    return;
-  }
   var pflicht = c.pflicht ? "<span class=\"lvl impulstag\">Vor der Nutzung</span>" : "";
   var kanon = c.grundlagen ? "<span class=\"lvl basis\">Grundlagenkanon</span>" : "";
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-action=\"zur-lernansicht\">← Zurück zu den Inhalten</button>"
-    + "<div class=\"badges\">" + (c.niveau ? "<span class=\"lvl " + esc(c.niveau) + "\">" + esc(c.niveauLabel) + "</span>" : "") + kanon + pflicht + "<span class=\"dur\">" + esc(c.format) + " · " + esc(c.dauer) + "</span></div>"
+  var status = c.status !== "veroeffentlicht" ? "<span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span>" : "";
+  var bearbeiten = kannBearbeitenInhalt(c)
+    ? "<button type=\"button\" class=\"btn-line\" data-action=\"bearbeiten\" data-id=\"" + esc(c.id) + "\">Bearbeiten</button>"
+    : "";
+  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"inhalte\" data-anker=\"allgemeine-inhalte-titel\">← Alle entdecken</button>"
+    + wegweiserHtml({ kommentar: true, freigabe: c.status !== "veroeffentlicht" })
+    + "<div class=\"badges\">" + status + (c.niveau ? "<span class=\"lvl " + esc(c.niveau) + "\">" + esc(c.niveauLabel) + "</span>" : "") + kanon + pflicht + "<span class=\"dur\">" + esc(c.format) + " · " + esc(c.dauer) + "</span></div>"
     + "<h1>" + esc(c.titel) + "</h1>"
     + "<p class=\"ergebnis-zeile\"><strong>Ergebnis:</strong> " + esc(c.ergebnis || "noch nicht benannt") + "</p>"
-    + (c.dauerMin > 10 ? "<p class=\"meta-line\">Dieser Bestandseintrag ist länger als zehn Minuten und folgt der bisherigen Kachel. Neu eingereichte Einheiten gibt die Redaktion nur bis zu diesem Richtwert frei.</p>" : "")
+    + (c.dauerMin > 10 ? "<p class=\"meta-line\">Dieser Bestandseintrag ist länger als zehn Minuten und folgt der bisherigen Kachel. Neu eingereichte Einheiten gibt die Moderation nur bis zu diesem Richtwert frei.</p>" : "")
     + "<p class=\"meta-line\">Anwendungsfeld: " + esc(felder) + " · Werkzeug: " + esc(c.werkzeug || "—") + " · Fassung " + esc(c.fassung || "1") + " · Geprüft am " + esc(datum(c.geprueft)) + "</p>"
     + (c.lernziel ? "<p class=\"meta-line\">Lernziel: " + esc(c.lernziel) + "</p>" : "")
     + (c.geltungsbereich ? "<p class=\"meta-line\">Geltungsbereich: " + esc(c.geltungsbereich) + "</p>" : "")
@@ -833,11 +908,10 @@ function renderPlayer() {
     + (schritte ? "<ol class=\"steps\">" + schritte + "</ol>" : "")
     + praxis
     + fehler
+    + moderationKasten(c)
     + "<label class=\"checkline\"><input type=\"checkbox\" id=\"selbstcheck\"> Ich habe das Ergebnis selbst geprüft. Das ist der Schritt, den ich in wenigen Minuten sehe.</label>"
-    + "<div class=\"button-row\"><button type=\"button\" class=\"btn-solid\" data-action=\"abschliessen\">Einheit abschließen</button><button type=\"button\" class=\"btn-line\" data-action=\"melden\" data-ziel=\"" + esc(c.id) + "\">Inhalt melden</button></div>"
-    + "<div class=\"detail-right\"><div class=\"dhead\"><h2>Kommentar zu diesem Inhalt</h2><span>" + kommentareVon(c).length + " Beiträge</span></div>"
-    + kommentare
-    + "<form class=\"comment-form\" id=\"kommentar-form\"><label class=\"field\"><span>Rückfrage unter Ihrem Namen</span><textarea name=\"text\" required rows=\"3\" placeholder=\"Was ist unklar geblieben?\"></textarea></label><button class=\"btn-solid\" type=\"submit\">Kommentar senden</button></form></div>";
+    + "<div class=\"button-row\"><button type=\"button\" class=\"btn-solid\" data-action=\"abschliessen\">Einheit abschließen</button>" + bearbeiten + "<button type=\"button\" class=\"btn-line\" data-action=\"melden\" data-ziel=\"" + esc(c.id) + "\">Inhalt melden</button></div>"
+    + kommentarBlock(c);
 }
 
 function renderSummary() {
@@ -886,10 +960,12 @@ function renderProfil() {
     + "<div class=\"ausbau-box\"><h2>Ansprechbarkeit und Personensuche</h2><p>Die freiwillige Kennzeichnung, zu welchen Themen Sie ansprechbar sind, und die Suche nach Personen folgen mit den Foren in der späteren Ausbaustufe.</p><button type=\"button\" class=\"btn-line\" disabled>Themen kennzeichnen</button></div>";
 }
 
-function renderEditor() {
+function renderEditor(root) {
   var c = editorId ? byId(editorId) : null;
-  var root = document.getElementById("view-editor");
-  var v = c || { titel: "", formatKey: "lernmodul", niveau: "basis", felder: [], werkzeugKey: "sprachmodell", dauerMin: 8, ergebnis: "", lernziel: "", praxis: { rolle: "", taetigkeit: "", nutzen: "", grenze: "" }, glossarOk: false, glossar: [], medien: "text", anwendungsbezogen: true, iframe: "", text: "", dateiname: "" };
+  root = root || document.getElementById("view-editor");
+  if (!root) return;
+  var v = c || { titel: "", formatKey: editorVorgabe || "lernmodul", niveau: "basis", felder: [], werkzeugKey: "sprachmodell", dauerMin: 8, ergebnis: "", lernziel: "", praxis: { rolle: "", taetigkeit: "", nutzen: "", grenze: "" }, glossarOk: false, glossar: [], medien: "text", anwendungsbezogen: true, iframe: "", text: "", dateiname: "" };
+  editorVorgabe = "";
   if (v.medien === "poltube") v.medien = "iframe";
   var p = v.praxis || { rolle: "", taetigkeit: "", nutzen: "", grenze: "" };
   function sel(name, wert, opts) {
@@ -897,9 +973,10 @@ function renderEditor() {
       return "<option value=\"" + o[0] + "\"" + (String(v[wert] || "") === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
     }).join("") + "</select></label>";
   }
-  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"meine\">← Meine Inhalte</button>"
-    + "<p class=\"eyebrow\">Erstellen im Browser</p><h1>" + (c ? "Lerneinheit bearbeiten" : "Neue Lerneinheit") + "</h1>"
-    + "<p>Entwurf, Prüfung, Freigabe, Veröffentlichung. Speichern legt die Fassung ab. Einreichen setzt den Status auf Review.</p>"
+  root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"meine\">← Erstellen</button>"
+    + wegweiserHtml({ freigabe: false })
+    + "<p class=\"eyebrow\">Dieselbe Sicht, nur die Felder</p><h1>" + (c ? "Inhalt bearbeiten" : "Neuen Inhalt anlegen") + "</h1>"
+    + "<p>Speichern legt die Fassung ab. Zur Prüfung geben legt den Inhalt in die Freigabeliste. Nach der Freigabe ist er unter Allgemeine Inhalte sichtbar.</p>"
     + "<form id=\"editor-form\" class=\"form-card\">"
     + "<label class=\"field\"><span>Titel</span><input name=\"titel\" required value=\"" + esc(v.titel || "") + "\"></label>"
     + sel("Format", "formatKey", [["lernmodul", "Lernmodul"], ["artikel", "Wissensartikel"], ["impuls", "Praxisimpuls"], ["video", "Video"]])
@@ -1048,17 +1125,54 @@ function statusLabel(s) {
   return { entwurf: "Entwurf", review: "Review", freigabe: "Freigabe", veroeffentlicht: "Veröffentlichung" }[s] || s;
 }
 
+function kachelMarkup(c) {
+  var farbe = "t" + ((String(c.titel || "").length % 6) + 1);
+  var n = kommentareVon(c).length;
+  var label = n === 1 ? "1 Kommentar" : n + " Kommentare";
+  var thema = (c.thema || []).join(" ");
+  var ziel = (c.ziel || []).join(" ");
+  var geliked = state.feedback[c.id] === "up";
+  return "<article class=\"tile " + farbe + "\" tabindex=\"0\" data-id=\"" + esc(c.id) + "\" data-werkzeug=\"" + esc(c.werkzeugKey || "") + "\" data-thema=\"" + esc(thema) + "\" data-format=\"" + esc(c.formatKey || "") + "\" data-niveau=\"" + esc(c.niveau || "") + "\" data-zielgruppe=\"" + esc(ziel) + "\">"
+    + "<div class=\"thumb\"><span class=\"fmt\">" + esc(c.format || "Inhalt") + " · " + esc(c.dauer) + "</span></div>"
+    + "<div class=\"tile-body\"><div class=\"badges\"><span class=\"lvl " + esc(c.niveau || "basis") + "\">" + esc(c.niveauLabel) + "</span><span class=\"st " + esc(c.status) + "\">" + esc(meinArt(c)) + "</span></div>"
+    + "<h3>" + esc(c.titel) + "</h3><p>" + esc(c.teaser || "") + "</p>"
+    + "<div class=\"tile-foot\"><button type=\"button\" class=\"likebtn" + (geliked ? " liked" : "") + "\" data-bewerten=\"" + esc(c.id) + "\" aria-pressed=\"" + (geliked ? "true" : "false") + "\" aria-label=\"Hat mir weitergeholfen\"><span class=\"cnt\">" + feedbackSumme(c.id).up + "</span></button>"
+    + "<button type=\"button\" class=\"textbtn kommentar-link\" data-open=\"" + esc(c.id) + "\" data-kommentar=\"1\">" + label + "</button></div></div></article>";
+}
+
+function verankereKachel(tile) {
+  var id = tile.dataset.id;
+  var c = byId(id);
+  if (!c) return;
+  var foot = tile.querySelector(".tile-foot");
+  if (!foot) return;
+  var n = kommentareVon(c).length;
+  var label = n === 1 ? "1 Kommentar" : n + " Kommentare";
+  var link = foot.querySelector(".kommentar-link");
+  if (!link) {
+    var meta = foot.querySelector(".meta-ic");
+    if (meta && /Kommentar/.test(meta.textContent)) meta.remove();
+    link = document.createElement("button");
+    link.type = "button";
+    link.className = "textbtn kommentar-link";
+    link.dataset.open = id;
+    link.dataset.kommentar = "1";
+    foot.appendChild(link);
+  }
+  link.textContent = label;
+  var like = foot.querySelector(".likebtn");
+  if (like) {
+    like.dataset.bewerten = id;
+    like.classList.toggle("liked", state.feedback[id] === "up");
+    like.setAttribute("aria-pressed", state.feedback[id] === "up" ? "true" : "false");
+    like.setAttribute("aria-label", "Hat mir weitergeholfen");
+    var cnt = like.querySelector(".cnt");
+    if (cnt) cnt.textContent = String(feedbackSumme(id).up);
+  }
+}
+
 function renderEigene() {
   var q = (suchtext || "").trim().toLowerCase();
-  function zeile(c) {
-    var oeffnen = c.status === "veroeffentlicht"
-      ? "<button type=\"button\" class=\"textbtn\" data-open=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong></button>"
-      : "<strong>" + esc(c.titel) + "</strong>";
-    var edit = kannBearbeitenInhalt(c)
-      ? "<button type=\"button\" class=\"btn-line\" data-action=\"bearbeiten\" data-id=\"" + esc(c.id) + "\">Bearbeiten</button>"
-      : "";
-    return "<div class=\"listrow\"><div>" + oeffnen + "<div class=\"meta-line\">" + esc(meinArt(c)) + " · " + esc(statusLabel(c.status)) + " · " + esc(c.dauer) + "</div></div>" + edit + "</div>";
-  }
   function treffer(c) {
     return !q || (c.titel + " " + (c.teaser || "")).toLowerCase().indexOf(q) >= 0;
   }
@@ -1071,11 +1185,14 @@ function renderEigene() {
   var box = document.getElementById("inhalte-eigene");
   if (box) {
     box.innerHTML = inhalte.length
-      ? inhalte.map(zeile).join("")
-      : "<p>" + (q ? "Kein Treffer unter Meine Inhalte." : "Noch keine Inhalte.") + "</p>";
+      ? inhalte.map(kachelMarkup).join("")
+      : "<p class=\"meta-line\">" + (q ? "Kein Treffer unter Meine Inhalte." : "Noch keine eigenen Inhalte. Unter Erstellen legen Sie einen an.") + "</p>";
   }
   var ibox = document.getElementById("impulse-eigene");
-  if (ibox) ibox.innerHTML = impulse.length ? impulse.map(zeile).join("") : "<p>Noch keine eigenen Impulse.</p>";
+  if (ibox) {
+    ibox.classList.add("grid");
+    ibox.innerHTML = impulse.length ? impulse.map(kachelMarkup).join("") : "<p class=\"meta-line\">Noch keine eigenen Impulse.</p>";
+  }
   document.querySelectorAll("#impulse-alle [data-open]").forEach(function (b) {
     var c = byId(b.dataset.open);
     var zeigen = !!(c && c.status === "veroeffentlicht" && !istEigen(c));
@@ -1087,10 +1204,17 @@ function renderEigene() {
 function renderRedaktion() {
   var root = document.getElementById("view-redaktion");
   var liste = alle().filter(function (c) { return c.status !== "veroeffentlicht" || c.autorRolle === "creator"; });
-  var wartend = alle().filter(function (c) { return c.status === "review" || c.status === "freigabe" || c.status === "entwurf"; });
+  var wartend = alle().filter(function (c) { return c.status === "review" || c.status === "freigabe"; });
   var rows = wartend.map(function (c) {
-    return "<button type=\"button\" class=\"rowitem\" data-action=\"review\" data-id=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong><span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span><span>" + esc(c.autor || "") + "</span></button>";
+    return "<button type=\"button\" class=\"rowitem\" data-open=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong><span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span><span>Zur Freigabe</span></button>";
   }).join("");
+  var gemeldet = [];
+  alle().forEach(function (c) {
+    kommentareVon(c).forEach(function (k) {
+      if (!k.gemeldet) return;
+      gemeldet.push("<div class=\"listrow\"><div><button type=\"button\" class=\"textbtn\" data-open=\"" + esc(c.id) + "\" data-kommentar=\"1\"><strong>" + esc(c.titel) + "</strong></button><div class=\"meta-line\">" + esc(k.name) + " · " + esc(k.text) + "</div></div><button type=\"button\" class=\"btn-line\" data-action=\"kommentar-loeschen\" data-key=\"" + esc(k.key) + "\" data-id=\"" + esc(c.id) + "\">Löschen</button></div>");
+    });
+  });
   var faellig = alle().filter(ueberfaellig).map(function (c) {
     return "<button type=\"button\" class=\"rowitem\" data-open=\"" + esc(c.id) + "\"><strong>" + esc(c.titel) + "</strong><span>Geprüft am " + esc(datum(c.geprueft)) + "</span></button>";
   }).join("");
@@ -1101,9 +1225,12 @@ function renderRedaktion() {
   var stufen = { basis: 0, aufbau: 0, spezial: 0 };
   alle().forEach(function (c) { if (c.status === "veroeffentlicht" && stufen[c.niveau] !== undefined) stufen[c.niveau]++; });
   root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"home\">Zurück</button>"
+    + wegweiserHtml({})
     + "<h1>Moderation</h1>"
-    + "<p>Diese Beiträge warten auf eine Entscheidung.</p>"
+    + "<p>Dieselben Inhalte wie für alle anderen. Hier entscheiden Sie nur, was sichtbar wird, und welche Kommentare bleiben.</p>"
+    + "<h2>Zur Freigabe</h2><p class=\"meta-line\">Freigabe schaltet den Inhalt sichtbar. Der Eintrag öffnet dieselbe Detailansicht.</p>"
     + "<div class=\"rowlist\">" + (rows || "<p>Keine offenen Inhalte.</p>") + "</div>"
+    + "<h2>Gemeldete Kommentare</h2><div class=\"list\">" + (gemeldet.join("") || "<p>Keine gemeldeten Kommentare.</p>") + "</div>"
     + "<h2>Überfällige Prüfdaten</h2><div class=\"rowlist\">" + (faellig || "<p>Kein Prüfdatum ist älter als ein halbes Jahr.</p>") + "</div>"
     + "<h2>Neue Rückmeldungen</h2><div class=\"list\">" + (meldungen || "<p>Noch keine Meldung in dieser Sitzung. Meldungen aus FAQ und Inhalten erscheinen hier und gehen in die Quartalsprüfung ein.</p>") + "</div>"
     + "<h2>Einstiegsseite</h2><form id=\"pin-form\" class=\"form-card\"><label class=\"field\"><span>Praxisimpuls ohne weitere Klickstrecke</span><select name=\"pin\">" + impulse.map(function (c) {
@@ -1156,6 +1283,7 @@ function renderAdmin() {
   var root = document.getElementById("view-admin");
   root.innerHTML = "<p class=\"eyebrow\">Administration</p><h1>Rollen, Rechte, Betrieb</h1>"
     + "<p>Konzeptanzeige für die Umsetzungsstelle. Keine echte Betriebsschnittstelle und keine personenbezogene Verwaltung.</p>"
+    + "<nav class=\"wegweiser\" aria-label=\"Zurück in die Arbeit\"><button type=\"button\" data-view-jump=\"inhalte\" data-anker=\"allgemeine-inhalte-titel\">Zu den Inhalten</button><button type=\"button\" data-view-jump=\"redaktion\">Zur Moderation</button></nav>"
     + "<h2>Rollen</h2>"
     + "<div class=\"list\">"
     + rolleZeile("Teilnehmende mit Erstellen", "Lernen und Inhalte anlegen, H5P als Datei, Video als iFrame, Text als Texteingabe", true)
@@ -1184,7 +1312,7 @@ function rolleZeile(name, text, aktiv) {
 }
 
 function syncKacheln() {
-  var grid = document.querySelector(".grid");
+  var grid = document.getElementById("katalog-grid");
   if (!grid) return;
   alle().forEach(function (c) {
     var vorhandene = grid.querySelector('.tile[data-id="' + c.id + '"]');
@@ -1210,7 +1338,9 @@ function kachel(c) {
   art.dataset.zielgruppe = (c.ziel || []).join(" ");
   art.dataset.werkzeug = c.werkzeugKey || "";
   art.tabIndex = 0;
-  art.innerHTML = "<div class=\"thumb\"><span class=\"fmt\">" + esc(c.format) + " · " + esc(c.dauer) + "</span></div><div class=\"tile-body\"><div class=\"badges\"><span class=\"lvl " + esc(c.niveau || "basis") + "\">" + esc(c.niveauLabel) + "</span></div><h3>" + esc(c.titel) + "</h3><p>" + esc(c.teaser) + "</p><div class=\"tile-foot\"><span class=\"meta-ic\">Neu veröffentlicht</span></div></div>";
+  var n = kommentareVon(c).length;
+  var label = n === 1 ? "1 Kommentar" : n + " Kommentare";
+  art.innerHTML = "<div class=\"thumb\"><span class=\"fmt\">" + esc(c.format) + " · " + esc(c.dauer) + "</span></div><div class=\"tile-body\"><div class=\"badges\"><span class=\"lvl " + esc(c.niveau || "basis") + "\">" + esc(c.niveauLabel) + "</span></div><h3>" + esc(c.titel) + "</h3><p>" + esc(c.teaser) + "</p><div class=\"tile-foot\"><span class=\"meta-ic\">Neu veröffentlicht</span><button type=\"button\" class=\"textbtn kommentar-link\" data-open=\"" + esc(c.id) + "\" data-kommentar=\"1\">" + label + "</button></div></div>";
   return art;
 }
 
@@ -1324,7 +1454,7 @@ function initFilter() {
     return werte.some(function (w) { return eigene.indexOf(w) !== -1; });
   }
   function filtern() {
-    var kacheln = Array.prototype.slice.call(document.querySelectorAll(".grid .tile"));
+    var kacheln = Array.prototype.slice.call(document.querySelectorAll("#katalog-grid .tile"));
     var auswahl = {};
     var anzahlAktiv = 0;
     GRUPPEN.forEach(function (g) {
@@ -1342,6 +1472,7 @@ function initFilter() {
       }
       k.hidden = !treffer;
       if (treffer) sichtbar++;
+      verankereKachel(k);
     });
     renderEigene();
     chips.forEach(function (c) {
@@ -1351,10 +1482,14 @@ function initFilter() {
         c.setAttribute("aria-pressed", leer ? "true" : "false");
       }
     });
-    if (anzahlAktiv === 0 && !q) fcount.textContent = "Alle " + kacheln.length + " Inhalte werden angezeigt.";
-    else if (sichtbar === 0) fcount.textContent = "Kein Inhalt entspricht dieser Auswahl.";
-    else if (sichtbar === 1) fcount.innerHTML = "<strong>1</strong> von " + kacheln.length + " Inhalten entspricht Ihrer Auswahl.";
-    else fcount.innerHTML = "<strong>" + sichtbar + "</strong> von " + kacheln.length + " Inhalten entsprechen Ihrer Auswahl.";
+    var allgemein = kacheln.filter(function (k) {
+      var inhalt = byId(k.dataset.id);
+      return !(inhalt && istEigen(inhalt));
+    }).length;
+    if (anzahlAktiv === 0 && !q) fcount.textContent = "Alle " + allgemein + " allgemeinen Inhalte werden angezeigt.";
+    else if (sichtbar === 0) fcount.textContent = "Kein allgemeiner Inhalt entspricht dieser Auswahl.";
+    else if (sichtbar === 1) fcount.innerHTML = "<strong>1</strong> von " + allgemein + " allgemeinen Inhalten entspricht Ihrer Auswahl.";
+    else fcount.innerHTML = "<strong>" + sichtbar + "</strong> von " + allgemein + " allgemeinen Inhalten entsprechen Ihrer Auswahl.";
     freset.hidden = anzahlAktiv === 0 && !q;
     empty.hidden = sichtbar > 0;
   }
@@ -1488,9 +1623,22 @@ function init() {
   });
 
   document.querySelector("header nav").addEventListener("click", function (e) {
+    var toggle = e.target.closest("[data-nav-toggle]");
+    if (toggle) {
+      e.preventDefault();
+      var sub = document.getElementById("nav-inhalte-sub");
+      var auf = sub.hidden;
+      sub.hidden = !auf;
+      toggle.setAttribute("aria-expanded", auf ? "true" : "false");
+      return;
+    }
     var a = e.target.closest("a[data-view]");
     if (!a) return;
     e.preventDefault();
+    var menu = document.getElementById("nav-inhalte-sub");
+    var knopf = document.getElementById("nav-inhalte-btn");
+    if (menu) menu.hidden = true;
+    if (knopf) knopf.setAttribute("aria-expanded", "false");
     showView(a.dataset.view, { anker: a.dataset.anker || "", leise: !!a.dataset.anker });
   });
 
@@ -1572,11 +1720,20 @@ function init() {
     lupe.addEventListener("click", function () { kopfSuche(kopfSuchfeld.hidden); });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && !kopfSuchfeld.hidden) kopfSuche(false);
+      if (e.key === "Escape") {
+        var sub = document.getElementById("nav-inhalte-sub");
+        var knopf = document.getElementById("nav-inhalte-btn");
+        if (sub && !sub.hidden) { sub.hidden = true; if (knopf) knopf.setAttribute("aria-expanded", "false"); }
+      }
     });
     document.addEventListener("click", function (e) {
-      if (kopfSuchfeld.hidden) return;
-      if (e.target.closest(".kopf-suche")) return;
-      kopfSuche(false);
+      if (!kopfSuchfeld.hidden && !e.target.closest(".kopf-suche")) kopfSuche(false);
+      var sub = document.getElementById("nav-inhalte-sub");
+      var knopf = document.getElementById("nav-inhalte-btn");
+      if (sub && !sub.hidden && !e.target.closest(".nav-drop")) {
+        sub.hidden = true;
+        if (knopf) knopf.setAttribute("aria-expanded", "false");
+      }
     });
   }
   [["suche", "suche-btn"], ["suche-kopf", "suche-kopf-btn"], ["suche-inhalte", "suche-inhalte-btn"]].forEach(function (paar) {
@@ -1611,11 +1768,21 @@ function init() {
     e.stopPropagation();
     oeffneInhalt(document.getElementById("sofort-btn").dataset.sofort || "berichte", true);
   });
-  document.querySelector(".grid").addEventListener("click", function (e) {
-    if (e.target.closest(".likebtn")) return;
-    var tile = e.target.closest(".tile");
-    if (!tile || !tile.dataset.id) return;
-    oeffneInhalt(tile.dataset.id);
+  document.querySelectorAll(".grid").forEach(function (grid) {
+    grid.addEventListener("click", function (e) {
+      if (e.target.closest(".likebtn, .kommentar-link, [data-bewerten], [data-kommentar]")) return;
+      var tile = e.target.closest(".tile");
+      if (!tile || !tile.dataset.id) return;
+      oeffneInhalt(tile.dataset.id);
+    });
+    grid.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      if (e.target.closest(".likebtn, .kommentar-link, button")) return;
+      var tile = e.target.closest(".tile");
+      if (!tile || !tile.dataset.id) return;
+      e.preventDefault();
+      oeffneInhalt(tile.dataset.id);
+    });
   });
   document.body.addEventListener("change", function (e) {
     if (e.target.name === "datei" && e.target.files && e.target.files[0]) {
@@ -1628,10 +1795,21 @@ function init() {
   });
 
   document.body.addEventListener("click", function (e) {
-    if (e.target.closest(".likebtn")) return;
+    var bewerten = e.target.closest("[data-bewerten]");
+    if (bewerten) {
+      e.preventDefault();
+      var bid = bewerten.dataset.bewerten;
+      state.feedback[bid] = state.feedback[bid] === "up" ? "" : "up";
+      sichern();
+      var playerOffen = document.getElementById("view-player") && !document.getElementById("view-player").hidden;
+      if (playerOffen && aktuell === bid && detailModus !== "bearbeiten") renderPlayer();
+      else if (window.filtern) window.filtern();
+      toast(state.feedback[bid] === "up" ? "Danke. Die Moderation sieht nur die Summe." : "Bewertung zurückgenommen.");
+      return;
+    }
     var open = e.target.closest("[data-open]");
     if (open && !e.target.closest("a")) {
-      oeffneInhalt(open.dataset.open, !!open.closest("#view-impulse"));
+      oeffneInhalt(open.dataset.open, false, open.dataset.kommentar ? "kommentar-bereich" : "");
       return;
     }
     var jump = e.target.closest("[data-view-jump]");
@@ -1651,9 +1829,17 @@ function init() {
       showView("faq");
       if (item) faqOeffnen(item);
     }
-    if (action === "neu") { editorId = null; showView("editor"); }
-    if (action === "bearbeiten") { editorId = act.dataset.id; showView("editor"); }
-    if (action === "review") { aktuell = act.dataset.id; showView("review"); }
+    if (action === "zum-kommentar") {
+      var kommentarZiel = document.getElementById("kommentar-bereich");
+      if (kommentarZiel) {
+        try { kommentarZiel.scrollIntoView({ block: "start" }); } catch (err) { /* Prototyp bleibt bedienbar. */ }
+        var eingabe = kommentarZiel.querySelector("textarea");
+        if (eingabe) eingabe.focus();
+      }
+    }
+    if (action === "neu") { editorId = null; editorVorgabe = ""; detailModus = "bearbeiten"; showView("player"); }
+    if (action === "bearbeiten") { editorId = act.dataset.id; editorVorgabe = ""; detailModus = "bearbeiten"; aktuell = editorId; showView("player"); }
+    if (action === "review") { aktuell = act.dataset.id; detailModus = "lesen"; oeffneInhalt(act.dataset.id); }
     if (action === "passwort") {
       oeffneAusbau("Zugang", "Ein Passwort der KI-Werkstatt gibt es nicht. Zurücksetzen und Sperre liegen beim Behördenkonto über ADFS.");
     }
@@ -1664,23 +1850,26 @@ function init() {
       toast("Stichprobe ist markiert.");
     }
     if (action === "zurueckgeben") {
-      var grund = (document.querySelector("#review-form textarea") || {}).value || "";
+      var grundFeld = document.getElementById("freigabe-grund") || document.querySelector("#review-form textarea");
+      var grund = grundFeld ? grundFeld.value : "";
       if (!grund.trim()) { toast("Bitte eine Begründung angeben."); return; }
       state.status[aktuell] = "entwurf";
       state.override[aktuell] = Object.assign({}, state.override[aktuell] || {}, { vorher: "Zurückgegeben: " + grund.trim() });
       sichern();
       syncKacheln();
-      toast("Zurück an die einreichende Person, Status Entwurf.");
+      toast("Zurück an die einreichende Person. Der Inhalt ist nicht sichtbar.");
       showView("redaktion");
     }
     if (action === "freigeben") {
       if (mangel(byId(aktuell)).length) return;
-      state.status[aktuell] = "freigabe";
+      state.status[aktuell] = "veroeffentlicht";
       state.pruefdatum = state.pruefdatum || {};
       state.pruefdatum[aktuell] = "2026-11-02";
       sichern();
-      toast("Freigegeben. Veröffentlichung ist der nächste Status.");
-      renderReview();
+      syncKacheln();
+      detailModus = "lesen";
+      toast("Freigegeben. Der Inhalt ist jetzt sichtbar.");
+      showView("player");
     }
     if (action === "veroeffentlichen") {
       var cur = byId(aktuell);
@@ -1692,23 +1881,36 @@ function init() {
       showView("redaktion");
     }
     if (action === "kommentar-loeschen") {
-      var idx = Number(act.dataset.index);
-      var c = byId(aktuell);
-      var basis = (c.kommentare || []).length;
-      var extraIndex = idx - basis;
-      if (extraIndex >= 0 && state.kommentare[aktuell]) {
-        state.kommentare[aktuell].splice(extraIndex, 1);
+      var loeschId = act.dataset.id || aktuell;
+      var loeschKey = act.dataset.key;
+      if (loeschId && loeschKey) {
+        state.kommentarWeg[loeschId] = state.kommentarWeg[loeschId] || {};
+        state.kommentarWeg[loeschId][loeschKey] = true;
         sichern();
-        renderPlayer();
+        var playerSicht = document.getElementById("view-player");
+        var redaktionSicht = document.getElementById("view-redaktion");
+        if (playerSicht && !playerSicht.hidden && detailModus !== "bearbeiten") renderPlayer();
+        if (redaktionSicht && !redaktionSicht.hidden) renderRedaktion();
+        toast("Kommentar gelöscht.");
       }
+    }
+    if (action === "kommentar-melden") {
+      state.kommentarFlags[aktuell] = state.kommentarFlags[aktuell] || {};
+      state.kommentarFlags[aktuell][act.dataset.key] = true;
+      state.meldungen.push({ ziel: aktuell, key: act.dataset.key, art: "Kommentar", text: "", zeit: "gerade eben" });
+      sichern();
+      renderPlayer();
+      toast("Kommentar ist bei der Moderation gemeldet.");
     }
     }
     var fb = e.target.closest("[data-fb]");
     if (fb && aktuell) {
-      state.feedback[aktuell] = fb.dataset.fb;
+      state.feedback[aktuell] = state.feedback[aktuell] === fb.dataset.fb ? "" : fb.dataset.fb;
       sichern();
-      renderSummary();
-      toast("Danke. Die Redaktion sieht nur die Summe.");
+      var playerFb = document.getElementById("view-player");
+      if (playerFb && !playerFb.hidden && detailModus !== "bearbeiten") renderPlayer();
+      else renderSummary();
+      toast(state.feedback[aktuell] ? "Danke. Die Moderation sieht nur die Summe." : "Bewertung zurückgenommen.");
       return;
     }
     var h5p = e.target.closest("[data-h5p]");
@@ -1732,6 +1934,7 @@ function init() {
       state.kommentare[aktuell].push({ name: "Henning Beckmann", meta: "gerade eben", text: String(text).trim(), eigen: true });
       sichern();
       renderPlayer();
+      if (window.filtern) window.filtern();
       toast("Kommentar steht unter Ihrem Namen.");
     }
     if (e.target.id === "editor-form") {
@@ -1745,15 +1948,17 @@ function init() {
           dialog({
             titel: "Noch nicht prüfbar",
             html: "<p>Zur Prüfung fehlen noch Pflichtmerkmale. Als Entwurf können Sie trotzdem speichern.</p><ul class=\"pruef\">" + luecken.map(function (l) { return "<li class=\"bad\">" + esc(l) + "</li>"; }).join("") + "</ul>",
-            aktionen: [{ label: "Als Entwurf speichern", fn: function () { obj.status = "entwurf"; editorId = obj.id; speichereInhalt(obj); showView("meine"); toast("Entwurf gespeichert."); } }, { label: "Weiter bearbeiten", zweite: true }]
+            aktionen: [{ label: "Als Entwurf speichern", fn: function () { obj.status = "entwurf"; editorId = obj.id; speichereInhalt(obj); detailModus = "lesen"; aktuell = obj.id; showView("player"); toast("Entwurf gespeichert."); } }, { label: "Weiter bearbeiten", zweite: true }]
           });
           return;
         }
       }
       editorId = obj.id;
       speichereInhalt(obj);
-      showView("meine");
-      toast(ziel === "review" ? "Zur Prüfung gegeben. Die Moderation sieht den Inhalt." : "Entwurf gespeichert.");
+      detailModus = "lesen";
+      aktuell = obj.id;
+      showView("player");
+      toast(ziel === "review" ? "Zur Prüfung gegeben. Die Moderation sieht denselben Inhalt." : "Entwurf gespeichert. Er liegt unter Meine Inhalte.");
     }
     if (e.target.id === "pin-form") {
       e.preventDefault();
@@ -1774,28 +1979,6 @@ function init() {
     }
   });
 
-  document.querySelectorAll(".likebtn").forEach(function (btn) {
-    btn.addEventListener("click", function (e) {
-      e.stopPropagation();
-      var cnt = btn.querySelector(".cnt");
-      var n = parseInt(cnt.textContent, 10);
-      if (btn.classList.contains("liked")) {
-        btn.classList.remove("liked");
-        cnt.textContent = n - 1;
-      } else {
-        btn.classList.add("liked");
-        cnt.textContent = n + 1;
-      }
-    });
-  });
-
-  document.querySelector(".grid").addEventListener("keydown", function (e) {
-    if (e.key !== "Enter" && e.key !== " ") return;
-    var tile = e.target.closest(".tile");
-    if (!tile) return;
-    e.preventDefault();
-    oeffneInhalt(tile.dataset.id);
-  });
   var impulseListe = document.querySelector(".impulse-grid");
   if (impulseListe) impulseListe.addEventListener("keydown", function (e) {
     if (e.key !== "Enter" && e.key !== " ") return;
@@ -1816,7 +1999,7 @@ function init() {
       titel: "Impuls anbieten",
       html: "<p>Es braucht Erfahrung aus dem Alltag, keinen Expertenstatus. Auch ein misslungener Versuch ist ein Beitrag. Anlegen können alle Teilnehmenden. Die Moderation entscheidet über die Veröffentlichung.</p>",
       aktionen: [
-        { label: "Impuls anlegen", fn: function () { editorId = null; showView("editor"); } },
+        { label: "Impuls anlegen", fn: function () { editorId = null; editorVorgabe = "impuls"; detailModus = "bearbeiten"; showView("player"); } },
         { label: "Schließen", zweite: true }
       ]
     });

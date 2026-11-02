@@ -64,6 +64,25 @@
     border-bottom:2px solid transparent;transition:color .15s, border-color .15s;
   }
   nav a:hover{color:var(--text-title);border-bottom-color:var(--blue-dynamic);}
+  .nav-drop{position:relative;}
+  .nav-drop-btn{
+    background:transparent;border:none;border-bottom:2px solid transparent;
+    color:var(--text-body);font-family:inherit;font-size:14px;font-weight:bold;
+    padding:6px 2px;cursor:pointer;min-height:44px;
+  }
+  .nav-drop-btn:hover,.nav-drop-btn[aria-expanded="true"],.nav-drop-btn[aria-current="page"]{
+    color:var(--text-title);border-bottom-color:var(--accent);
+  }
+  .nav-sub{
+    position:absolute;top:calc(100% + 8px);left:0;min-width:240px;z-index:60;
+    background:var(--bg-card);border:1px solid var(--line);border-radius:8px;
+    padding:6px;box-shadow:0 8px 24px rgba(0,0,0,0.35);
+  }
+  .nav-sub a{
+    display:flex;align-items:center;min-height:44px;padding:8px 12px;
+    border-bottom:none;border-radius:6px;font-size:15px;
+  }
+  .nav-sub a:hover{background:var(--bg-card-hover);border-bottom-color:transparent;}
 
   .profile{position:relative;}
   .profile-btn{
@@ -552,6 +571,18 @@
   section.inhaltsbereich{padding:22px 22px 26px;}
   .bereich-meine{border-top:4px solid var(--blue-light);}
   .bereich-allgemein{border-top:4px solid var(--accent);}
+  .bereich-impuls{border-top:4px solid var(--blue-dynamic);}
+  .bereich-live{border-top:4px solid var(--blue-mid);}
+  .bereich-community{border-top:4px solid var(--text-muted);}
+  h2[id],#kommentar-bereich{scroll-margin-top:88px;}
+  .wegweiser{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 18px;}
+  .wegweiser button{
+    min-height:44px;padding:8px 14px;border-radius:999px;
+    border:1px solid var(--line);background:var(--bg-card);color:var(--text-title);
+    font:inherit;font-size:14px;font-weight:bold;cursor:pointer;
+  }
+  .wegweiser button:hover,.wegweiser button[aria-current="page"]{border-color:var(--accent);}
+  .kommentar-link{margin-left:auto;min-height:44px;padding:8px 0;}
   .hub-tile{
     text-align:left;background:var(--bg-card);border:1px solid var(--line);border-radius:10px;
     padding:22px 22px 18px;min-height:168px;cursor:pointer;color:inherit;font-family:inherit;
@@ -771,8 +802,17 @@
       <div class="org">Polizei NRW</div>
     </div>
     <nav aria-label="Bereiche">
-      <a href="#inhalte" data-nav="inhalte" data-view="inhalte">Inhalte</a>
-      <a href="#impulse" data-nav="impulse" data-view="impulse">Impulse</a>
+      <div class="nav-drop">
+        <button type="button" class="nav-drop-btn" id="nav-inhalte-btn" data-nav-toggle aria-expanded="false" aria-controls="nav-inhalte-sub">Inhalte</button>
+        <div class="nav-sub" id="nav-inhalte-sub" hidden>
+          <a href="#erstellen" data-nav="meine" data-view="meine">Erstellen</a>
+          <a href="#meine-inhalte" data-nav="inhalte" data-view="inhalte" data-anker="eigene-inhalte-titel">Meine Inhalte</a>
+          <a href="#allgemeine-inhalte" data-nav="inhalte" data-view="inhalte" data-anker="allgemeine-inhalte-titel">Allgemeine Inhalte</a>
+          <a href="#impulse" data-nav="inhalte" data-view="inhalte" data-anker="impulse-titel">Impulse</a>
+        </div>
+      </div>
+      <a href="#live" data-nav="live" data-view="inhalte" data-anker="live-titel">Live-Sessions</a>
+      <a href="#community" data-nav="community" data-view="inhalte" data-anker="community-titel">Community</a>
       <a href="#faq" data-nav="faq" data-view="faq">FAQ</a>
     </nav>
     <div class="kopf-suche">
@@ -840,16 +880,6 @@
       <button type="button" id="suche-btn">Suchen</button>
     </div>
 
-    <div class="hub-split">
-      <section class="hub-zone hub-zone-meine" aria-labelledby="hub-meine-titel">
-        <h2 id="hub-meine-titel">Meine Inhalte</h2>
-        <div id="hub-meine"></div>
-      </section>
-      <section class="hub-zone hub-zone-allgemein" aria-labelledby="hub-allgemein-titel">
-        <h2 id="hub-allgemein-titel">Allgemeine Inhalte</h2>
-        <div id="hub-allgemein"></div>
-      </section>
-    </div>
     <div class="hub-grid" id="hub-kacheln"></div>
   </div>
 
@@ -920,6 +950,14 @@
   <button type="button" class="backlink" data-view-jump="home">Zurück</button>
   <section id="inhalte">
     <h1>Inhalte</h1>
+    <p>Ein Bereich für alles, was Sie lesen, anlegen oder austauschen. Die Leiste springt nur an die passende Stelle.</p>
+    <nav class="wegweiser" aria-label="Sprung in den Inhalten">
+      <button type="button" data-view-jump="inhalte" data-anker="eigene-inhalte-titel">Meine Inhalte</button>
+      <button type="button" data-view-jump="inhalte" data-anker="allgemeine-inhalte-titel">Alle entdecken</button>
+      <button type="button" data-view-jump="inhalte" data-anker="impulse-titel">Impulse</button>
+      <button type="button" data-view-jump="inhalte" data-anker="live-titel">Live-Sessions</button>
+      <button type="button" data-view-jump="inhalte" data-anker="community-titel">Community</button>
+    </nav>
     <div class="search bereich-suche" role="search">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
       <input id="suche-inhalte" type="search" placeholder="Wonach suchen Sie? z. B. Transkription, Prompt, EU-KI-Verordnung …" aria-label="Suche in den Inhalten">
@@ -929,12 +967,14 @@
 
     <section class="inhaltsbereich bereich-meine" aria-labelledby="eigene-inhalte-titel">
       <h2 class="bereich-titel" id="eigene-inhalte-titel">Meine Inhalte</h2>
-      <div id="inhalte-eigene" class="eigenliste"></div>
+      <p class="meta-line">Erstellt, bereitgestellt oder begonnen. Dieselben Kacheln wie beim Entdecken, klar von den allgemeinen Inhalten getrennt.</p>
+      <div id="inhalte-eigene" class="grid"></div>
     </section>
 
     <section class="inhaltsbereich bereich-allgemein" aria-labelledby="allgemeine-inhalte-titel">
     <div class="section-head">
-      <h2 id="allgemeine-inhalte-titel">Inhalte entdecken</h2>
+      <h2 id="allgemeine-inhalte-titel">Allgemeine Inhalte</h2>
+      <p class="meta-line">Inhalte entdecken. Die Kommentarzahl steht an der Kachel und öffnet genau diesen Inhalt.</p>
       <span class="hint prinzip">
         <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 4: Redaktion als Daueraufgabe">4</span><span class="p-tip" data-align="right"><span class="p-kicker">Strukturprinzip 4</span><span class="p-title">Redaktion als Daueraufgabe</span><span class="p-text">Jeder Inhalt ist fachlich geprüft und benennbar verantwortet. Ein Redaktionskonzept regelt für alle Kanäle, wer erstellt, prüft und freigibt und wie Widersprüche zwischen den Kanälen vermieden werden. Der Betrieb ist als Daueraufgabe angelegt, nicht als einmalige Initiative: Verwaiste Angebote richten mehr Schaden an als nie gestartete.</span><span class="p-src">Feinkonzept 5.4.1 · Risiko „Die KI-Werkstatt zwischen Aufbau und Alltag“ (Kapitel 9)</span></span>
         Redaktionell geprüft und laufend aktualisiert
@@ -990,7 +1030,7 @@
       </div>
     </div>
 
-    <div class="grid">
+    <div class="grid" id="katalog-grid">
 
       <article class="tile t1" tabindex="0" data-id="transkription" data-werkzeug="transkription" data-thema="einsatzfelder" data-format="video" data-niveau="basis" data-zielgruppe="ermittlung">
         <div class="thumb">
@@ -1259,63 +1299,12 @@
       <button class="btn-line" id="empty-reset">Filter zurücksetzen</button>
     </div>
 
-    <!-- Detailkarte mit Kommentaren -->
-    <div class="prinzip p-wrap">
-      <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 5: Lernen im Austausch">5</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 5</span><span class="p-title">Lernen im Austausch</span><span class="p-text">Der Inhalt endet nicht mit dem Video. Kommentare, Rückfragen und Erfahrungsberichte gehören zum Lerngegenstand. Dass Lernen vor allem im Austausch untereinander gelingt, ist mit neun Quellen der am breitesten getragene Befund des gesamten Feinkonzepts.</span><span class="p-src">Feinkonzept 5.4.3 · Belegdichte: <b>breit getragen (neun Quellen)</b></span></span>
-      <div class="detail">
-      <div class="detail-left">
-        <div class="playbig">
-          <svg width="22" height="22" viewBox="0 0 24 24"><polygon points="9 6 19 12 9 18" fill="#fff"/></svg>
-        </div>
-        <div class="badges"><span class="lvl aufbau">Aufbau</span></div>
-        <h3>Prompt-Engineering I: Präzise Anfragen für Auswertungen</h3>
-      </div>
-      <div class="detail-right">
-        <div class="dhead">
-          <h4>Kommentare zu diesem Inhalt</h4>
-          <span>22 Beiträge</span>
-        </div>
-
-        <div class="comment">
-          <div class="c-av a">MK</div>
-          <div class="c-body">
-            <div class="c-name">M. Kaminski <span>PP Dortmund · vor 2 Tagen</span></div>
-            <div class="c-text">Beim ersten Versuch kam bei mir nur Unbrauchbares raus — lag an meinem Prompt, nicht am System. Mit dem Beispiel aus Minute 4 hat es dann funktioniert. Falls jemand denselben Fehler macht: Kontext zuerst, dann die Aufgabe.</div>
-            <div class="c-actions"><span>12 hilfreich</span><span>Antworten</span></div>
-          </div>
-        </div>
-
-        <div class="comment c-reply">
-          <div class="c-av b">JW</div>
-          <div class="c-body">
-            <div class="c-name">J. Weber <span>LZPD NRW · vor 2 Tagen</span></div>
-            <div class="c-text">Guter Hinweis — das ist der häufigste Stolperstein. Genau dafür ist die Werkstatt da: ausprobieren, danebenliegen, besser machen. Ergänzend lohnt sich der Artikel zu Halluzinationen als Gegenprobe.</div>
-            <div class="c-actions"><span>8 hilfreich</span><span>Antworten</span></div>
-          </div>
-        </div>
-
-        <div class="comment">
-          <div class="c-av c">SB</div>
-          <div class="c-body">
-            <div class="c-name">S. Brandt <span>KPB Kleve · vor 5 Tagen</span></div>
-            <div class="c-text">Kurze Verständnisfrage, auch wenn sie banal klingt: Gilt die Struktur aus dem Video auch für Zusammenfassungen längerer Berichte, oder braucht es da einen anderen Aufbau?</div>
-            <div class="c-actions"><span>4 hilfreich</span><span>3 Antworten</span></div>
-          </div>
-        </div>
-
-      </div>
-      </div>
-    </div>
     </section>
-  </section>
-  </div><!-- view-inhalte -->
 
-  <div id="view-impulse" class="view" hidden>
-  <button type="button" class="backlink" data-view-jump="home">Zurück</button>
-  <!-- IMPULSE AUS DER PRAXIS -->
-  <section id="impulse">
+  <section class="inhaltsbereich bereich-impuls" id="impulse" aria-labelledby="impulse-titel">
     <div class="section-head">
-      <h2>Impulse aus der Praxis</h2>
+      <h2 class="bereich-titel" id="impulse-titel">Impulse</h2>
+      <p class="meta-line">Kurze Beiträge aus dem Dienstalltag, im selben Inhaltsbereich wie die übrigen Inhalte.</p>
       <span class="hint">Von Kolleginnen und Kollegen, die es bereits anwenden</span>
     </div>
 
@@ -1341,14 +1330,11 @@
       <button class="btn-solid" type="button" id="impuls-anbieten">Impuls anbieten</button>
     </div>
   </section>
-  </div><!-- view-impulse -->
 
-  <div id="view-community" class="view" hidden>
-  <button type="button" class="backlink" data-view-jump="home">Zurück</button>
-  <!-- COMMUNITY -->
-  <section id="community">
+  <section class="inhaltsbereich bereich-community" id="community" aria-labelledby="community-titel">
     <div class="section-head">
-      <h2>Aus der Community</h2>
+      <h2 class="bereich-titel" id="community-titel">Community</h2>
+      <p class="meta-line">Vorschau auf den späteren Austausch. Am einzelnen Inhalt können Sie schon kommentieren.</p>
       <span class="hint">Vorschau · Leitforen folgen in der späteren Ausbaustufe</span>
     </div>
     <div class="community-wrap prinzip">
@@ -1402,12 +1388,10 @@
       </aside>
     </div>
   </section>
-  </div><!-- view-community -->
 
-  <div id="view-live" class="view" hidden>
-  <button type="button" class="backlink" data-view-jump="home">Zurück</button>
-  <!-- LIVE -->
-  <section id="live">
+  <section class="inhaltsbereich bereich-live" id="live" aria-labelledby="live-titel">
+    <h2 class="bereich-titel" id="live-titel">Live-Sessions</h2>
+    <p class="meta-line">Offenes Format im selben Inhaltsbereich. Die Teilnahme selbst folgt später. Aufzeichnungen liegen als Inhalt.</p>
     <div class="prinzip p-wrap">
       <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 8: Offene Formate, digital und analog">8</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 8</span><span class="p-title">Offene Formate, digital und analog</span><span class="p-text">Neben den jederzeit abrufbaren Inhalten stehen feste offene Formate: Sprechstunden, Live-Sessions und Hackathons. Sie werden bewusst um Formate in Präsenz ergänzt, weil digitale Werkzeuge nicht ausschließlich mit digitalen Formaten begleitet werden sollten, ohne dass zwischenmenschliche Beziehungen verloren gehen.</span><span class="p-src">Feinkonzept 5.4.2 und 5.4.3 · analoge Ergänzung: Krutwage/Port</span></span>
       <div class="live">
@@ -1425,7 +1409,8 @@
       </div>
     </div>
   </section>
-  </div><!-- view-live -->
+  </section>
+  </div><!-- view-inhalte -->
 
   <div id="view-faq" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="home">Zurück</button>
