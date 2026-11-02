@@ -761,7 +761,7 @@ function renderHub() {
     ["meine", "", "Meine Inhalte", "Nur, was Sie erstellt haben oder bearbeiten dürfen."],
     ["inhalte", "", "Lektionen", "Verfügbare, begonnene und abgeschlossene Lektionen."],
     ["impulse", "", "Impulse", "Verfügbare, begonnene und abgeschlossene Impulse."],
-    ["live", "", "Live-Sessions", "Verfügbare Termine und Ihre Teilnahmen."],
+    ["live", "", "Live-Sessions", "Ihre Teilnahmen und verfügbare Termine."],
     ["community", "", "Community", "Bereiche, in denen Sie mitwirken, und weitere Communitys."],
     ["faq", "", "Häufige Fragen", "Verlässliche Antworten zum Einstieg."]
   ];
