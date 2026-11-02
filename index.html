@@ -835,10 +835,10 @@
         <button type="button" class="nav-drop-btn" id="nav-inhalte-btn" data-nav-toggle aria-expanded="false" aria-controls="nav-inhalte-sub">Inhalte</button>
         <div class="nav-sub" id="nav-inhalte-sub" hidden>
           <a href="#meine-inhalte" data-nav="meine" data-view="meine">Meine Inhalte</a>
-          <a href="#allgemeine-inhalte" data-nav="inhalte" data-view="inhalte" data-anker="allgemeine-inhalte-titel">Allgemeine Inhalte</a>
-          <a href="#impulse" data-nav="inhalte" data-view="inhalte" data-anker="impulse-titel">Impulse</a>
-          <a href="#live" data-nav="inhalte" data-view="inhalte" data-anker="live-titel">Live-Sessions</a>
-          <a href="#community" data-nav="inhalte" data-view="inhalte" data-anker="community-titel">Community</a>
+          <a href="#lektionen" data-nav="inhalte" data-view="inhalte">Lektionen</a>
+          <a href="#impulse" data-nav="impulse" data-view="impulse">Impulse</a>
+          <a href="#live" data-nav="live" data-view="live">Live-Sessions</a>
+          <a href="#community" data-nav="community" data-view="community">Community</a>
         </div>
       </div>
       <a href="#faq" data-nav="faq" data-view="faq">FAQ</a>
@@ -977,15 +977,8 @@
   <div id="view-inhalte" class="view" hidden>
   <button type="button" class="backlink" data-view-jump="home">Zurück</button>
   <section id="inhalte">
-    <h1>Inhalte</h1>
-    <p>Ein Bereich für alles, was Sie lesen, anlegen oder austauschen. Die Leiste springt nur an die passende Stelle.</p>
-    <nav class="wegweiser" aria-label="Sprung in den Inhalten">
-      <button type="button" data-view-jump="meine">Meine Inhalte</button>
-      <button type="button" data-view-jump="inhalte" data-anker="allgemeine-inhalte-titel">Allgemeine Inhalte</button>
-      <button type="button" data-view-jump="inhalte" data-anker="impulse-titel">Impulse</button>
-      <button type="button" data-view-jump="inhalte" data-anker="live-titel">Live-Sessions</button>
-      <button type="button" data-view-jump="inhalte" data-anker="community-titel">Community</button>
-    </nav>
+    <h1>Lektionen</h1>
+    <p>Nur Lektionen. Impulse, Live-Sessions und Community haben jeweils eine eigene Seite.</p>
     <div class="search bereich-suche" role="search">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
       <input id="suche-inhalte" type="search" placeholder="Wonach suchen Sie? z. B. Transkription, Prompt, EU-KI-Verordnung …" aria-label="Suche in den Inhalten">
@@ -995,8 +988,8 @@
 
     <section class="inhaltsbereich bereich-allgemein" aria-labelledby="allgemeine-inhalte-titel">
     <div class="section-head">
-      <h2 id="allgemeine-inhalte-titel">Allgemeine Inhalte</h2>
-      <p class="meta-line">Zwei Kacheln führen zu dem, was Sie geöffnet oder abgeschlossen haben. Dieselben Kacheln stehen unter Meine Inhalte. Darunter bleiben die übrigen Inhalte.</p>
+      <h2 id="lektionen-titel">Lektionen</h2>
+      <p class="meta-line">Begonnene und abgeschlossene Lektionen öffnen Sie über die Kacheln. Darunter stehen die verfügbaren Lektionen.</p>
       <span class="hint prinzip">
         <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 4: Redaktion als Daueraufgabe">4</span><span class="p-tip" data-align="right"><span class="p-kicker">Strukturprinzip 4</span><span class="p-title">Redaktion als Daueraufgabe</span><span class="p-text">Jeder Inhalt ist fachlich geprüft und benennbar verantwortet. Ein Redaktionskonzept regelt für alle Kanäle, wer erstellt, prüft und freigibt und wie Widersprüche zwischen den Kanälen vermieden werden. Der Betrieb ist als Daueraufgabe angelegt, nicht als einmalige Initiative: Verwaiste Angebote richten mehr Schaden an als nie gestartete.</span><span class="p-src">Feinkonzept 5.4.1 · Risiko „Die KI-Werkstatt zwischen Aufbau und Alltag“ (Kapitel 9)</span></span>
         Redaktionell geprüft und laufend aktualisiert
@@ -1006,18 +999,18 @@
     <div class="lauf-hub" id="lauf-hub">
       <button type="button" class="hub-tile" data-view-jump="lauf-begonnen" data-herkunft="begonnen">
         <span class="zahl-badge zahl-begonnen">0</span>
-        <span class="hub-titel">Begonnene Inhalte</span>
+        <span class="hub-titel">Begonnene Lektionen</span>
         <span class="hub-text">Geöffnet, noch nicht abgeschlossen.</span>
-        <span class="go">Inhalte öffnen</span>
+        <span class="go">Lektionen öffnen</span>
       </button>
       <button type="button" class="hub-tile" data-view-jump="lauf-abgeschlossen" data-herkunft="abgeschlossen">
         <span class="zahl-badge zahl-abgeschlossen">0</span>
-        <span class="hub-titel">Abgeschlossene Inhalte</span>
+        <span class="hub-titel">Abgeschlossene Lektionen</span>
         <span class="hub-text">Von Ihnen als abgeschlossen markiert.</span>
-        <span class="go">Inhalte öffnen</span>
+        <span class="go">Lektionen öffnen</span>
       </button>
     </div>
-    <h3 class="bereich-titel" id="uebrige-titel">Übrige Inhalte</h3>
+    <h3 class="bereich-titel" id="uebrige-titel">Verfügbare Lektionen</h3>
 
     <p class="banner" id="pfadhinweis" hidden></p>
     <div class="filters prinzip" aria-label="Inhalte filtern">
@@ -1041,8 +1034,7 @@
         <button class="chip" data-group="format" data-value="video" aria-pressed="false">Video</button>
         <button class="chip" data-group="format" data-value="artikel" aria-pressed="false">Artikel</button>
         <button class="chip" data-group="format" data-value="lernmodul" aria-pressed="false">Lernmodul</button>
-        <button class="chip" data-group="format" data-value="impuls" aria-pressed="false">Impuls</button>
-        <button class="chip" data-group="format" data-value="live" aria-pressed="false">Live</button>
+        <button class="chip" data-group="format" data-value="live" aria-pressed="false">Aufzeichnung</button>
       </div>
       <div class="fgroup" role="group" aria-label="Niveau">
         <span class="flabel">Niveau</span>
@@ -1332,136 +1324,167 @@
     </div>
 
     <div class="empty" id="empty" hidden>
-      <h3>Zu dieser Auswahl liegt noch kein Inhalt vor.</h3>
+      <h3>Zu dieser Auswahl liegt noch keine Lektion vor.</h3>
       <p>Setzen Sie einzelne Filter zurück — oder melden Sie den Bedarf der Redaktion. Lücken im Angebot sind ein wichtiger Hinweis für die Weiterentwicklung.</p>
       <button class="btn-line" id="empty-reset">Filter zurücksetzen</button>
     </div>
 
     </section>
 
-  <section class="inhaltsbereich bereich-impuls" id="impulse" aria-labelledby="impulse-titel">
-    <div class="section-head">
-      <h2 class="bereich-titel" id="impulse-titel">Impulse</h2>
-      <p class="meta-line">Kurze Beiträge aus dem Dienstalltag, im selben Inhaltsbereich wie die übrigen Inhalte.</p>
-      <span class="hint">Von Kolleginnen und Kollegen, die es bereits anwenden</span>
-    </div>
-
-    <div class="impulse-intro prinzip">
-      <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 6: Glaubwürdige Gesichter aus der Belegschaft">6</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 6</span><span class="p-title">Glaubwürdige Gesichter aus der Belegschaft</span><span class="p-text">Die Beiträge stammen nicht aus der Lehre, sondern aus dem Dienstalltag. Impulsgeberinnen und Impulsgeber berichten aus eigener Erfahrung, ausdrücklich auch über misslungene Versuche. Damit trägt die Rubrik zugleich die Kernbotschaft des Konzepts: Beim Ausprobieren kann nichts beschädigt werden.</span><span class="p-src">Feinkonzept 5.4.3 · Kernbotschaft aus 6.4.1 · Meilenstein HF 6.2 M3.7</span></span>
-      <p>Hier berichten <strong>Impulsgeberinnen und Impulsgeber</strong> aus den Behörden von ihrer eigenen Arbeit mit Künstlicher Intelligenz: was sich bewährt hat, was misslungen ist und was sie beim nächsten Mal anders machen würden. Die Beiträge stammen nicht aus der Fortbildung, sondern aus dem Dienstalltag — und stehen als Live-Session, Podcast oder kurzes Tutorial zur Verfügung.</p>
-    </div>
-
-    <h3 class="bereich-titel">Für alle</h3>
-    <p class="meta-line">Nur veröffentlichte Impulse, die nicht zu Ihren eigenen Inhalten gehören.</p>
-    <ul class="happen" id="impulse-alle">
-      <li><button type="button" data-open="impuls-auswertung">Wie wir im Ermittlungsteam die Auswertung umgestellt haben<span>45 Min.</span></button></li>
-      <li><button type="button" data-open="skeptikerin">Ich war die Skeptikerin im Team<span>18 Min.</span></button></li>
-      <li><button type="button" data-open="berichte">Berichte zusammenfassen: mein Vorgehen Schritt für Schritt<span>9 Min.</span></button></li>
-    </ul>
-
-    <div class="impulse-cta">
-      <div>
-        <h3>Sie arbeiten bereits mit KI? Werden Sie Impulsgeberin oder Impulsgeber.</h3>
-        <p>Es braucht keinen Expertenstatus — es braucht Erfahrung aus dem Alltag. Auch der Bericht über einen misslungenen Versuch ist ein wertvoller Impuls. Die Redaktion unterstützt bei Aufbereitung, Aufnahme und Veröffentlichung.</p>
-      </div>
-      <button class="btn-solid" type="button" id="impuls-anbieten">Impuls anbieten</button>
-    </div>
-  </section>
-
-  <section class="inhaltsbereich bereich-community" id="community" aria-labelledby="community-titel">
-    <div class="section-head">
-      <h2 class="bereich-titel" id="community-titel">Community</h2>
-      <p class="meta-line">Vorschau auf den späteren Austausch. Am einzelnen Inhalt können Sie schon kommentieren.</p>
-      <span class="hint">Vorschau · Leitforen folgen in der späteren Ausbaustufe</span>
-    </div>
-    <div class="community-wrap prinzip">
-      <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 7: Beteiligung über Behördengrenzen hinweg">7</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 7</span><span class="p-title">Beteiligung über Behördengrenzen hinweg</span><span class="p-text">Fragen werden nicht an eine zentrale Stelle gerichtet, sondern in die Fläche. Kolleginnen und Kollegen aus ganz Nordrhein-Westfalen antworten einander, fachlich gekennzeichnete Personen ergänzen, wo es in die Tiefe geht. Wer mitgestaltet, trägt das Ergebnis mit.</span><span class="p-src">Feinkonzept 5.4.3 · operatives Ziel HF 6.2: Lernen voneinander, auch über Behördengrenzen hinweg</span></span>
-      <div>
-
-        <div class="thread" tabindex="0">
-          <div class="c-av a">TH</div>
-          <div>
-            <h3>Transkript weicht stark vom Audio ab — woran kann das liegen?</h3>
-            <div class="t-meta">
-              <span>T. Hoffmann · KPB Borken</span>
-              <span>14 Antworten</span>
-              <span class="expert">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                Antwort von J. Weber · Fachexpertin Sprachtechnologie
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="thread" tabindex="0">
-          <div class="c-av b">RD</div>
-          <div>
-            <h3>Welche Formulierungen funktionieren bei der Zusammenfassung längerer Berichte?</h3>
-            <div class="t-meta">
-              <span>R. Demir · PP Köln</span>
-              <span>23 Antworten</span>
-              <span>Zuletzt aktiv vor 3 Std.</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="thread" tabindex="0">
-          <div class="c-av c">AL</div>
-          <div>
-            <h3>Erster KI-Einsatz im Team: Was hat bei euch die Skepsis abgebaut?</h3>
-            <div class="t-meta">
-              <span>A. Lindner · KPB Gütersloh</span>
-              <span>31 Antworten</span>
-              <span>Zuletzt aktiv gestern</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      <aside class="community-side">
-        <h3>Ihre Frage ist hier richtig.</h3>
-        <p>Ob Grundsatzfrage oder Spezialfall: In der Community antworten Kolleginnen und Kollegen aus ganz NRW — und gekennzeichnete Fachleute, wenn es fachlich in die Tiefe geht.</p>
-        <button type="button" class="btn-line" id="community-mehr">Was später kommt</button>
-      </aside>
-    </div>
-  </section>
-
-  <section class="inhaltsbereich bereich-live" id="live" aria-labelledby="live-titel">
-    <h2 class="bereich-titel" id="live-titel">Live-Sessions</h2>
-    <p class="meta-line">Offenes Format im selben Inhaltsbereich. Die Teilnahme selbst folgt später. Aufzeichnungen liegen als Inhalt.</p>
-    <div class="prinzip p-wrap">
-      <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 8: Offene Formate, digital und analog">8</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 8</span><span class="p-title">Offene Formate, digital und analog</span><span class="p-text">Neben den jederzeit abrufbaren Inhalten stehen feste offene Formate: Sprechstunden, Live-Sessions und Hackathons. Sie werden bewusst um Formate in Präsenz ergänzt, weil digitale Werkzeuge nicht ausschließlich mit digitalen Formaten begleitet werden sollten, ohne dass zwischenmenschliche Beziehungen verloren gehen.</span><span class="p-src">Feinkonzept 5.4.2 und 5.4.3 · analoge Ergänzung: Krutwage/Port</span></span>
-      <div class="live">
-      <div class="live-date">
-        <div class="d">23.</div>
-        <div class="m">Juli</div>
-      </div>
-      <div class="live-info">
-        <span class="tag"><span class="dot"></span>Live-Session</span>
-        <span class="ausbau">spätere Ausbaustufe</span>
-        <h3>Fragen &amp; Antworten: KI-gestützte Auswertung in der Praxis</h3>
-        <p>Mit Fachleuten aus Technik und Recht · Donnerstag, 10:00–11:00 Uhr · Aufzeichnung anschließend in der Werkstatt verfügbar.</p>
-      </div>
-      <button class="btn-solid" type="button" id="live-btn">Teilnehmen</button>
-      </div>
-    </div>
-  </section>
   </section>
   </div><!-- view-inhalte -->
 
+  <div id="view-impulse" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="home">Zurück</button>
+    <h1>Impulse</h1>
+    <p>Kurze Beiträge aus dem Dienstalltag. Begonnene und abgeschlossene Impulse öffnen Sie über die Kacheln.</p>
+    <div class="lauf-hub" id="impuls-hub">
+      <button type="button" class="hub-tile" data-view-jump="impuls-begonnen" data-herkunft="impuls-begonnen">
+        <span class="zahl-badge zahl-impuls-begonnen">0</span>
+        <span class="hub-titel">Begonnene Impulse</span>
+        <span class="hub-text">Geöffnet, noch nicht abgeschlossen.</span>
+        <span class="go">Impulse öffnen</span>
+      </button>
+      <button type="button" class="hub-tile" data-view-jump="impuls-abgeschlossen" data-herkunft="impuls-abgeschlossen">
+        <span class="zahl-badge zahl-impuls-abgeschlossen">0</span>
+        <span class="hub-titel">Abgeschlossene Impulse</span>
+        <span class="hub-text">Von Ihnen als abgeschlossen markiert.</span>
+        <span class="go">Impulse öffnen</span>
+      </button>
+    </div>
+    <section class="inhaltsbereich bereich-impuls" id="impulse" aria-labelledby="impulse-titel">
+      <h2 class="bereich-titel" id="impulse-titel">Verfügbare Impulse</h2>
+      <p class="meta-line">Nur veröffentlichte Impulse, die nicht Ihnen gehören und die Sie noch nicht begonnen haben.</p>
+      <div class="impulse-intro prinzip">
+        <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 6: Glaubwürdige Gesichter aus der Belegschaft">6</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 6</span><span class="p-title">Glaubwürdige Gesichter aus der Belegschaft</span><span class="p-text">Die Beiträge stammen nicht aus der Lehre, sondern aus dem Dienstalltag. Impulsgeberinnen und Impulsgeber berichten aus eigener Erfahrung, ausdrücklich auch über misslungene Versuche. Damit trägt die Rubrik zugleich die Kernbotschaft des Konzepts: Beim Ausprobieren kann nichts beschädigt werden.</span><span class="p-src">Feinkonzept 5.4.3 · Kernbotschaft aus 6.4.1 · Meilenstein HF 6.2 M3.7</span></span>
+        <p>Hier berichten <strong>Impulsgeberinnen und Impulsgeber</strong> aus den Behörden von ihrer eigenen Arbeit mit Künstlicher Intelligenz: was sich bewährt hat, was misslungen ist und was sie beim nächsten Mal anders machen würden.</p>
+      </div>
+      <ul class="happen" id="impulse-alle">
+        <li><button type="button" data-open="impuls-auswertung">Wie wir im Ermittlungsteam die Auswertung umgestellt haben<span>45 Min.</span></button></li>
+        <li><button type="button" data-open="skeptikerin">Ich war die Skeptikerin im Team<span>18 Min.</span></button></li>
+        <li><button type="button" data-open="berichte">Berichte zusammenfassen: mein Vorgehen Schritt für Schritt<span>9 Min.</span></button></li>
+      </ul>
+      <div class="impulse-cta">
+        <div>
+          <h3>Sie arbeiten bereits mit KI? Werden Sie Impulsgeberin oder Impulsgeber.</h3>
+          <p>Es braucht keinen Expertenstatus — es braucht Erfahrung aus dem Alltag. Auch der Bericht über einen misslungenen Versuch ist ein wertvoller Impuls. Die Redaktion unterstützt bei Aufbereitung, Aufnahme und Veröffentlichung.</p>
+        </div>
+        <button class="btn-solid" type="button" id="impuls-anbieten">Impuls anbieten</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="view-community" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="home">Zurück</button>
+    <h1 id="community-titel">Community</h1>
+    <p>Zwei Kacheln: Bereiche, an denen Sie mitwirken, und verfügbare Communitys.</p>
+    <div class="lauf-hub" id="community-hub">
+      <button type="button" class="hub-tile" data-view-jump="community-mit" data-herkunft="community-mit">
+        <span class="zahl-badge zahl-community-mit">0</span>
+        <span class="hub-titel">Bereiche, an denen ich mitwirke</span>
+        <span class="hub-text">Communitys, in denen Sie dabei sind.</span>
+        <span class="go">Bereiche öffnen</span>
+      </button>
+      <button type="button" class="hub-tile" data-view-jump="community-frei" data-herkunft="community-frei">
+        <span class="zahl-badge zahl-community-frei">0</span>
+        <span class="hub-titel">Verfügbare Communitys</span>
+        <span class="hub-text">Bereiche, denen Sie noch nicht beigetreten sind.</span>
+        <span class="go">Communitys öffnen</span>
+      </button>
+    </div>
+    <section class="inhaltsbereich bereich-community" id="community" aria-labelledby="community-titel">
+      <div class="community-wrap prinzip">
+        <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 7: Beteiligung über Behördengrenzen hinweg">7</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 7</span><span class="p-title">Beteiligung über Behördengrenzen hinweg</span><span class="p-text">Fragen werden nicht an eine zentrale Stelle gerichtet, sondern in die Fläche. Kolleginnen und Kollegen aus ganz Nordrhein-Westfalen antworten einander, fachlich gekennzeichnete Personen ergänzen, wo es in die Tiefe geht. Wer mitgestaltet, trägt das Ergebnis mit.</span><span class="p-src">Feinkonzept 5.4.3 · operatives Ziel HF 6.2: Lernen voneinander, auch über Behördengrenzen hinweg</span></span>
+        <aside class="community-side">
+          <h2>Ihre Frage ist hier richtig.</h2>
+          <p>Ob Grundsatzfrage oder Spezialfall: In der Community antworten Kolleginnen und Kollegen aus ganz NRW. Fragen stellen und eigene Beiträge löschen folgen später.</p>
+          <button type="button" class="btn-line" id="community-mehr">Was später kommt</button>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <div id="view-live" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="home">Zurück</button>
+    <h1 id="live-titel">Live-Sessions</h1>
+    <p>Nur zwei Bereiche: verfügbare Sessions und Sessions, an denen Sie teilgenommen haben.</p>
+    <div class="lauf-hub" id="live-hub">
+      <button type="button" class="hub-tile" data-view-jump="live-verfuegbar" data-herkunft="live-verfuegbar">
+        <span class="zahl-badge zahl-live-frei">0</span>
+        <span class="hub-titel">Verfügbare Live-Sessions</span>
+        <span class="hub-text">Termine, an denen Sie noch nicht teilgenommen haben.</span>
+        <span class="go">Sessions öffnen</span>
+      </button>
+      <button type="button" class="hub-tile" data-view-jump="live-teilgenommen" data-herkunft="live-teilgenommen">
+        <span class="zahl-badge zahl-live-dabei">0</span>
+        <span class="hub-titel">Teilgenommen</span>
+        <span class="hub-text">Sessions, an denen Sie dabei waren.</span>
+        <span class="go">Teilnahmen öffnen</span>
+      </button>
+    </div>
+    <section class="inhaltsbereich bereich-live" id="live" aria-labelledby="live-titel">
+      <div class="prinzip p-wrap">
+        <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 8: Offene Formate, digital und analog">8</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 8</span><span class="p-title">Offene Formate, digital und analog</span><span class="p-text">Neben den jederzeit abrufbaren Inhalten stehen feste offene Formate: Sprechstunden, Live-Sessions und Hackathons. Sie werden bewusst um Formate in Präsenz ergänzt, weil digitale Werkzeuge nicht ausschließlich mit digitalen Formaten begleitet werden sollten, ohne dass zwischenmenschliche Beziehungen verloren gehen.</span><span class="p-src">Feinkonzept 5.4.2 und 5.4.3 · analoge Ergänzung: Krutwage/Port</span></span>
+        <p>Aufzeichnungen einer Session bleiben Lektionen. Hier führen Sie nur die Termine.</p>
+      </div>
+    </section>
+  </div>
+
   <div id="view-lauf-begonnen" class="view" hidden>
-    <button type="button" class="backlink" data-view-jump="inhalte" data-anker="allgemeine-inhalte-titel">← Allgemeine Inhalte</button>
-    <h1>Begonnene Inhalte</h1>
-    <p>Dieselben Kacheln wie bei den übrigen Inhalten. Die Liste erreichen Sie von Allgemeine Inhalte und von Meine Inhalte.</p>
+    <button type="button" class="backlink" data-view-jump="inhalte">← Lektionen</button>
+    <h1>Begonnene Lektionen</h1>
+    <p>Dieselben Kacheln wie bei den verfügbaren Lektionen.</p>
     <div id="inhalte-begonnen" class="grid"></div>
-    <p class="meta-line" id="begonnen-leer" hidden>Noch nichts begonnen. Ein allgemeiner Inhalt erscheint hier, sobald Sie ihn öffnen.</p>
+    <p class="meta-line" id="begonnen-leer" hidden>Noch keine begonnene Lektion. Eine verfügbare Lektion erscheint hier, sobald Sie sie öffnen.</p>
   </div>
   <div id="view-lauf-abgeschlossen" class="view" hidden>
-    <button type="button" class="backlink" data-view-jump="inhalte" data-anker="allgemeine-inhalte-titel">← Allgemeine Inhalte</button>
-    <h1>Abgeschlossene Inhalte</h1>
-    <p>Dieselben Kacheln wie bei den übrigen Inhalten. Als abgeschlossen markiert, und bei Bedarf wieder als begonnen.</p>
+    <button type="button" class="backlink" data-view-jump="inhalte">← Lektionen</button>
+    <h1>Abgeschlossene Lektionen</h1>
+    <p>Dieselben Kacheln wie bei den verfügbaren Lektionen. Bei Bedarf markieren Sie eine Lektion wieder als begonnen.</p>
     <div id="inhalte-abgeschlossen" class="grid"></div>
-    <p class="meta-line" id="abgeschlossen-leer" hidden>Noch nichts abgeschlossen.</p>
+    <p class="meta-line" id="abgeschlossen-leer" hidden>Noch keine abgeschlossene Lektion.</p>
+  </div>
+  <div id="view-impuls-begonnen" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="impulse">← Impulse</button>
+    <h1>Begonnene Impulse</h1>
+    <p>Dieselben Kacheln wie bei den Lektionen.</p>
+    <div id="impulse-begonnen" class="grid"></div>
+    <p class="meta-line" id="impuls-begonnen-leer" hidden>Noch kein begonnener Impuls.</p>
+  </div>
+  <div id="view-impuls-abgeschlossen" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="impulse">← Impulse</button>
+    <h1>Abgeschlossene Impulse</h1>
+    <p>Dieselben Kacheln wie bei den Lektionen.</p>
+    <div id="impulse-abgeschlossen" class="grid"></div>
+    <p class="meta-line" id="impuls-abgeschlossen-leer" hidden>Noch kein abgeschlossener Impuls.</p>
+  </div>
+  <div id="view-live-verfuegbar" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="live">← Live-Sessions</button>
+    <h1>Verfügbare Live-Sessions</h1>
+    <p>Termine, an denen Sie noch nicht teilgenommen haben.</p>
+    <div id="live-verfuegbar-liste"></div>
+    <p class="meta-line" id="live-verfuegbar-leer" hidden>Zurzeit keine weitere Session.</p>
+  </div>
+  <div id="view-live-teilgenommen" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="live">← Live-Sessions</button>
+    <h1>Teilgenommen</h1>
+    <p>Live-Sessions, an denen Sie teilgenommen haben.</p>
+    <div id="live-teilgenommen-liste"></div>
+    <p class="meta-line" id="live-teilgenommen-leer" hidden>Noch keine Teilnahme.</p>
+  </div>
+  <div id="view-community-mit" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="community">← Community</button>
+    <h1>Bereiche, an denen ich mitwirke</h1>
+    <p>Communitys, in denen Sie dabei sind. Den Austausch selbst gibt es in dieser Fassung noch nicht.</p>
+    <div id="community-mit-liste"></div>
+    <p class="meta-line" id="community-mit-leer" hidden>Sie wirken noch in keinem Bereich mit.</p>
+  </div>
+  <div id="view-community-frei" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="community">← Community</button>
+    <h1>Verfügbare Communitys</h1>
+    <p>Bereiche, denen Sie noch nicht beigetreten sind.</p>
+    <div id="community-frei-liste"></div>
+    <p class="meta-line" id="community-frei-leer" hidden>Keine weitere Community.</p>
   </div>
 
   <div id="view-faq" class="view" hidden>
@@ -1566,7 +1589,7 @@
   <div id="view-meine" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="home">Zurück</button>
     <h1>Meine Inhalte</h1>
-    <p class="meta-line">Inhalte, die Sie erstellt haben oder bearbeiten dürfen, und zusätzlich Begonnenes und Abgeschlossenes. Der Stift bleibt bei dem, was Sie erstellen oder ausdrücklich bearbeiten dürfen.</p>
+    <p class="meta-line">Nur Lektionen, Impulse und Live-Sessions, die Sie erstellt haben oder ausdrücklich bearbeiten dürfen. Begonnenes und Abgeschlossenes liegt auf der jeweiligen Seite.</p>
     <section class="anlegen" aria-labelledby="anlegen-titel">
       <h2 id="anlegen-titel">Inhalt erstellen</h2>
       <p>Inhalt, Impuls oder Live-Session. Der Entwurf bleibt bei Ihnen, bis Sie ihn zur Freigabe geben. Ein Stift an der Kachel und in der Ansicht bedeutet: das können Sie bearbeiten.</p>
@@ -1577,28 +1600,12 @@
         <button type="button" class="btn-line" data-view-jump="leitfaden">Leitfaden öffnen</button>
       </div>
     </section>
-    <h2 id="lauf-meine-titel">Begonnen und abgeschlossen</h2>
-    <p class="meta-line">Dieselben Kacheln wie unter Allgemeine Inhalte. Ein Klick öffnet die Liste.</p>
-    <div class="lauf-hub" id="lauf-hub-meine">
-      <button type="button" class="hub-tile" data-view-jump="lauf-begonnen" data-herkunft="meine-begonnen">
-        <span class="zahl-badge zahl-begonnen">0</span>
-        <span class="hub-titel">Begonnene Inhalte</span>
-        <span class="hub-text">Geöffnet, noch nicht abgeschlossen.</span>
-        <span class="go">Inhalte öffnen</span>
-      </button>
-      <button type="button" class="hub-tile" data-view-jump="lauf-abgeschlossen" data-herkunft="meine-abgeschlossen">
-        <span class="zahl-badge zahl-abgeschlossen">0</span>
-        <span class="hub-titel">Abgeschlossene Inhalte</span>
-        <span class="hub-text">Von Ihnen als abgeschlossen markiert.</span>
-        <span class="go">Inhalte öffnen</span>
-      </button>
-    </div>
     <div id="inhalte-eigene" class="grid"></div>
     <h2 id="eigene-impulse-titel">Eigene Impulse</h2>
     <p class="meta-line">Ihre Praxisbeiträge. Unter Impulse stehen nur die veröffentlichten Beiträge, die nicht Ihnen gehören.</p>
     <div id="impulse-eigene" class="grid"></div>
     <h2 id="eigene-live-titel">Eigene Live-Sessions</h2>
-    <p class="meta-line">Termine, die Sie anlegen. Die Teilnahme selbst folgt später.</p>
+    <p class="meta-line">Termine, die Sie anlegen. Verfügbare Termine und Ihre Teilnahmen stehen unter Live-Sessions.</p>
     <div id="live-eigene" class="grid"></div>
   </div>
   <div id="view-editor" class="view" hidden></div>

@@ -438,6 +438,8 @@ function leerZustand() {
     extra: { start: 0, null: 0, bereits: 0, frage: 0, inhalte: {} },
     fortschritt: {},
     editRechte: {},
+    liveTeilnahme: { "live-prompt": true },
+    communityMit: { skepsis: true },
     stichprobe: {},
     pruefdatum: {}
   };
@@ -658,6 +660,18 @@ function istEigen(c) {
   return kannBearbeitenInhalt(c);
 }
 
+function istImpuls(c) {
+  return !!(c && (c.impuls || c.formatKey === "impuls"));
+}
+
+function istLiveSession(c) {
+  return !!(c && c.formatKey === "live" && !istImpuls(c) && c.medien !== "iframe" && c.medien !== "poltube" && c.medien !== "h5p");
+}
+
+function istLektion(c) {
+  return !!(c && !istImpuls(c) && !istLiveSession(c));
+}
+
 function meinArt(c) {
   if (istUrheber(c)) return "Erstellt";
   if (hatEditRecht(c)) return "Darf bearbeiten";
@@ -669,10 +683,6 @@ function showView(name, opt) {
   if (name !== "sso" && !authAktiv()) name = "sso";
   if (name === "editor") { detailModus = "bearbeiten"; name = "player"; }
   if (name === "review") { detailModus = "lesen"; name = "player"; }
-  if (name === "impulse" || name === "community" || name === "live") {
-    opt.anker = opt.anker || { impulse: "impulse-titel", community: "community-titel", live: "live-titel" }[name];
-    name = "inhalte";
-  }
   if ((name === "redaktion" || name === "mod-freigabe" || name === "mod-kommentare" || name === "mod-pruefung" || name === "statistik") && !darfFreigeben()) name = "home";
   if ((name === "player" && detailModus === "bearbeiten" || name === "meine" || name === "leitfaden") && !darfBearbeiten()) name = "home";
   if (name === "admin" && state.rolle !== "admin") name = "home";
@@ -694,10 +704,10 @@ function showView(name, opt) {
   if (name === "admin") renderAdmin();
   if (name === "leitfaden") { /* statisches HTML */ }
   if (name === "inhalte" && typeof window.filtern === "function") window.filtern();
-  if (name === "lauf-begonnen" || name === "lauf-abgeschlossen") {
-    renderFortschritt();
-    laufZurueck(name);
-  }
+  if (name === "impulse") renderImpulse();
+  if (name === "live" || name === "live-verfuegbar" || name === "live-teilgenommen") renderLive();
+  if (name === "community" || name === "community-mit" || name === "community-frei") renderCommunity();
+  if (name === "lauf-begonnen" || name === "lauf-abgeschlossen" || name === "impuls-begonnen" || name === "impuls-abgeschlossen") renderFortschritt();
   markNav(name, opt.anker || "");
   if (opt.anker) {
     var ziel = document.getElementById(opt.anker);
@@ -721,13 +731,10 @@ function markNav(name, anker) {
     if (herkunft) anker = herkunft.anker || "";
   }
   if (name === "statistik" || name.indexOf("mod-") === 0) bereich = "redaktion";
-  if (name === "lauf-begonnen" || name === "lauf-abgeschlossen") {
-    if (herkunft && herkunft.nav === "meine") bereich = "meine";
-    else {
-      bereich = "inhalte";
-      anker = "allgemeine-inhalte-titel";
-    }
-  }
+  if (name === "lauf-begonnen" || name === "lauf-abgeschlossen") bereich = "inhalte";
+  if (name === "impuls-begonnen" || name === "impuls-abgeschlossen") bereich = "impulse";
+  if (name === "live-verfuegbar" || name === "live-teilgenommen") bereich = "live";
+  if (name === "community-mit" || name === "community-frei") bereich = "community";
   document.querySelectorAll("header nav a").forEach(function (a) {
     var an = false;
     if (a.dataset.anker) an = bereich === "inhalte" && anker === a.dataset.anker;
@@ -754,11 +761,11 @@ function renderHub() {
   var box = document.getElementById("hub-kacheln");
   if (!box) return;
   var kacheln = [
-    ["meine", "", "Meine Inhalte", "Erstellt, begonnen oder abgeschlossen."],
-    ["inhalte", "allgemeine-inhalte-titel", "Allgemeine Inhalte", "Inhalte entdecken."],
-    ["inhalte", "impulse-titel", "Impulse", "Kurze Beiträge aus dem Dienstalltag."],
-    ["inhalte", "live-titel", "Live-Sessions", "Offenes Format. Die Teilnahme folgt später."],
-    ["inhalte", "community-titel", "Community", "Vorschau auf den späteren Austausch."],
+    ["meine", "", "Meine Inhalte", "Nur, was Sie erstellt haben oder bearbeiten dürfen."],
+    ["inhalte", "", "Lektionen", "Verfügbare, begonnene und abgeschlossene Lektionen."],
+    ["impulse", "", "Impulse", "Verfügbare, begonnene und abgeschlossene Impulse."],
+    ["live", "", "Live-Sessions", "Verfügbare Termine und Ihre Teilnahmen."],
+    ["community", "", "Community", "Bereiche, in denen Sie mitwirken, und weitere Communitys."],
     ["faq", "", "Häufige Fragen", "Verlässliche Antworten zum Einstieg."]
   ];
   if (darfFreigeben()) kacheln.push(["redaktion", "", "Moderation", "Freigaben und gemeldete Kommentare."]);
@@ -773,10 +780,10 @@ function renderNav() {
     "<button type=\"button\" class=\"nav-drop-btn\" id=\"nav-inhalte-btn\" data-nav-toggle aria-expanded=\"false\" aria-controls=\"nav-inhalte-sub\">Inhalte</button>" +
     "<div class=\"nav-sub\" id=\"nav-inhalte-sub\" hidden>" +
       "<a href=\"#meine-inhalte\" data-nav=\"meine\" data-view=\"meine\">Meine Inhalte</a>" +
-      "<a href=\"#allgemeine-inhalte\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"allgemeine-inhalte-titel\">Allgemeine Inhalte</a>" +
-      "<a href=\"#impulse\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"impulse-titel\">Impulse</a>" +
-      "<a href=\"#live\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"live-titel\">Live-Sessions</a>" +
-      "<a href=\"#community\" data-nav=\"inhalte\" data-view=\"inhalte\" data-anker=\"community-titel\">Community</a>" +
+      "<a href=\"#lektionen\" data-nav=\"inhalte\" data-view=\"inhalte\">Lektionen</a>" +
+      "<a href=\"#impulse\" data-nav=\"impulse\" data-view=\"impulse\">Impulse</a>" +
+      "<a href=\"#live\" data-nav=\"live\" data-view=\"live\">Live-Sessions</a>" +
+      "<a href=\"#community\" data-nav=\"community\" data-view=\"community\">Community</a>" +
     "</div></div>";
   if (darfFreigeben()) html += "<a href=\"#redaktion\" data-nav=\"redaktion\" data-view=\"redaktion\">Moderation</a>";
   if (state.rolle === "admin") html += "<a href=\"#admin\" data-nav=\"admin\" data-view=\"admin\">Administration</a>";
@@ -852,14 +859,18 @@ function herkunftSetzen(id) {
   var katalog = {
     home: { id: "home", nav: "home", anker: "", spur: [start] },
     meine: { id: "meine", nav: "meine", anker: "", spur: [start, spurSchritt("Meine Inhalte", "meine")] },
-    allgemein: { id: "allgemein", nav: "inhalte", anker: "allgemeine-inhalte-titel", spur: [start, spurSchritt("Allgemeine Inhalte", "inhalte", "allgemeine-inhalte-titel")] },
-    begonnen: { id: "begonnen", nav: "inhalte", anker: "allgemeine-inhalte-titel", spur: [start, spurSchritt("Allgemeine Inhalte", "inhalte", "allgemeine-inhalte-titel"), spurSchritt("Begonnene Inhalte", "lauf-begonnen")] },
-    abgeschlossen: { id: "abgeschlossen", nav: "inhalte", anker: "allgemeine-inhalte-titel", spur: [start, spurSchritt("Allgemeine Inhalte", "inhalte", "allgemeine-inhalte-titel"), spurSchritt("Abgeschlossene Inhalte", "lauf-abgeschlossen")] },
-    "meine-begonnen": { id: "meine-begonnen", nav: "meine", anker: "", spur: [start, spurSchritt("Meine Inhalte", "meine"), spurSchritt("Begonnene Inhalte", "lauf-begonnen")] },
-    "meine-abgeschlossen": { id: "meine-abgeschlossen", nav: "meine", anker: "", spur: [start, spurSchritt("Meine Inhalte", "meine"), spurSchritt("Abgeschlossene Inhalte", "lauf-abgeschlossen")] },
-    impulse: { id: "impulse", nav: "inhalte", anker: "impulse-titel", spur: [start, spurSchritt("Impulse", "inhalte", "impulse-titel")] },
-    live: { id: "live", nav: "inhalte", anker: "live-titel", spur: [start, spurSchritt("Live-Sessions", "inhalte", "live-titel")] },
-    community: { id: "community", nav: "inhalte", anker: "community-titel", spur: [start, spurSchritt("Community", "inhalte", "community-titel")] },
+    allgemein: { id: "allgemein", nav: "inhalte", anker: "", spur: [start, spurSchritt("Lektionen", "inhalte")] },
+    begonnen: { id: "begonnen", nav: "inhalte", anker: "", spur: [start, spurSchritt("Lektionen", "inhalte"), spurSchritt("Begonnene Lektionen", "lauf-begonnen")] },
+    abgeschlossen: { id: "abgeschlossen", nav: "inhalte", anker: "", spur: [start, spurSchritt("Lektionen", "inhalte"), spurSchritt("Abgeschlossene Lektionen", "lauf-abgeschlossen")] },
+    impulse: { id: "impulse", nav: "impulse", anker: "", spur: [start, spurSchritt("Impulse", "impulse")] },
+    "impuls-begonnen": { id: "impuls-begonnen", nav: "impulse", anker: "", spur: [start, spurSchritt("Impulse", "impulse"), spurSchritt("Begonnene Impulse", "impuls-begonnen")] },
+    "impuls-abgeschlossen": { id: "impuls-abgeschlossen", nav: "impulse", anker: "", spur: [start, spurSchritt("Impulse", "impulse"), spurSchritt("Abgeschlossene Impulse", "impuls-abgeschlossen")] },
+    live: { id: "live", nav: "live", anker: "", spur: [start, spurSchritt("Live-Sessions", "live")] },
+    "live-verfuegbar": { id: "live-verfuegbar", nav: "live", anker: "", spur: [start, spurSchritt("Live-Sessions", "live"), spurSchritt("Verfügbare Live-Sessions", "live-verfuegbar")] },
+    "live-teilgenommen": { id: "live-teilgenommen", nav: "live", anker: "", spur: [start, spurSchritt("Live-Sessions", "live"), spurSchritt("Teilgenommen", "live-teilgenommen")] },
+    community: { id: "community", nav: "community", anker: "", spur: [start, spurSchritt("Community", "community")] },
+    "community-mit": { id: "community-mit", nav: "community", anker: "", spur: [start, spurSchritt("Community", "community"), spurSchritt("Mitwirkung", "community-mit")] },
+    "community-frei": { id: "community-frei", nav: "community", anker: "", spur: [start, spurSchritt("Community", "community"), spurSchritt("Verfügbare Communitys", "community-frei")] },
     freigabe: { id: "freigabe", nav: "redaktion", anker: "", spur: [start, spurSchritt("Moderation", "redaktion"), spurSchritt("Zur Freigabe", "mod-freigabe")] },
     kommentare: { id: "kommentare", nav: "redaktion", anker: "", spur: [start, spurSchritt("Moderation", "redaktion"), spurSchritt("Kommentare", "mod-kommentare")] },
     pruefung: { id: "pruefung", nav: "redaktion", anker: "", spur: [start, spurSchritt("Moderation", "redaktion"), spurSchritt("Prüfdaten", "mod-pruefung")] },
@@ -871,20 +882,22 @@ function herkunftSetzen(id) {
 function herkunftAusElement(el) {
   if (!el || !el.closest) return "";
   if (el.closest("#view-meine, #inhalte-eigene")) return "meine";
-  if (el.closest("#impulse, #impulse-eigene")) return "impulse";
+  if (el.closest("#view-impuls-begonnen, #impulse-begonnen")) return "impuls-begonnen";
+  if (el.closest("#view-impuls-abgeschlossen, #impulse-abgeschlossen")) return "impuls-abgeschlossen";
+  if (el.closest("#view-impulse, #impulse, #impulse-eigene")) return "impulse";
   if (el.closest("#view-mod-freigabe")) return "freigabe";
   if (el.closest("#view-mod-kommentare")) return "kommentare";
   if (el.closest("#view-mod-pruefung")) return "pruefung";
-  if (el.closest("#view-lauf-begonnen, #inhalte-begonnen")) {
-    return herkunft && herkunft.id === "meine-begonnen" ? "meine-begonnen" : "begonnen";
-  }
-  if (el.closest("#view-lauf-abgeschlossen, #inhalte-abgeschlossen")) {
-    return herkunft && herkunft.id === "meine-abgeschlossen" ? "meine-abgeschlossen" : "abgeschlossen";
-  }
+  if (el.closest("#view-lauf-begonnen, #inhalte-begonnen")) return "begonnen";
+  if (el.closest("#view-lauf-abgeschlossen, #inhalte-abgeschlossen")) return "abgeschlossen";
+  if (el.closest("#view-live-verfuegbar")) return "live-verfuegbar";
+  if (el.closest("#view-live-teilgenommen")) return "live-teilgenommen";
+  if (el.closest("#view-live, #live")) return "live";
+  if (el.closest("#view-community-mit")) return "community-mit";
+  if (el.closest("#view-community-frei")) return "community-frei";
+  if (el.closest("#view-community, #community")) return "community";
   if (el.closest("#katalog-grid, .bereich-allgemein")) return "allgemein";
   if (el.closest("#view-faq")) return "faq";
-  if (el.closest("#live")) return "live";
-  if (el.closest("#community")) return "community";
   if (el.closest("#view-home, #lager")) return "home";
   return "";
 }
@@ -1142,8 +1155,8 @@ function renderEditor(root) {
   var einleitung = art === "impuls"
     ? "Ein Impuls ist Ihre Erfahrung aus dem Alltag, als Text. Nach der Freigabe sehen ihn die anderen unter Impulse. Bei Ihnen bleibt er unter Meine Inhalte."
     : art === "live"
-      ? "Sie legen Thema und Termin an. Teilnehmende können die Session in dieser Fassung noch nicht buchen. Nach der Freigabe bleibt der Termin bei Ihren Live-Sessions."
-      : "Eine Form genügt. Text schreiben Sie hier, H5P ist eine Datei, Video nur die Adresse eines iFrames. Nach der Freigabe liegt der Inhalt unter Allgemeine Inhalte.";
+      ? "Sie legen Thema und Termin an. Nach der Freigabe bleibt der Termin unter Meine Inhalte. Unter Live-Sessions stehen die Termine, an denen andere teilnehmen können."
+      : "Eine Form genügt. Text schreiben Sie hier, H5P ist eine Datei, Video nur die Adresse eines iFrames. Nach der Freigabe liegt die Lektion unter Lektionen.";
   var medienBlock = art === "inhalt"
     ? "<fieldset class=\"niveaus\"><legend>Was legen Sie an?</legend>"
       + "<label><input type=\"radio\" name=\"medien\" value=\"text\"" + (v.medien === "text" ? " checked" : "") + "><strong>Strukturierter Text</strong><span>Für Begriffe, Regeln und kurze Abläufe. Sie schreiben den Text in das Feld darunter.</span></label>"
@@ -1413,10 +1426,8 @@ function renderEigene() {
   function treffer(c) {
     return !q || (c.titel + " " + (c.teaser || "")).toLowerCase().indexOf(q) >= 0;
   }
-  function istImpuls(c) { return !!(c.impuls || c.formatKey === "impuls"); }
-  function istLiveSession(c) { return c.formatKey === "live" && !istImpuls(c) && c.medien !== "iframe" && c.medien !== "poltube" && c.medien !== "h5p"; }
   var inhalte = alle().filter(function (c) {
-    return istEigen(c) && !istImpuls(c) && !istLiveSession(c);
+    return istEigen(c) && istLektion(c);
   }).filter(treffer);
   var impulse = alle().filter(function (c) {
     return istEigen(c) && istImpuls(c);
@@ -1447,42 +1458,107 @@ function renderEigene() {
 }
 
 function renderFortschritt() {
-  function liste(stand) {
+  function liste(stand, art) {
     return alle().filter(function (c) {
-      return c.status === "veroeffentlicht" && fortschrittVon(c) === stand;
+      if (c.status !== "veroeffentlicht" || fortschrittVon(c) !== stand) return false;
+      return art === "impuls" ? istImpuls(c) : istLektion(c);
     });
   }
-  var begonnen = liste("begonnen");
-  var fertig = liste("abgeschlossen");
-  var boxB = document.getElementById("inhalte-begonnen");
-  var boxA = document.getElementById("inhalte-abgeschlossen");
-  var leerB = document.getElementById("begonnen-leer");
-  var leerA = document.getElementById("abgeschlossen-leer");
-  var zahlB = document.querySelectorAll(".zahl-begonnen");
-  var zahlA = document.querySelectorAll(".zahl-abgeschlossen");
-  if (boxB) boxB.innerHTML = begonnen.map(kachelMarkup).join("");
-  if (boxA) boxA.innerHTML = fertig.map(kachelMarkup).join("");
-  if (leerB) leerB.hidden = begonnen.length > 0;
-  if (leerA) leerA.hidden = fertig.length > 0;
-  zahlB.forEach(function (el) { el.textContent = String(begonnen.length); });
-  zahlA.forEach(function (el) { el.textContent = String(fertig.length); });
+  function fuellen(stand, art, boxId, leerId, zahlKlasse) {
+    var eintraege = liste(stand, art);
+    var box = document.getElementById(boxId);
+    var leer = document.getElementById(leerId);
+    if (box) box.innerHTML = eintraege.map(kachelMarkup).join("");
+    if (leer) leer.hidden = eintraege.length > 0;
+    document.querySelectorAll(zahlKlasse).forEach(function (el) { el.textContent = String(eintraege.length); });
+  }
+  fuellen("begonnen", "lektion", "inhalte-begonnen", "begonnen-leer", ".zahl-begonnen");
+  fuellen("abgeschlossen", "lektion", "inhalte-abgeschlossen", "abgeschlossen-leer", ".zahl-abgeschlossen");
+  fuellen("begonnen", "impuls", "impulse-begonnen", "impuls-begonnen-leer", ".zahl-impuls-begonnen");
+  fuellen("abgeschlossen", "impuls", "impulse-abgeschlossen", "impuls-abgeschlossen-leer", ".zahl-impuls-abgeschlossen");
 }
 
-function laufZurueck(name) {
-  var root = document.getElementById("view-" + name);
-  if (!root) return;
-  var back = root.querySelector(".backlink");
-  if (!back) return;
-  var vonMeine = herkunft && (herkunft.id === "meine-begonnen" || herkunft.id === "meine-abgeschlossen");
-  if (vonMeine) {
-    back.dataset.viewJump = "meine";
-    delete back.dataset.anker;
-    back.textContent = "← Meine Inhalte";
-  } else {
-    back.dataset.viewJump = "inhalte";
-    back.dataset.anker = "allgemeine-inhalte-titel";
-    back.textContent = "← Allgemeine Inhalte";
-  }
+function renderImpulse() {
+  renderEigene();
+  renderFortschritt();
+}
+
+var LIVE_FEST = [
+  { id: "live-auswertung", tag: "23.", monat: "Juli", titel: "Fragen & Antworten: KI-gestützte Auswertung in der Praxis", text: "Mit Fachleuten aus Technik und Recht · Donnerstag, 10:00–11:00 Uhr. Die Aufzeichnung liegt danach als Lektion." },
+  { id: "live-prompt", tag: "04.", monat: "Juni", titel: "Sprechstunde: Prompts für Berichte", text: "Offene Stunde für alle Behörden." }
+];
+
+var COMMUNITYS = [
+  { id: "transkript", kuerzel: "TH", farbe: "a", titel: "Transkript weicht stark vom Audio ab — woran kann das liegen?", meta: "T. Hoffmann · KPB Borken · 14 Antworten" },
+  { id: "formulierungen", kuerzel: "RD", farbe: "b", titel: "Welche Formulierungen funktionieren bei der Zusammenfassung längerer Berichte?", meta: "R. Demir · PP Köln · 23 Antworten" },
+  { id: "skepsis", kuerzel: "AL", farbe: "c", titel: "Erster KI-Einsatz im Team: Was hat bei euch die Skepsis abgebaut?", meta: "A. Lindner · KPB Gütersloh · 31 Antworten" }
+];
+
+function liveTermine() {
+  var ids = {};
+  var liste = LIVE_FEST.map(function (s) {
+    ids[s.id] = true;
+    return s;
+  });
+  alle().forEach(function (c) {
+    if (!istLiveSession(c) || c.status !== "veroeffentlicht" || istEigen(c) || ids[c.id]) return;
+    var tag = "–";
+    var monat = "Termin";
+    if (c.liveDatum && c.liveDatum.length >= 10) {
+      tag = c.liveDatum.slice(8, 10) + ".";
+      monat = c.liveDatum.slice(5, 7) + ".";
+    }
+    liste.push({ id: c.id, tag: tag, monat: c.liveZeit || monat, titel: c.titel, text: c.teaser || "" });
+  });
+  return liste;
+}
+
+function liveKarte(s, dabei) {
+  var aktion = dabei
+    ? "<span class=\"st veroeffentlicht\">Teilgenommen</span>"
+    : "<button class=\"btn-solid\" type=\"button\" data-action=\"live-teilnehmen\" data-id=\"" + esc(s.id) + "\">Teilnehmen</button>";
+  return "<div class=\"live\"><div class=\"live-date\"><div class=\"d\">" + esc(s.tag) + "</div><div class=\"m\">" + esc(s.monat) + "</div></div><div class=\"live-info\"><span class=\"tag\"><span class=\"dot\"></span>Live-Session</span><h3>" + esc(s.titel) + "</h3><p>" + esc(s.text) + "</p></div>" + aktion + "</div>";
+}
+
+function renderLive() {
+  var dabei = state.liveTeilnahme || {};
+  var termine = liveTermine();
+  var frei = termine.filter(function (s) { return !dabei[s.id]; });
+  var mit = termine.filter(function (s) { return !!dabei[s.id]; });
+  var boxFrei = document.getElementById("live-verfuegbar-liste");
+  var boxMit = document.getElementById("live-teilgenommen-liste");
+  var leerFrei = document.getElementById("live-verfuegbar-leer");
+  var leerMit = document.getElementById("live-teilgenommen-leer");
+  if (boxFrei) boxFrei.innerHTML = frei.map(function (s) { return liveKarte(s, false); }).join("");
+  if (boxMit) boxMit.innerHTML = mit.map(function (s) { return liveKarte(s, true); }).join("");
+  if (leerFrei) leerFrei.hidden = frei.length > 0;
+  if (leerMit) leerMit.hidden = mit.length > 0;
+  document.querySelectorAll(".zahl-live-frei").forEach(function (el) { el.textContent = String(frei.length); });
+  document.querySelectorAll(".zahl-live-dabei").forEach(function (el) { el.textContent = String(mit.length); });
+}
+
+function communityKarte(c) {
+  var dabei = !!(state.communityMit && state.communityMit[c.id]);
+  var knopf = dabei
+    ? "<button type=\"button\" class=\"btn-line\" data-action=\"community-mit\" data-id=\"" + esc(c.id) + "\">Nicht mehr mitwirken</button>"
+    : "<button type=\"button\" class=\"btn-line\" data-action=\"community-mit\" data-id=\"" + esc(c.id) + "\">Mitwirken</button>";
+  return "<div class=\"thread\" tabindex=\"0\" role=\"button\" data-action=\"community-lesen\"><div class=\"c-av " + esc(c.farbe) + "\">" + esc(c.kuerzel) + "</div><div><h3>" + esc(c.titel) + "</h3><div class=\"t-meta\"><span>" + esc(c.meta) + "</span></div>" + knopf + "</div></div>";
+}
+
+function renderCommunity() {
+  var dabei = state.communityMit || {};
+  var mit = COMMUNITYS.filter(function (c) { return !!dabei[c.id]; });
+  var frei = COMMUNITYS.filter(function (c) { return !dabei[c.id]; });
+  var boxMit = document.getElementById("community-mit-liste");
+  var boxFrei = document.getElementById("community-frei-liste");
+  var leerMit = document.getElementById("community-mit-leer");
+  var leerFrei = document.getElementById("community-frei-leer");
+  if (boxMit) boxMit.innerHTML = mit.map(communityKarte).join("");
+  if (boxFrei) boxFrei.innerHTML = frei.map(communityKarte).join("");
+  if (leerMit) leerMit.hidden = mit.length > 0;
+  if (leerFrei) leerFrei.hidden = frei.length > 0;
+  document.querySelectorAll(".zahl-community-mit").forEach(function (el) { el.textContent = String(mit.length); });
+  document.querySelectorAll(".zahl-community-frei").forEach(function (el) { el.textContent = String(frei.length); });
 }
 
 function modSammeln() {
@@ -1595,7 +1671,7 @@ function renderAdmin() {
   var root = document.getElementById("view-admin");
   root.innerHTML = "<p class=\"eyebrow\">Administration</p><h1>Rollen, Rechte, Betrieb</h1>"
     + "<p>Konzeptanzeige für die Umsetzungsstelle. Keine echte Betriebsschnittstelle und keine personenbezogene Verwaltung.</p>"
-    + "<nav class=\"wegweiser\" aria-label=\"Zurück in die Arbeit\"><button type=\"button\" data-view-jump=\"inhalte\" data-anker=\"allgemeine-inhalte-titel\">Zu den Inhalten</button><button type=\"button\" data-view-jump=\"redaktion\">Zur Moderation</button></nav>"
+    + "<nav class=\"wegweiser\" aria-label=\"Zurück in die Arbeit\"><button type=\"button\" data-view-jump=\"inhalte\">Zu den Lektionen</button><button type=\"button\" data-view-jump=\"redaktion\">Zur Moderation</button></nav>"
     + "<h2>Rollen</h2>"
     + "<div class=\"list\">"
     + rolleZeile("Teilnehmende mit Erstellen", "Lernen und Inhalte anlegen, H5P als Datei, Video als iFrame, Text als Texteingabe", true)
@@ -1788,7 +1864,7 @@ function initFilter() {
       if (treffer && q && k.textContent.toLowerCase().indexOf(q) === -1) treffer = false;
       if (treffer) {
         var inhalt = byId(k.dataset.id);
-        if (inhalt && (istEigen(inhalt) || fortschrittVon(inhalt))) treffer = false;
+        if (!inhalt || !istLektion(inhalt) || istEigen(inhalt) || fortschrittVon(inhalt)) treffer = false;
       }
       k.hidden = !treffer;
       if (treffer) sichtbar++;
@@ -1805,12 +1881,12 @@ function initFilter() {
     });
     var allgemein = kacheln.filter(function (k) {
       var inhalt = byId(k.dataset.id);
-      return !(inhalt && (istEigen(inhalt) || fortschrittVon(inhalt)));
+      return !!(inhalt && istLektion(inhalt) && !istEigen(inhalt) && !fortschrittVon(inhalt));
     }).length;
-    if (anzahlAktiv === 0 && !q) fcount.textContent = "Alle " + allgemein + " allgemeinen Inhalte werden angezeigt.";
-    else if (sichtbar === 0) fcount.textContent = "Kein allgemeiner Inhalt entspricht dieser Auswahl.";
-    else if (sichtbar === 1) fcount.innerHTML = "<strong>1</strong> von " + allgemein + " allgemeinen Inhalten entspricht Ihrer Auswahl.";
-    else fcount.innerHTML = "<strong>" + sichtbar + "</strong> von " + allgemein + " allgemeinen Inhalten entsprechen Ihrer Auswahl.";
+    if (anzahlAktiv === 0 && !q) fcount.textContent = "Alle " + allgemein + " verfügbaren Lektionen werden angezeigt.";
+    else if (sichtbar === 0) fcount.textContent = "Keine Lektion entspricht dieser Auswahl.";
+    else if (sichtbar === 1) fcount.innerHTML = "<strong>1</strong> von " + allgemein + " verfügbaren Lektionen entspricht Ihrer Auswahl.";
+    else fcount.innerHTML = "<strong>" + sichtbar + "</strong> von " + allgemein + " verfügbaren Lektionen entsprechen Ihrer Auswahl.";
     freset.hidden = anzahlAktiv === 0 && !q;
     empty.hidden = sichtbar > 0;
   }
@@ -1920,6 +1996,8 @@ function init() {
   initFaq();
   initFilter();
   syncKacheln();
+  renderLive();
+  renderCommunity();
   sofortKarte();
   if (!sessionStorage.getItem("kiw-start")) {
     sessionStorage.setItem("kiw-start", "1");
@@ -2196,7 +2274,31 @@ function init() {
       sichern();
       if (window.filtern) window.filtern();
       renderPlayer();
-      toast(state.fortschritt[aktuell] === "abgeschlossen" ? "Liegt jetzt unter Abgeschlossene Inhalte." : "Liegt wieder unter Begonnene Inhalte.");
+      var fertigName = istImpuls(byId(aktuell)) ? "Abgeschlossene Impulse" : "Abgeschlossene Lektionen";
+      var begonnenName = istImpuls(byId(aktuell)) ? "Begonnene Impulse" : "Begonnene Lektionen";
+      toast(state.fortschritt[aktuell] === "abgeschlossen" ? "Liegt jetzt unter " + fertigName + "." : "Liegt wieder unter " + begonnenName + ".");
+    }
+    if (action === "live-teilnehmen") {
+      var liveId = act.dataset.id;
+      if (!liveId) return;
+      state.liveTeilnahme = state.liveTeilnahme || {};
+      state.liveTeilnahme[liveId] = true;
+      sichern();
+      renderLive();
+      toast("Die Session liegt jetzt unter Teilgenommen.");
+    }
+    if (action === "community-mit") {
+      var communityId = act.dataset.id;
+      if (!communityId) return;
+      state.communityMit = state.communityMit || {};
+      state.communityMit[communityId] = !state.communityMit[communityId];
+      sichern();
+      renderCommunity();
+      toast(state.communityMit[communityId] ? "Der Bereich liegt unter Mitwirkung." : "Der Bereich liegt wieder unter verfügbaren Communitys.");
+    }
+    if (action === "community-lesen") {
+      if (e.target.closest("[data-action=community-mit]")) return;
+      oeffneAusbau("Forenvorschau", "Den Beitrag können Sie hier nur als Vorschau lesen. Fragen stellen, Taggen und eigene Beiträge löschen folgen mit den Leitforen.");
     }
     if (action === "edit-recht") {
       var inhaltId = act.dataset.id;
@@ -2383,8 +2485,9 @@ function init() {
   document.getElementById("community-mehr").addEventListener("click", function () {
     oeffneAusbau("Leitforen und Ansprechpersonen", "Drei bis vier moderierte Foren, Tags, das Löschen eigener Beiträge, die Praxis-FAQ und die Suche nach ansprechbaren Personen sind beschrieben, aber nicht Teil der ersten Iteration.");
   });
-  document.getElementById("live-btn").addEventListener("click", function () {
-    oeffneAusbau("Open-Space und Live-Formate", "Regelmäßige Live-Sessions und das vertrauliche Open-Space-Format folgen später. Vertraulichkeitsregeln würden zu Beginn jeder Sitzung sichtbar. Die Teilnahme lässt sich hier nicht buchen. Aufzeichnungen können als Inhalt in der Werkstatt liegen.");
+  var liveKnopf = document.getElementById("live-btn");
+  if (liveKnopf) liveKnopf.addEventListener("click", function () {
+    oeffneAusbau("Open-Space und Live-Formate", "Regelmäßige Live-Sessions und das vertrauliche Open-Space-Format folgen später. Vertraulichkeitsregeln würden zu Beginn jeder Sitzung sichtbar. Aufzeichnungen können als Lektion in der Werkstatt liegen.");
   });
   document.getElementById("impuls-anbieten").addEventListener("click", function () {
     dialog({
@@ -2397,7 +2500,8 @@ function init() {
     });
   });
   document.querySelectorAll(".thread").forEach(function (th) {
-    th.addEventListener("click", function () {
+    th.addEventListener("click", function (ev) {
+      if (ev.target.closest("[data-action]")) return;
       oeffneAusbau("Forenvorschau", "Den Beitrag können Sie hier nur als Vorschau lesen. Fragen stellen, Taggen und eigene Beiträge löschen folgen mit den Leitforen.");
     });
   });
