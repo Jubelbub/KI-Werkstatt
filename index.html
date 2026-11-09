@@ -573,6 +573,24 @@
     padding:12px 26px;cursor:pointer;white-space:nowrap;transition:background .15s;
   }
   .btn-solid:hover{background:#00548C;}
+  .lernansicht{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,.85fr);gap:16px;align-items:start;margin-top:8px;}
+  .player-buehne{background:#0c1c30;border:1px solid var(--line);border-radius:12px;min-height:280px;display:flex;flex-direction:column;}
+  .player-flaeche{flex:1;min-height:220px;display:flex;align-items:center;justify-content:center;}
+  .player-quadrat{width:min(160px,36%);aspect-ratio:1;background:var(--blue-dynamic);border-radius:6px;}
+  .player-leiste{display:flex;align-items:center;gap:12px;padding:10px 14px;color:var(--text-title);font-size:13px;border-top:1px solid var(--line);}
+  .player-leiste .balken{flex:1;height:6px;background:#163559;border-radius:99px;overflow:hidden;}
+  .player-leiste .balken i{display:block;height:100%;width:0;background:var(--blue-light);}
+  .lern-karte{background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:16px 16px 12px;margin-bottom:12px;}
+  .lern-karte h2{font-size:18px;margin-bottom:10px;}
+  .lern-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:12px;}
+  .lern-tabs button{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-body);font:inherit;font-weight:bold;padding:8px 10px;cursor:pointer;min-height:44px;}
+  .lern-tabs button[aria-selected="true"]{color:var(--text-title);border-bottom-color:var(--blue-light);}
+  .lern-fuss{display:flex;align-items:center;gap:12px;margin-top:16px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--line);border-radius:12px;}
+  .lern-fortschritt{flex:1;height:8px;background:#0c1c30;border-radius:99px;overflow:hidden;}
+  .lern-fortschritt span{display:block;height:100%;background:var(--blue-light);}
+  .naechstes button{width:100%;text-align:left;background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--text-title);font:inherit;padding:10px;margin-bottom:8px;cursor:pointer;}
+  .naechstes button:hover{background:var(--bg-card-hover);}
+  @media (max-width:980px){.lernansicht{grid-template-columns:1fr;}}
 
   /* Footer */
   footer{
@@ -883,13 +901,13 @@
         <span class="avatar" id="avatar">HB</span>
         <span class="profile-label">
           <span id="profile-name">Henning Beckmann</span>
-          <span class="profile-role" id="profile-role">Teilnehmende mit Erstellen</span>
+          <span class="profile-role" id="profile-role">Content Creator</span>
         </span>
       </button>
       <div class="profile-menu" id="profile-menu" hidden>
         <span class="menu-label">Rolle</span>
-        <button type="button" data-rolle="teilnehmende">Teilnehmende mit Erstellen<span class="menu-erklaerung">Sie lernen und können Inhalte anlegen.</span></button>
-        <button type="button" data-rolle="redaktion">Moderation<span class="menu-erklaerung">Sie sehen Beiträge, die auf eine Entscheidung warten.</span></button>
+        <button type="button" data-rolle="teilnehmende">Content Creator<span class="menu-erklaerung">Sie lernen und können Inhalte anlegen.</span></button>
+        <button type="button" data-rolle="redaktion">Redaktion<span class="menu-erklaerung">Sie sehen Beiträge, die auf eine Entscheidung warten.</span></button>
         <button type="button" data-rolle="admin">Administration<span class="menu-erklaerung">Sie sehen zusätzlich den Betrieb.</span></button>
         <span class="menu-label">Konto</span>
         <button type="button" id="menu-profil">Mein Profil</button>
@@ -917,29 +935,19 @@
 
   <div id="view-home" class="view">
 
-  <div class="hero hub">
+  <div class="hero">
     <p class="hello" id="hello" hidden data-einfach="Guten Tag. Sie müssen die KI-Werkstatt nicht nutzen. Das ist freiwillig.">Guten Tag, Henning Beckmann. Die Nutzung ist freiwillig.</p>
-    <h1>Was möchten Sie öffnen?</h1>
-
+    <div class="eyebrow">Lernen · Wissen · Austausch</div>
+    <h1>KI verstehen und sicher anwenden — direkt aus dem Arbeitsalltag heraus.</h1>
+    <p class="sub">Die KI-Werkstatt ergänzt die bestehende Fortbildung um eine jederzeit verfügbare Lern- und Wissensumgebung: kurze Einheiten, verlässliche Antworten, kollegialer Austausch und Impulse aus der Praxis.</p>
     <div class="search" role="search">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-      <input id="suche" type="text" placeholder="Lektionen, Impulse, Live-Sessions, Community …" aria-label="Suche in allen Inhalten">
+      <input id="suche" type="text" placeholder="Wonach suchen Sie? z. B. Transkription, Prompt, EU-KI-Verordnung …" aria-label="Suche in der KI-Werkstatt">
       <button type="button" id="suche-btn">Suchen</button>
     </div>
-
-    <div class="hub-grid" id="hub-kacheln"></div>
   </div>
 
-  </div><!-- view-home -->
-
-  <div id="view-suche" class="view" hidden>
-    <button type="button" class="backlink" data-view-jump="home">Zurück</button>
-    <h1>Suchergebnisse</h1>
-    <p id="suche-frage">Die Suche geht über Lektionen, Impulse, Live-Sessions, Communitys und die häufigen Fragen.</p>
-    <div id="suche-treffer"></div>
-  </div>
-
-  <div id="lager" hidden>
+  <div id="lager">
     <div class="paths prinzip">
       <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 2: Lernwege statt Kursräume">2</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 2</span><span class="p-title">Lernwege statt Kursräume</span><span class="p-text">Der Einstieg erfolgt nicht über einen Kurskatalog, sondern über die eigene Ausgangslage. Dahinter stehen kurze Einheiten, die einzeln aktualisiert werden können, gebündelt zu Lernwegen nach Rolle und Vorwissen. Der Pflichtanteil bleibt auf das rechtlich Erforderliche nach der EU-KI-Verordnung begrenzt.</span><span class="p-src">Feinkonzept 5.4.2 · Belegdichte: <b>breit getragen</b></span></span>
       <div class="path" tabindex="0" data-pfad="anfang">
@@ -1000,26 +1008,44 @@
     </div>
   </div><!-- lager: bisherige Einstiegskarten, damit die vorhandenen Schalter weiter ansprechbar sind -->
 
+  </div><!-- view-home -->
+
+  <div id="view-dashboard" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="home">Zur Startseite</button>
+    <div class="hero hub">
+      <h1>Was möchten Sie öffnen?</h1>
+      <p>Die Bereiche richten sich nach Ihrer Rolle. Content Creator sieht zusätzlich Meine Inhalte.</p>
+      <div class="hub-grid" id="hub-kacheln"></div>
+    </div>
+  </div>
+
+  <div id="view-suche" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="home">Zurück</button>
+    <h1>Suchergebnisse</h1>
+    <p id="suche-frage">Die Suche geht über Basismodule, Anwendungsmodule, Praxisimpulse, Beiträge, Live-Sessions, Communitys und die häufigen Fragen.</p>
+    <div id="suche-treffer"></div>
+  </div>
+
   <div id="view-inhalte" class="view" hidden>
   <button type="button" class="backlink" data-view-jump="home">Zurück</button>
-    <h1>Lektionen</h1>
-    <p>Nur Lektionen. Begonnene und abgeschlossene Lektionen öffnen Sie über die Kacheln.</p>
+    <h1>Basismodule</h1>
+    <p>Grundlagenkanon. Begonnene und abgeschlossene Basismodule öffnen Sie über die Kacheln.</p>
     <div class="lauf-hub" id="lauf-hub">
       <button type="button" class="hub-tile" data-view-jump="lauf-begonnen" data-herkunft="begonnen">
         <span class="zahl-badge zahl-begonnen">0</span>
-        <span class="hub-titel">Begonnene Lektionen</span>
+        <span class="hub-titel">Begonnene Basismodule</span>
         <span class="hub-text">Geöffnet, noch nicht abgeschlossen.</span>
-        <span class="go">Lektionen öffnen</span>
+        <span class="go">Basismodule öffnen</span>
       </button>
       <button type="button" class="hub-tile" data-view-jump="lauf-abgeschlossen" data-herkunft="abgeschlossen">
         <span class="zahl-badge zahl-abgeschlossen">0</span>
-        <span class="hub-titel">Abgeschlossene Lektionen</span>
+        <span class="hub-titel">Abgeschlossene Basismodule</span>
         <span class="hub-text">Von Ihnen als abgeschlossen markiert.</span>
-        <span class="go">Lektionen öffnen</span>
+        <span class="go">Basismodule öffnen</span>
       </button>
     </div>
     <section class="inhaltsbereich bereich-allgemein" id="inhalte" aria-labelledby="uebrige-titel">
-    <h2 class="bereich-titel" id="uebrige-titel">Verfügbare Lektionen</h2>
+    <h2 class="bereich-titel" id="uebrige-titel">Verfügbare Basismodule</h2>
     <p class="meta-line prinzip">
       <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 4: Redaktion als Daueraufgabe">4</span><span class="p-tip" data-align="right"><span class="p-kicker">Strukturprinzip 4</span><span class="p-title">Redaktion als Daueraufgabe</span><span class="p-text">Jeder Inhalt ist fachlich geprüft und benennbar verantwortet. Ein Redaktionskonzept regelt für alle Kanäle, wer erstellt, prüft und freigibt und wie Widersprüche zwischen den Kanälen vermieden werden. Der Betrieb ist als Daueraufgabe angelegt, nicht als einmalige Initiative: Verwaiste Angebote richten mehr Schaden an als nie gestartete.</span><span class="p-src">Feinkonzept 5.4.1 · Risiko „Die KI-Werkstatt zwischen Aufbau und Alltag“ (Kapitel 9)</span></span>
       Redaktionell geprüft und laufend aktualisiert
@@ -1028,53 +1054,41 @@
     <p class="banner" id="pfadhinweis" hidden></p>
     <div class="search bereich-suche" role="search">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-      <input id="suche-inhalte" type="search" placeholder="Lektion suchen, z. B. Transkription, Prompt, EU-KI-Verordnung …" aria-label="Suche in den verfügbaren Lektionen">
+      <input id="suche-inhalte" type="search" placeholder="Basismodul suchen, z. B. Sprachmodell, Verordnung …" aria-label="Suche in den verfügbaren Basismodulen">
       <button type="button" id="suche-inhalte-btn">Suchen</button>
     </div>
-    <div class="filters prinzip" data-scope="lektion" aria-label="Verfügbare Lektionen filtern">
+    <div class="filters prinzip" data-scope="lektion" aria-label="Verfügbare Basismodule filtern">
       <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 3: Auffindbar nach Rolle und Vorwissen">3</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 3</span><span class="p-title">Auffindbar nach Rolle und Vorwissen</span><span class="p-text">Dieselbe Sammlung, vier Zugänge: Thema, Format, Niveau und Zielgruppe. Wer nur zehn Minuten hat, findet ebenso etwas wie jemand, der ein Thema vertiefen will. Filterkombinationen ohne Treffer sind kein Fehler, sondern ein Hinweis an die Redaktion, wo das Angebot noch Lücken hat.</span><span class="p-src">Feinkonzept 5.4.1 und 5.4.2 · operative Ziele HF 6.2</span></span>
-      <p class="filter-lead">Suche und Filter gelten nur für die verfügbaren Lektionen.</p>
+      <p class="filter-lead">Suche und Filter gelten nur für die verfügbaren Basismodule.</p>
       <div class="filter-status">
-        <span class="fcount" id="fcount" role="status" aria-live="polite">Alle verfügbaren Lektionen werden angezeigt.</span>
+        <span class="fcount" id="fcount" role="status" aria-live="polite">Alle verfügbaren Basismodule werden angezeigt.</span>
         <button class="freset" id="freset" type="button" data-filter-reset="lektion" hidden>Filter zurücksetzen</button>
       </div>
       <div class="fgroup" role="group" aria-label="Thema">
         <span class="flabel">Thema</span>
         <button class="chip active" data-group="thema" data-value="alle" aria-pressed="true">Alle</button>
-        <button class="chip" data-group="thema" data-value="grundlagen" aria-pressed="false">Grundlagen</button>
-        <button class="chip" data-group="thema" data-value="recht" aria-pressed="false">Recht</button>
-        <button class="chip" data-group="thema" data-value="ethik" aria-pressed="false">Ethik</button>
-        <button class="chip" data-group="thema" data-value="einsatzfelder" aria-pressed="false">Einsatzfelder</button>
+        <button class="chip" data-group="thema" data-value="methodik" aria-pressed="false">Methodik</button>
+        <button class="chip" data-group="thema" data-value="recht-ethik" aria-pressed="false">Recht/Ethik</button>
+        <button class="chip" data-group="thema" data-value="daten" aria-pressed="false">Daten</button>
+        <button class="chip" data-group="thema" data-value="generative-ki" aria-pressed="false">Generative KI</button>
+        <button class="chip" data-group="thema" data-value="automatisierung" aria-pressed="false">Automatisierung</button>
+        <button class="chip" data-group="thema" data-value="vibe-coding" aria-pressed="false">Vibe-Coding</button>
+        <button class="chip" data-group="thema" data-value="uebersetzung" aria-pressed="false">Übersetzung/Transkription</button>
       </div>
-      <div class="fgroup" role="group" aria-label="Format">
-        <span class="flabel">Format</span>
-        <button class="chip active" data-group="format" data-value="alle" aria-pressed="true">Alle</button>
-        <button class="chip" data-group="format" data-value="video" aria-pressed="false">Video</button>
-        <button class="chip" data-group="format" data-value="artikel" aria-pressed="false">Artikel</button>
-        <button class="chip" data-group="format" data-value="lernmodul" aria-pressed="false">Lernmodul</button>
-        <button class="chip" data-group="format" data-value="live" aria-pressed="false">Aufzeichnung</button>
-      </div>
-      <div class="fgroup" role="group" aria-label="Niveau">
-        <span class="flabel">Niveau</span>
-        <button class="chip active" data-group="niveau" data-value="alle" aria-pressed="true">Alle</button>
-        <button class="chip" data-group="niveau" data-value="basis" aria-pressed="false">Basis</button>
-        <button class="chip" data-group="niveau" data-value="aufbau" aria-pressed="false">Aufbau</button>
-        <button class="chip" data-group="niveau" data-value="spezial" aria-pressed="false">Spezial</button>
-      </div>
-      <div class="fgroup" role="group" aria-label="Zielgruppe">
-        <span class="flabel">Zielgruppe</span>
+      <div class="fgroup" role="group" aria-label="Anwendungsfeld">
+        <span class="flabel">Anwendungsfeld</span>
         <button class="chip active" data-group="zielgruppe" data-value="alle" aria-pressed="true">Alle</button>
         <button class="chip" data-group="zielgruppe" data-value="ermittlung" aria-pressed="false">Ermittlung</button>
         <button class="chip" data-group="zielgruppe" data-value="fuehrung" aria-pressed="false">Führung</button>
         <button class="chip" data-group="zielgruppe" data-value="verwaltung" aria-pressed="false">Verwaltung</button>
       </div>
-      <div class="fgroup" role="group" aria-label="Werkzeug">
-        <span class="flabel">Werkzeug</span>
+      <div class="fgroup" role="group" aria-label="KI-Tool">
+        <span class="flabel">KI-Tool</span>
         <button class="chip active" data-group="werkzeug" data-value="alle" aria-pressed="true">Alle</button>
-        <button class="chip" data-group="werkzeug" data-value="sprachmodell" aria-pressed="false">Sprachmodell</button>
-        <button class="chip" data-group="werkzeug" data-value="transkription" aria-pressed="false">Transkription</button>
-        <button class="chip" data-group="werkzeug" data-value="auswertung" aria-pressed="false">Auswertung</button>
-        <button class="chip" data-group="werkzeug" data-value="keins" aria-pressed="false">Ohne Werkzeug</button>
+        <button class="chip" data-group="werkzeug" data-value="anychat" aria-pressed="false">AnyChat</button>
+        <button class="chip" data-group="werkzeug" data-value="lingua" aria-pressed="false">Lingua</button>
+        <button class="chip" data-group="werkzeug" data-value="translate" aria-pressed="false">Translate</button>
+        <button class="chip" data-group="werkzeug" data-value="visualchat" aria-pressed="false">VisualChat</button>
       </div>
     </div>
 
@@ -1350,27 +1364,51 @@
     </section>
   </div><!-- view-inhalte -->
 
+  <div id="view-anwendung" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="home">Zurück</button>
+    <h1>Anwendungsmodule</h1>
+    <p>Anwendungsbezogene Einheiten, getrennt vom Grundlagenkanon.</p>
+    <section class="inhaltsbereich" id="anwendung" aria-labelledby="anwendung-titel">
+      <h2 class="bereich-titel" id="anwendung-titel">Verfügbare Anwendungsmodule</h2>
+      <div id="filter-slot-anwendung"></div>
+      <div class="grid" id="anwendung-grid"></div>
+      <p class="meta-line" id="anwendung-leer" hidden>Kein Anwendungsmodul entspricht dieser Auswahl.</p>
+    </section>
+  </div>
+
+  <div id="view-beitrag" class="view" hidden>
+    <button type="button" class="backlink" data-view-jump="home">Zurück</button>
+    <h1>Beitrag</h1>
+    <p>Kurze Beiträge neben den Lernmodulen und Praxisimpulsen.</p>
+    <section class="inhaltsbereich" id="beitraege" aria-labelledby="beitrag-titel">
+      <h2 class="bereich-titel" id="beitrag-titel">Verfügbare Beiträge</h2>
+      <div id="filter-slot-beitrag"></div>
+      <div class="grid" id="beitrag-grid"></div>
+      <p class="meta-line" id="beitrag-leer" hidden>Kein Beitrag entspricht dieser Auswahl.</p>
+    </section>
+  </div>
+
   <div id="view-impulse" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="home">Zurück</button>
-    <h1>Impulse</h1>
-    <p>Kurze Beiträge aus dem Dienstalltag. Begonnene und abgeschlossene Impulse öffnen Sie über die Kacheln.</p>
+    <h1>Praxisimpulse</h1>
+    <p>Kurze Beiträge aus dem Dienstalltag. Begonnene und abgeschlossene Praxisimpulse öffnen Sie über die Kacheln.</p>
     <div class="lauf-hub" id="impuls-hub">
       <button type="button" class="hub-tile" data-view-jump="impuls-begonnen" data-herkunft="impuls-begonnen">
         <span class="zahl-badge zahl-impuls-begonnen">0</span>
-        <span class="hub-titel">Begonnene Impulse</span>
+        <span class="hub-titel">Begonnene Praxisimpulse</span>
         <span class="hub-text">Geöffnet, noch nicht abgeschlossen.</span>
-        <span class="go">Impulse öffnen</span>
+        <span class="go">Praxisimpulse öffnen</span>
       </button>
       <button type="button" class="hub-tile" data-view-jump="impuls-abgeschlossen" data-herkunft="impuls-abgeschlossen">
         <span class="zahl-badge zahl-impuls-abgeschlossen">0</span>
-        <span class="hub-titel">Abgeschlossene Impulse</span>
+        <span class="hub-titel">Abgeschlossene Praxisimpulse</span>
         <span class="hub-text">Von Ihnen als abgeschlossen markiert.</span>
-        <span class="go">Impulse öffnen</span>
+        <span class="go">Praxisimpulse öffnen</span>
       </button>
     </div>
     <section class="inhaltsbereich bereich-impuls" id="impulse" aria-labelledby="impulse-titel">
-      <h2 class="bereich-titel" id="impulse-titel">Verfügbare Impulse</h2>
-      <p class="meta-line">Nur veröffentlichte Impulse, die nicht Ihnen gehören und die Sie noch nicht begonnen haben.</p>
+      <h2 class="bereich-titel" id="impulse-titel">Verfügbare Praxisimpulse</h2>
+      <p class="meta-line">Nur veröffentlichte Praxisimpulse, die nicht Ihnen gehören und die Sie noch nicht begonnen haben.</p>
       <div class="impulse-intro prinzip">
         <span class="p-mark" tabindex="0" role="button" aria-label="Strukturprinzip 6: Glaubwürdige Gesichter aus der Belegschaft">6</span><span class="p-tip"><span class="p-kicker">Strukturprinzip 6</span><span class="p-title">Glaubwürdige Gesichter aus der Belegschaft</span><span class="p-text">Die Beiträge stammen nicht aus der Lehre, sondern aus dem Dienstalltag. Impulsgeberinnen und Impulsgeber berichten aus eigener Erfahrung, ausdrücklich auch über misslungene Versuche. Damit trägt die Rubrik zugleich die Kernbotschaft des Konzepts: Beim Ausprobieren kann nichts beschädigt werden.</span><span class="p-src">Feinkonzept 5.4.3 · Kernbotschaft aus 6.4.1 · Meilenstein HF 6.2 M3.7</span></span>
         <p>Hier berichten <strong>Impulsgeberinnen und Impulsgeber</strong> aus den Behörden von ihrer eigenen Arbeit mit Künstlicher Intelligenz: was sich bewährt hat, was misslungen ist und was sie beim nächsten Mal anders machen würden.</p>
@@ -1441,32 +1479,32 @@
   </div>
 
   <div id="view-lauf-begonnen" class="view" hidden>
-    <button type="button" class="backlink" data-view-jump="inhalte">← Lektionen</button>
-    <h1>Begonnene Lektionen</h1>
-    <p>Dieselben Kacheln wie bei den verfügbaren Lektionen.</p>
+    <button type="button" class="backlink" data-view-jump="inhalte">← Basismodule</button>
+    <h1>Begonnene Basismodule</h1>
+    <p>Dieselben Kacheln wie bei den verfügbaren Basismodulen.</p>
     <div id="inhalte-begonnen" class="grid"></div>
-    <p class="meta-line" id="begonnen-leer" hidden>Noch keine begonnene Lektion. Eine verfügbare Lektion erscheint hier, sobald Sie sie öffnen.</p>
+    <p class="meta-line" id="begonnen-leer" hidden>Noch kein begonnenes Basismodul. Ein verfügbares Basismodul erscheint hier, sobald Sie es öffnen.</p>
   </div>
   <div id="view-lauf-abgeschlossen" class="view" hidden>
-    <button type="button" class="backlink" data-view-jump="inhalte">← Lektionen</button>
-    <h1>Abgeschlossene Lektionen</h1>
-    <p>Dieselben Kacheln wie bei den verfügbaren Lektionen. Bei Bedarf markieren Sie eine Lektion wieder als begonnen.</p>
+    <button type="button" class="backlink" data-view-jump="inhalte">← Basismodule</button>
+    <h1>Abgeschlossene Basismodule</h1>
+    <p>Dieselben Kacheln wie bei den verfügbaren Basismodulen. Bei Bedarf markieren Sie ein Basismodul wieder als begonnen.</p>
     <div id="inhalte-abgeschlossen" class="grid"></div>
-    <p class="meta-line" id="abgeschlossen-leer" hidden>Noch keine abgeschlossene Lektion.</p>
+    <p class="meta-line" id="abgeschlossen-leer" hidden>Noch kein abgeschlossenes Basismodul.</p>
   </div>
   <div id="view-impuls-begonnen" class="view" hidden>
-    <button type="button" class="backlink" data-view-jump="impulse">← Impulse</button>
-    <h1>Begonnene Impulse</h1>
-    <p>Dieselben Kacheln wie bei den Lektionen.</p>
+    <button type="button" class="backlink" data-view-jump="impulse">← Praxisimpulse</button>
+    <h1>Begonnene Praxisimpulse</h1>
+    <p>Dieselben Kacheln wie bei den Basismodulen.</p>
     <div id="impulse-begonnen" class="grid"></div>
-    <p class="meta-line" id="impuls-begonnen-leer" hidden>Noch kein begonnener Impuls.</p>
+    <p class="meta-line" id="impuls-begonnen-leer" hidden>Noch kein begonnener Praxisimpuls.</p>
   </div>
   <div id="view-impuls-abgeschlossen" class="view" hidden>
-    <button type="button" class="backlink" data-view-jump="impulse">← Impulse</button>
-    <h1>Abgeschlossene Impulse</h1>
-    <p>Dieselben Kacheln wie bei den Lektionen.</p>
+    <button type="button" class="backlink" data-view-jump="impulse">← Praxisimpulse</button>
+    <h1>Abgeschlossene Praxisimpulse</h1>
+    <p>Dieselben Kacheln wie bei den Basismodulen.</p>
     <div id="impulse-abgeschlossen" class="grid"></div>
-    <p class="meta-line" id="impuls-abgeschlossen-leer" hidden>Noch kein abgeschlossener Impuls.</p>
+    <p class="meta-line" id="impuls-abgeschlossen-leer" hidden>Noch kein abgeschlossener Praxisimpuls.</p>
   </div>
 
   <div id="view-faq" class="view" hidden>
@@ -1568,20 +1606,18 @@
   <div id="view-meine" class="view" hidden>
     <button type="button" class="backlink" data-view-jump="home">Zurück</button>
     <h1>Meine Inhalte</h1>
-    <p class="meta-line">Nur Lektionen, Impulse und Live-Sessions, die Sie erstellt haben oder ausdrücklich bearbeiten dürfen. Begonnenes und Abgeschlossenes liegt auf der jeweiligen Seite.</p>
+    <p class="meta-line">Basismodule, Anwendungsmodule, Beiträge und Praxisimpulse, die Sie erstellt haben oder ausdrücklich bearbeiten dürfen.</p>
     <section class="anlegen" aria-labelledby="anlegen-titel">
       <h2 id="anlegen-titel">Inhalt erstellen</h2>
-      <p>Inhalt, Impuls oder Live-Session. Der Entwurf bleibt bei Ihnen, bis Sie ihn zur Freigabe geben. Ein Stift an der Kachel und in der Ansicht bedeutet: das können Sie bearbeiten.</p>
+      <p>Sie wählen die Art im Formular: Basismodul, Anwendungsmodul, Beitrag, Praxisimpuls oder FAQ-Eintrag. Der Entwurf bleibt bei Ihnen, bis Sie ihn zur Freigabe geben.</p>
       <div class="button-row">
-        <button type="button" class="btn-solid" data-action="neu" data-art="inhalt">Neuen Inhalt anlegen</button>
-        <button type="button" class="btn-line" data-action="neu" data-art="impuls">Neuen Impuls erstellen</button>
-        <button type="button" class="btn-line" data-action="neu" data-art="live">Neue Live-Session starten</button>
+        <button type="button" class="btn-solid" data-action="neu" data-art="basis">Inhalt anlegen</button>
         <button type="button" class="btn-line" data-view-jump="leitfaden">Leitfaden öffnen</button>
       </div>
     </section>
     <div id="inhalte-eigene" class="grid"></div>
-    <h2 id="eigene-impulse-titel">Eigene Impulse</h2>
-    <p class="meta-line">Ihre Praxisbeiträge. Unter Impulse stehen nur die veröffentlichten Beiträge, die nicht Ihnen gehören.</p>
+    <h2 id="eigene-impulse-titel">Eigene Praxisimpulse</h2>
+    <p class="meta-line">Ihre Praxisbeiträge. Unter Praxisimpulse stehen nur die veröffentlichten Beiträge, die nicht Ihnen gehören.</p>
     <div id="impulse-eigene" class="grid"></div>
     <h2 id="eigene-live-titel">Eigene Live-Sessions</h2>
     <p class="meta-line">Termine, die Sie anlegen. Verfügbare Termine und Ihre Teilnahmen stehen unter Live-Sessions.</p>
@@ -1592,16 +1628,14 @@
     <button type="button" class="backlink" data-view-jump="meine">← Meine Inhalte</button>
     <p class="eyebrow">Rahmen für neue Inhalte</p>
     <h1>Leitfaden</h1>
-    <p>Der Anforderungskatalog nennt einen Leitfaden mit acht Ausschlusskriterien. Die ausformulierte Liste liegt nicht im MVP-Entwurf. Der Prototyp sperrt die Freigabe an den Merkmalen, die Katalog und Journeys für den Start benennen.</p>
+    <p>Die Freigabe prüft die Felder der Maske: Art, genau eine Stufe, mindestens ein Anwendungsfeld und mindestens ein Thema. Dauer, Ergebnis vor Beginn, Lernziel, Praxisbeispiel, Glossar und der Schritt mit sichtbarem Ergebnis sind keine Pflicht mehr.</p>
     <ol class="steps">
-      <li><h3>Genau eine Niveaustufe</h3><p>Basis, Aufbau oder Spezial. In der Einordnungshilfe entsprechen sie Anfänger, Fortgeschritten und Experte. Die Stufe beschreibt den Inhalt, nicht die Person. Keine Einstufung, keine Zugangssperre, keine Pflichtreihenfolge.</p></li>
-      <li><h3>Anwendungsfeld</h3><p>Ermittlung, Führung oder Verwaltung, auch mehrere. Unbesetzte Felder bleiben in der Übersicht als Lücke sichtbar und werden nicht mit Fremdinhalt gefüllt.</p></li>
-      <li><h3>Dauer und Ergebnis vorab</h3><p>Neue Einheiten bleiben beim Richtwert von höchstens 10 Minuten. Dauer und Ergebnis stehen am Inhalt, bevor er startet.</p></li>
-      <li><h3>Praxisbeispiel mit vier Merkmalen</h3><p>Bei anwendungsbezogenen Inhalten: benannte Rolle, konkrete Tätigkeit, Nutzen und Grenze.</p></li>
-      <li><h3>Begriffe erklärt</h3><p>Fremdwörter, Abkürzungen und Anglizismen stehen im Glossar. Ohne diese Kennzeichnung gibt es keine Freigabe.</p></li>
-      <li><h3>Fehlversuch ohne Abwertung</h3><p>Wo ein typischer Fehlversuch gezeigt wird, ist er normal und hat einen Korrekturhinweis. Keine Drohkulisse, keine Abwertung bisheriger Arbeitsweisen.</p></li>
-      <li><h3>Passendes Format</h3><p>Begriffe und Regeln als strukturierter Text. Bedienabläufe als bebilderte Schrittfolge oder als Bildschirmaufzeichnung mit Bordmitteln. Ohne Termin, Begleitung oder Beschaffung.</p></li>
-      <li><h3>Fassungsstand</h3><p>Das Prüfdatum setzt die Redaktion bei der Freigabe. Frühere Fassungen bleiben benannt.</p></li>
+      <li><h3>Art</h3><p>Basismodul, Anwendungsmodul, Beitrag, Praxisimpuls oder FAQ-Eintrag.</p></li>
+      <li><h3>Genau eine Niveaustufe</h3><p>Basis, Aufbau oder Spezial. Die Stufe beschreibt den Inhalt, nicht die Person.</p></li>
+      <li><h3>Anwendungsfeld und Thema</h3><p>Anwendungsfeld: Ermittlung, Führung oder Verwaltung. Thema: Methodik, Recht/Ethik, Daten, Generative KI, Automatisierung, Vibe-Coding oder Übersetzung/Transkription.</p></li>
+      <li><h3>KI-Tool</h3><p>AnyChat, Lingua, Translate oder VisualChat. Keins ist zulässig.</p></li>
+      <li><h3>Lernaktivität</h3><p>Zusätzlich zum Text: H5P-Datei oder iFrame. Beides wird hier nicht ausgeführt.</p></li>
+      <li><h3>Einwilligung, Ersteller, Datum, Erlaubnis</h3><p>Einwilligung und Erlaubnis sind Klickfelder. Die Erlaubnis startet aus. Ersteller und letzte Änderung setzt das System.</p></li>
     </ol>
     <div class="form-card">
       <h2>Grundlagenkanon</h2>

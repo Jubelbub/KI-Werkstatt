@@ -4,7 +4,7 @@
 var STORE = "kiw-dummy-v1";
 var aktuell = null;
 var suchtext = "";
-var sucheSeite = { lektion: "", impuls: "", live: "", community: "" };
+var sucheSeite = { lektion: "", anwendung: "", beitrag: "", impuls: "", live: "", community: "" };
 var selbstGeprueft = false;
 var editorId = null;
 var editorVorgabe = "";
@@ -409,6 +409,21 @@ var INHALTE = [
     kern: ["Gliederung kann das Werkzeug.", "Die Sachaussage bleibt bei Ihnen."],
     glossar: ["Sprachmodell"], glossarOk: true,
     verwandt: ["schriftverkehr"], autor: "Content Creator (Demo)", autorRolle: "creator", status: "entwurf", kommentare: []
+  }),
+  inhalt({
+    id: "beitrag-pruefschritt", titel: "Ein Prüfschritt, der im Team hängen geblieben ist",
+    teaser: "Kurzer Beitrag dazu, wie ein Team die Gegenprobe fest in den Ablauf genommen hat.",
+    format: "Beitrag", formatKey: "beitrag", modul: "beitrag", beitrag: true,
+    niveau: "basis", dauerMin: 6,
+    ergebnis: "Die Gegenprobe steht neben der Aussage, bevor sie in den Vermerk kommt.",
+    geprueft: "2026-10-02", fassung: "1", felder: ["Ermittlung"], werkzeug: "AnyChat", werkzeugKey: "anychat", kiTool: "anychat",
+    thema: ["methodik"], themaKey: ["methodik"], ziel: ["ermittlung"], medien: "text",
+    anwendungsbezogen: true, grundlagen: false,
+    text: "Wir haben verabredet, jede übernommene Aussage gegen die Quelle zu halten, bevor sie in den Vermerk kommt. Der Beitrag hält fest, wie das im Team hängen geblieben ist.",
+    schritte: [{ t: "Quelle danebenlegen", d: "Die Aussage und die Fundstelle stehen im selben Blick." }],
+    kern: ["Der Prüfschritt ist verabredet.", "Die Quelle bleibt neben der Aussage."],
+    verwandt: ["ergebnis-pruefen", "halluzinationen"], autor: "A. Lindner", status: "veroeffentlicht",
+    einwilligung: true, erlaubnis: true, geaendert: "2026-10-02", kommentare: []
   })
 ];
 
@@ -439,6 +454,7 @@ function leerZustand() {
     extra: { start: 0, null: 0, bereits: 0, frage: 0, inhalte: {} },
     fortschritt: {},
     editRechte: {},
+    notizen: {},
     liveTeilnahme: { "live-prompt": true },
     communityMit: { skepsis: true },
     stichprobe: {},
@@ -512,25 +528,16 @@ function authAktiv() {
 
 function mangel(c) {
   var m = [];
-  var neu = String(c.id || "").indexOf("eigen-") === 0;
-  if (!c.niveau) m.push("Niveaustufe fehlt. Genau eine Stufe ist Pflicht.");
-  if (!c.felder || !c.felder.length) m.push("Anwendungsfeld fehlt.");
-  if (!c.dauerMin) m.push("Dauer fehlt.");
-  else if (neu && c.formatKey !== "live" && c.dauerMin > 10) m.push("Umfang über dem Richtwert von 10 Minuten.");
-  if (!c.ergebnis) m.push("Ergebnis fehlt. Dauer und Ergebnis stehen vor Beginn am Inhalt.");
-  if (c.formatKey === "live") {
-    if (!c.liveDatum || !c.liveZeit) m.push("Termin fehlt. Datum und Uhrzeit gehören an die Session.");
+  if (!c) return ["Inhalt fehlt."];
+  if (c.formatKey === "faq" || c.modul === "faq") {
+    if (!c.titel) m.push("Titel fehlt.");
+    if (!c.text) m.push("Antwort fehlt.");
     return m;
   }
-  if (!c.glossarOk) m.push("Fachbegriffe und Anglizismen sind nicht als erklärt gekennzeichnet.");
-  if (c.anwendungsbezogen !== false) {
-    var p = c.praxis || {};
-    if (!p.rolle || !p.taetigkeit || !p.nutzen || !p.grenze) {
-      m.push("Praxisbeispiel unvollständig. Es braucht Rolle, Tätigkeit, Nutzen und Grenze.");
-    }
-  }
-  var schritte = c.schritte || [];
-  if (!schritte.some(function (s) { return s && s.t && s.d; })) m.push("Ein Schritt mit sichtbarem Ergebnis fehlt.");
+  if (!c.niveau) m.push("Niveaustufe fehlt. Genau eine Stufe ist Pflicht.");
+  if (!c.felder || !c.felder.length) m.push("Anwendungsfeld fehlt.");
+  if (!themaSchluessel(c).length) m.push("Thema fehlt.");
+  if (c.formatKey === "live" && (!c.liveDatum || !c.liveZeit)) m.push("Termin fehlt. Datum und Uhrzeit gehören an die Session.");
   return m;
 }
 
@@ -589,13 +596,13 @@ function mitBegriffen(text) {
 }
 
 function rolleLabel(r) {
-  return { teilnehmende: "Teilnehmende mit Erstellen", redaktion: "Moderation", admin: "Administration" }[r] || "Teilnehmende mit Erstellen";
+  return { teilnehmende: "Content Creator", redaktion: "Redaktion", admin: "Administration" }[r] || "Content Creator";
 }
 
 function rolleHinweis(r) {
   return {
-    teilnehmende: "Teilnehmende mit Erstellen: Sie lernen und können Inhalte anlegen.",
-    redaktion: "Moderation: Sie sehen Beiträge, die auf eine Entscheidung warten.",
+    teilnehmende: "Content Creator: Sie lernen und können Inhalte anlegen.",
+    redaktion: "Redaktion: Sie sehen Beiträge, die auf eine Entscheidung warten.",
     admin: "Administration: Sie sehen zusätzlich den Betrieb."
   }[r] || "";
 }
@@ -669,8 +676,86 @@ function istLiveSession(c) {
   return !!(c && c.formatKey === "live" && !istImpuls(c) && c.medien !== "iframe" && c.medien !== "poltube" && c.medien !== "h5p");
 }
 
+var THEMA_ALT = { grundlagen: "methodik", recht: "recht-ethik", ethik: "recht-ethik", einsatzfelder: "daten" };
+var TOOL_ALT = { sprachmodell: "anychat", transkription: "lingua", auswertung: "visualchat", keins: "" };
+var THEMA_LABEL = {
+  methodik: "Methodik",
+  "recht-ethik": "Recht/Ethik",
+  daten: "Daten",
+  "generative-ki": "Generative KI",
+  automatisierung: "Automatisierung",
+  "vibe-coding": "Vibe-Coding",
+  uebersetzung: "Übersetzung/Transkription"
+};
+var TOOL_LABEL = { anychat: "AnyChat", lingua: "Lingua", translate: "Translate", visualchat: "VisualChat" };
+
+function themaSchluessel(c) {
+  if (!c) return [];
+  var roh = (c.themaKey && c.themaKey.length) ? c.themaKey : (c.thema || []);
+  var out = [];
+  roh.forEach(function (t) {
+    var n = THEMA_ALT[t] || t;
+    if (THEMA_LABEL[n] && out.indexOf(n) < 0) out.push(n);
+  });
+  return out;
+}
+
+function toolSchluessel(c) {
+  if (!c) return "";
+  if (c.kiTool && TOOL_LABEL[c.kiTool]) return c.kiTool;
+  if (TOOL_LABEL[c.werkzeugKey]) return c.werkzeugKey;
+  return TOOL_ALT[c.werkzeugKey] || "";
+}
+
+function mapThemaString(s) {
+  var out = [];
+  String(s || "").split(/\s+/).forEach(function (t) {
+    var n = THEMA_ALT[t] || t;
+    if (THEMA_LABEL[n] && out.indexOf(n) < 0) out.push(n);
+  });
+  return out.join(" ");
+}
+
+function mapToolString(s) {
+  if (TOOL_LABEL[s]) return s;
+  return TOOL_ALT[s] || "";
+}
+
+function schreibeFilterDaten(el, c) {
+  if (!el || !c) return;
+  el.dataset.thema = themaSchluessel(c).join(" ");
+  el.dataset.werkzeug = toolSchluessel(c);
+  el.dataset.zielgruppe = (c.ziel || []).join(" ");
+}
+
+function istFaq(c) {
+  return !!(c && (c.formatKey === "faq" || c.modul === "faq"));
+}
+
+function istBeitrag(c) {
+  return !!(c && !istFaq(c) && (c.beitrag || c.formatKey === "beitrag" || c.modul === "beitrag"));
+}
+
 function istLektion(c) {
-  return !!(c && !istImpuls(c) && !istLiveSession(c));
+  return !!(c && !istImpuls(c) && !istLiveSession(c) && !istBeitrag(c) && !istFaq(c));
+}
+
+function istBasismodul(c) {
+  return !!(istLektion(c) && (c.grundlagen === true || c.modul === "basis"));
+}
+
+function istAnwendungsmodul(c) {
+  return !!(istLektion(c) && !istBasismodul(c));
+}
+
+function artName(c) {
+  if (istImpuls(c)) return "Praxisimpuls";
+  if (istBeitrag(c)) return "Beitrag";
+  if (istBasismodul(c)) return "Basismodul";
+  if (istAnwendungsmodul(c)) return "Anwendungsmodul";
+  if (istLiveSession(c)) return "Live-Session";
+  if (istFaq(c)) return "FAQ-Eintrag";
+  return "Inhalt";
 }
 
 function meinArt(c) {
@@ -685,7 +770,7 @@ function showView(name, opt) {
   if (name === "editor") { detailModus = "bearbeiten"; name = "player"; }
   if (name === "review") { detailModus = "lesen"; name = "player"; }
   if ((name === "redaktion" || name === "mod-freigabe" || name === "mod-kommentare" || name === "mod-pruefung" || name === "statistik") && !darfFreigeben()) name = "home";
-  if ((name === "player" && detailModus === "bearbeiten" || name === "meine" || name === "leitfaden") && !darfBearbeiten()) name = "home";
+  if ((name === "player" && detailModus === "bearbeiten" || name === "meine" || name === "leitfaden") && state.rolle !== "teilnehmende") name = "dashboard";
   if (name === "admin" && state.rolle !== "admin") name = "home";
   document.body.classList.toggle("sso", name === "sso");
   document.querySelectorAll(".view").forEach(function (v) {
@@ -704,7 +789,7 @@ function showView(name, opt) {
   if (name === "statistik") renderStatistik();
   if (name === "admin") renderAdmin();
   if (name === "leitfaden") { /* statisches HTML */ }
-  if ((name === "inhalte" || name === "impulse" || name === "live" || name === "community") && typeof window.filtern === "function") window.filtern();
+  if ((name === "inhalte" || name === "anwendung" || name === "beitrag" || name === "impulse" || name === "live" || name === "community") && typeof window.filtern === "function") window.filtern();
   if (name === "suche") renderSuche();
   if (name === "lauf-begonnen" || name === "lauf-abgeschlossen" || name === "impuls-begonnen" || name === "impuls-abgeschlossen") renderFortschritt();
   markNav(name, opt.anker || "");
@@ -732,6 +817,8 @@ function markNav(name, anker) {
   if (name === "statistik" || name.indexOf("mod-") === 0) bereich = "redaktion";
   if (name === "lauf-begonnen" || name === "lauf-abgeschlossen") bereich = "inhalte";
   if (name === "impuls-begonnen" || name === "impuls-abgeschlossen") bereich = "impulse";
+  if (name === "anwendung") bereich = "anwendung";
+  if (name === "beitrag") bereich = "beitrag";
   document.querySelectorAll("header nav a").forEach(function (a) {
     var an = false;
     if (a.dataset.anker) an = bereich === "inhalte" && anker === a.dataset.anker;
@@ -742,7 +829,7 @@ function markNav(name, anker) {
   });
   var btn = document.getElementById("nav-inhalte-btn");
   if (btn) {
-    var inhaltAktiv = bereich === "inhalte" || bereich === "meine";
+    var inhaltAktiv = bereich === "inhalte" || bereich === "anwendung" || bereich === "beitrag" || bereich === "impulse" || bereich === "live" || bereich === "community" || bereich === "meine";
     if (inhaltAktiv) btn.setAttribute("aria-current", "page");
     else btn.removeAttribute("aria-current");
   }
@@ -757,15 +844,18 @@ function hubKachel(k) {
 function renderHub() {
   var box = document.getElementById("hub-kacheln");
   if (!box) return;
-  var kacheln = [
-    ["meine", "", "Meine Inhalte", "Nur, was Sie erstellt haben oder bearbeiten dürfen."],
-    ["inhalte", "", "Lektionen", "Verfügbare, begonnene und abgeschlossene Lektionen."],
-    ["impulse", "", "Impulse", "Verfügbare, begonnene und abgeschlossene Impulse."],
+  var kacheln = [];
+  if (state.rolle === "teilnehmende") kacheln.push(["meine", "", "Meine Inhalte", "Nur, was Sie erstellt haben oder bearbeiten dürfen."]);
+  kacheln.push(
+    ["inhalte", "", "Basismodule", "Grundlagenkanon, begonnen und abgeschlossen."],
+    ["anwendung", "", "Anwendungsmodule", "Anwendungsbezogene Einheiten."],
+    ["impulse", "", "Praxisimpulse", "Beiträge aus dem Dienstalltag."],
+    ["beitrag", "", "Beitrag", "Kurze Beiträge neben den Modulen."],
     ["live", "", "Live-Sessions", "Ihre Teilnahmen und verfügbare Termine."],
     ["community", "", "Community", "Bereiche, in denen Sie mitwirken, und weitere Communitys."],
     ["faq", "", "Häufige Fragen", "Verlässliche Antworten zum Einstieg."]
-  ];
-  if (darfFreigeben()) kacheln.push(["redaktion", "", "Moderation", "Freigaben und gemeldete Kommentare."]);
+  );
+  if (darfFreigeben()) kacheln.push(["redaktion", "", "Redaktion", "Freigaben und gemeldete Kommentare."]);
   if (state.rolle === "admin") kacheln.push(["admin", "", "Administration", "Rollen, Anbindung und Betrieb."]);
   box.innerHTML = kacheln.map(hubKachel).join("");
 }
@@ -773,16 +863,19 @@ function renderHub() {
 function renderNav() {
   var nav = document.querySelector("header nav");
   if (!nav) return;
-  var html = "<div class=\"nav-drop\">" +
+  var links = "";
+  if (state.rolle === "teilnehmende") links += "<a href=\"#meine-inhalte\" data-nav=\"meine\" data-view=\"meine\">Meine Inhalte</a>";
+  links += "<a href=\"#basismodule\" data-nav=\"inhalte\" data-view=\"inhalte\">Basismodule</a>" +
+    "<a href=\"#anwendungsmodule\" data-nav=\"anwendung\" data-view=\"anwendung\">Anwendungsmodule</a>" +
+    "<a href=\"#praxisimpulse\" data-nav=\"impulse\" data-view=\"impulse\">Praxisimpulse</a>" +
+    "<a href=\"#beitrag\" data-nav=\"beitrag\" data-view=\"beitrag\">Beitrag</a>" +
+    "<a href=\"#live\" data-nav=\"live\" data-view=\"live\">Live-Sessions</a>" +
+    "<a href=\"#community\" data-nav=\"community\" data-view=\"community\">Community</a>";
+  var html = "<a href=\"#dashboard\" data-nav=\"dashboard\" data-view=\"dashboard\">Dashboard</a>" +
+    "<div class=\"nav-drop\">" +
     "<button type=\"button\" class=\"nav-drop-btn\" id=\"nav-inhalte-btn\" data-nav-toggle aria-expanded=\"false\" aria-controls=\"nav-inhalte-sub\">Inhalte</button>" +
-    "<div class=\"nav-sub\" id=\"nav-inhalte-sub\" hidden>" +
-      "<a href=\"#meine-inhalte\" data-nav=\"meine\" data-view=\"meine\">Meine Inhalte</a>" +
-      "<a href=\"#lektionen\" data-nav=\"inhalte\" data-view=\"inhalte\">Lektionen</a>" +
-      "<a href=\"#impulse\" data-nav=\"impulse\" data-view=\"impulse\">Impulse</a>" +
-      "<a href=\"#live\" data-nav=\"live\" data-view=\"live\">Live-Sessions</a>" +
-      "<a href=\"#community\" data-nav=\"community\" data-view=\"community\">Community</a>" +
-    "</div></div>";
-  if (darfFreigeben()) html += "<a href=\"#redaktion\" data-nav=\"redaktion\" data-view=\"redaktion\">Moderation</a>";
+    "<div class=\"nav-sub\" id=\"nav-inhalte-sub\" hidden>" + links + "</div></div>";
+  if (darfFreigeben()) html += "<a href=\"#redaktion\" data-nav=\"redaktion\" data-view=\"redaktion\">Redaktion</a>";
   if (state.rolle === "admin") html += "<a href=\"#admin\" data-nav=\"admin\" data-view=\"admin\">Administration</a>";
   html += "<a href=\"#faq\" data-nav=\"faq\" data-view=\"faq\">FAQ</a>";
   nav.innerHTML = html;
@@ -856,12 +949,15 @@ function herkunftSetzen(id) {
   var katalog = {
     home: { id: "home", nav: "home", anker: "", spur: [start] },
     meine: { id: "meine", nav: "meine", anker: "", spur: [start, spurSchritt("Meine Inhalte", "meine")] },
-    allgemein: { id: "allgemein", nav: "inhalte", anker: "", spur: [start, spurSchritt("Lektionen", "inhalte")] },
-    begonnen: { id: "begonnen", nav: "inhalte", anker: "", spur: [start, spurSchritt("Lektionen", "inhalte"), spurSchritt("Begonnene Lektionen", "lauf-begonnen")] },
-    abgeschlossen: { id: "abgeschlossen", nav: "inhalte", anker: "", spur: [start, spurSchritt("Lektionen", "inhalte"), spurSchritt("Abgeschlossene Lektionen", "lauf-abgeschlossen")] },
-    impulse: { id: "impulse", nav: "impulse", anker: "", spur: [start, spurSchritt("Impulse", "impulse")] },
-    "impuls-begonnen": { id: "impuls-begonnen", nav: "impulse", anker: "", spur: [start, spurSchritt("Impulse", "impulse"), spurSchritt("Begonnene Impulse", "impuls-begonnen")] },
-    "impuls-abgeschlossen": { id: "impuls-abgeschlossen", nav: "impulse", anker: "", spur: [start, spurSchritt("Impulse", "impulse"), spurSchritt("Abgeschlossene Impulse", "impuls-abgeschlossen")] },
+    dashboard: { id: "dashboard", nav: "dashboard", anker: "", spur: [start, spurSchritt("Dashboard", "dashboard")] },
+    allgemein: { id: "allgemein", nav: "inhalte", anker: "", spur: [start, spurSchritt("Basismodule", "inhalte")] },
+    anwendung: { id: "anwendung", nav: "anwendung", anker: "", spur: [start, spurSchritt("Anwendungsmodule", "anwendung")] },
+    beitrag: { id: "beitrag", nav: "beitrag", anker: "", spur: [start, spurSchritt("Beitrag", "beitrag")] },
+    begonnen: { id: "begonnen", nav: "inhalte", anker: "", spur: [start, spurSchritt("Basismodule", "inhalte"), spurSchritt("Begonnene Basismodule", "lauf-begonnen")] },
+    abgeschlossen: { id: "abgeschlossen", nav: "inhalte", anker: "", spur: [start, spurSchritt("Basismodule", "inhalte"), spurSchritt("Abgeschlossene Basismodule", "lauf-abgeschlossen")] },
+    impulse: { id: "impulse", nav: "impulse", anker: "", spur: [start, spurSchritt("Praxisimpulse", "impulse")] },
+    "impuls-begonnen": { id: "impuls-begonnen", nav: "impulse", anker: "", spur: [start, spurSchritt("Praxisimpulse", "impulse"), spurSchritt("Begonnene Praxisimpulse", "impuls-begonnen")] },
+    "impuls-abgeschlossen": { id: "impuls-abgeschlossen", nav: "impulse", anker: "", spur: [start, spurSchritt("Praxisimpulse", "impulse"), spurSchritt("Abgeschlossene Praxisimpulse", "impuls-abgeschlossen")] },
     live: { id: "live", nav: "live", anker: "", spur: [start, spurSchritt("Live-Sessions", "live")] },
     community: { id: "community", nav: "community", anker: "", spur: [start, spurSchritt("Community", "community")] },
     suche: { id: "suche", nav: "home", anker: "", spur: [start, spurSchritt("Suche", "suche")] },
@@ -887,6 +983,9 @@ function herkunftAusElement(el) {
   if (el.closest("#view-lauf-abgeschlossen, #inhalte-abgeschlossen")) return "abgeschlossen";
   if (el.closest("#view-live, #live")) return "live";
   if (el.closest("#view-community, #community")) return "community";
+  if (el.closest("#view-anwendung, #anwendung-grid")) return "anwendung";
+  if (el.closest("#view-beitrag, #beitrag-grid")) return "beitrag";
+  if (el.closest("#view-dashboard")) return "dashboard";
   if (el.closest("#katalog-grid, .bereich-allgemein")) return "allgemein";
   if (el.closest("#view-faq")) return "faq";
   if (el.closest("#view-home, #lager")) return "home";
@@ -994,70 +1093,86 @@ function renderPlayer() {
   var root = document.getElementById("view-player");
   if (!c) { root.innerHTML = "<p>Inhalt nicht gefunden.</p>"; return; }
   var felder = (c.felder || []).join(", ") || "nicht gesetzt";
-  var stage = "";
-  if (c.medien === "poltube" || c.medien === "iframe") {
-    var rahmen = c.iframe
-      ? "<iframe class=\"video-frame\" title=\"Video: " + esc(c.titel) + "\" src=\"" + esc(c.iframe) + "\"></iframe>"
-      : "<iframe class=\"video-frame\" title=\"Video: " + esc(c.titel) + "\" srcdoc=\"&lt;!DOCTYPE html&gt;&lt;title&gt;Video&lt;/title&gt;&lt;body style='margin:0;background:#0d4a63;color:#fff;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh'&gt;Video&lt;/body&gt;\"></iframe>";
-    stage = "<div class=\"stage\"><p class=\"entry-kicker\">Video · iFrame</p>" + rahmen + "<div class=\"transcript\"><h3>Textfassung</h3><p>" + mitBegriffen(c.teaser) + "</p></div></div>";
-  } else if (c.medien === "h5p") {
-    var h5pDatei = c.dateiname || (c.id + ".h5p");
-    var h5pInhalt = (c.h5p)
-      ? "<h3 id=\"h5p-frage\">" + esc(c.h5p.frage) + "</h3><div class=\"h5p-options\">" + c.h5p.optionen.map(function (o, i) {
-        return "<button type=\"button\" class=\"h5p-opt\" data-h5p=\"" + i + "\">" + esc(o.t) + "</button>";
-      }).join("") + "</div><p id=\"h5p-hinweis\" class=\"stage-note\" hidden></p>"
-      : "<p>" + mitBegriffen(c.teaser) + "</p>";
-    stage = "<div class=\"stage h5p\"><p class=\"entry-kicker\">H5P-Datei</p><p><strong>" + esc(h5pDatei) + "</strong></p>" + h5pInhalt + "</div>";
-  } else if (c.formatKey === "live") {
-    var termin = (c.liveDatum ? datum(c.liveDatum) : "Termin offen") + (c.liveZeit ? " · " + c.liveZeit : "");
-    stage = "<div class=\"stage\"><p class=\"entry-kicker\">Live-Session</p><p><strong>" + esc(termin) + "</strong></p><p>" + mitBegriffen(c.text || c.teaser) + "</p><p class=\"meta-line\">Die Teilnahme lässt sich hier nicht buchen.</p></div>";
-  } else {
-    stage = "<div class=\"stage\"><p class=\"entry-kicker\">Strukturierter Text</p><p>" + mitBegriffen(c.text || c.teaser) + "</p></div>";
-  }
-  var praxis = "";
-  if (c.praxis && (c.praxis.rolle || c.praxis.taetigkeit)) {
-    praxis = "<div class=\"praxis\"><h3>Praxisbeispiel</h3><dl><div><dt>Rolle</dt><dd>" + esc(c.praxis.rolle || "—") + "</dd></div><div><dt>Tätigkeit</dt><dd>" + esc(c.praxis.taetigkeit || "—") + "</dd></div><div><dt>Nutzen</dt><dd>" + esc(c.praxis.nutzen || "—") + "</dd></div><div><dt>Grenze</dt><dd>" + esc(c.praxis.grenze || "—") + "</dd></div></dl></div>";
-  }
-  var fehler = "";
-  if (c.fehler) {
-    fehler = "<div class=\"fehler\"><h3>Ein typischer Fehlversuch — der ist normal</h3><p>" + mitBegriffen(c.fehler.text) + "</p><p><strong>Korrektur:</strong> " + mitBegriffen(c.fehler.korrektur) + "</p></div>";
-  }
-  var schritte = (c.schritte || []).map(function (s, i) {
-    return "<li><h3>" + (i + 1) + ". " + esc(s.t) + "</h3><p>" + mitBegriffen(s.d) + "</p></li>";
-  }).join("");
-  var pflicht = c.pflicht ? "<span class=\"lvl impulstag\">Vor der Nutzung</span>" : "";
-  var kanon = c.grundlagen ? "<span class=\"lvl basis\">Grundlagenkanon</span>" : "";
-  var status = c.status !== "veroeffentlicht" ? "<span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span>" : "";
-  var bearbeiten = kannBearbeitenInhalt(c) ? stiftKnopf(c.id, true) : "";
+  var themen = themaSchluessel(c).map(function (t) { return THEMA_LABEL[t]; }).join(", ") || "nicht gesetzt";
+  var tool = TOOL_LABEL[toolSchluessel(c)] || c.werkzeug || "keins";
+  var naechste = (c.verwandt || []).map(byId).filter(function (v) { return v && (v.status === "veroeffentlicht" || kannBearbeitenInhalt(v)); });
+  var naechster = naechste[0];
   var stand = fortschrittVon(c);
+  var prozent = stand === "abgeschlossen" ? 100 : stand === "begonnen" ? 35 : 8;
+  var notiz = (state.notizen && state.notizen[c.id]) || "";
+  var buehne = "";
+  if (c.medien === "h5p" && c.h5p) {
+    buehne = "<div class=\"player-flaeche\" style=\"display:block;padding:24px;color:#fff\"><p class=\"entry-kicker\">H5P</p><h2 id=\"h5p-frage\">" + esc(c.h5p.frage) + "</h2><div class=\"h5p-options\">" + c.h5p.optionen.map(function (o, i) {
+      return "<button type=\"button\" class=\"h5p-opt\" data-h5p=\"" + i + "\">" + esc(o.t) + "</button>";
+    }).join("") + "</div><p id=\"h5p-hinweis\" class=\"stage-note\" hidden></p></div>";
+  } else if ((c.medien === "iframe" || c.medien === "poltube") && c.iframe) {
+    buehne = "<iframe class=\"video-frame\" title=\"Video: " + esc(c.titel) + "\" src=\"" + esc(c.iframe) + "\"></iframe>";
+  } else {
+    buehne = "<div class=\"player-flaeche\" aria-hidden=\"true\"><span class=\"player-quadrat\"></span></div>"
+      + "<div class=\"player-leiste\"><span>Wiedergabe</span><span class=\"balken\"><i style=\"width:" + prozent + "%\"></i></span><span>" + prozent + " %</span></div>";
+  }
+  var kapitel = (c.schritte || []).map(function (s, i) {
+    return "<p><strong>" + (i + 1) + ". " + esc(s.t) + "</strong><br>" + mitBegriffen(s.d) + "</p>";
+  }).join("") || "<p>Keine Kapitel hinterlegt.</p>";
+  var naechstesHtml = naechste.length
+    ? naechste.map(function (v) {
+      return "<button type=\"button\" data-open=\"" + esc(v.id) + "\"><strong>" + esc(v.titel) + "</strong><br><span>" + esc(artName(v)) + "</span></button>";
+    }).join("")
+    : "<p>Kein weiterer Inhalt ist verknüpft.</p>";
+  var status = c.status !== "veroeffentlicht" ? "<span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span>" : "";
+  var bearbeiten = (state.rolle === "teilnehmende" && kannBearbeitenInhalt(c)) ? stiftKnopf(c.id, true) : "";
   var lauf = "";
   if (c.status === "veroeffentlicht" && !kannBearbeitenInhalt(c)) {
     lauf = stand === "abgeschlossen"
       ? "<div class=\"button-row\"><span class=\"st veroeffentlicht\">Abgeschlossen</span><button type=\"button\" class=\"btn-line\" data-action=\"fortschritt\" data-stand=\"begonnen\">Wieder als begonnen</button></div>"
       : "<div class=\"button-row\"><button type=\"button\" class=\"btn-line\" data-action=\"fortschritt\" data-stand=\"abgeschlossen\">Als abgeschlossen markieren</button></div>";
   }
+  var weiter = naechster
+    ? "<button type=\"button\" class=\"btn-solid\" data-open=\"" + esc(naechster.id) + "\">Nächster</button>"
+    : "<button type=\"button\" class=\"btn-line\" data-action=\"fortschritt\" data-stand=\"abgeschlossen\">Abschließen</button>";
   root.innerHTML = krumenHtml(c.titel)
-    + "<div class=\"badges\">" + status + (c.niveau ? "<span class=\"lvl " + esc(c.niveau) + "\">" + esc(c.niveauLabel) + "</span>" : "") + kanon + pflicht + "<span class=\"dur\">" + esc(c.format) + " · " + esc(c.dauer) + "</span></div>"
-    + "<div class=\"titelzeile\"><h1>" + esc(c.titel) + "</h1>" + bearbeiten + "</div>"
-    + "<p class=\"ergebnis-zeile\"><strong>Ergebnis:</strong> " + esc(c.ergebnis || "noch nicht benannt") + "</p>"
-    + (c.dauerMin > 10 ? "<p class=\"banner\">Dieser Bestandseintrag ist länger als zehn Minuten und folgt der bisherigen Kachel. Neu eingereichte Einheiten gibt die Moderation nur bis zu diesem Richtwert frei.</p>" : "")
-    + "<div class=\"form-card\"><h2>Einordnung</h2><dl class=\"gloss\">"
-    + "<div><dt>Anwendungsfeld</dt><dd>" + esc(felder) + "</dd></div>"
-    + "<div><dt>Werkzeug</dt><dd>" + esc(c.werkzeug || "—") + "</dd></div>"
-    + "<div><dt>Fassung</dt><dd>" + esc(c.fassung || "1") + "</dd></div>"
-    + "<div><dt>Geprüft am</dt><dd>" + esc(datum(c.geprueft)) + "</dd></div>"
-    + (c.lernziel ? "<div><dt>Lernziel</dt><dd>" + esc(c.lernziel) + "</dd></div>" : "")
-    + (c.geltungsbereich ? "<div><dt>Geltungsbereich</dt><dd>" + esc(c.geltungsbereich) + "</dd></div>" : "")
-    + "</dl></div>"
-    + stage
-    + (schritte ? "<ol class=\"steps\">" + schritte + "</ol>" : "")
-    + praxis
-    + fehler
+    + "<div class=\"badges\">" + status + "<span class=\"dur\">" + esc(artName(c)) + (c.niveauLabel ? " · " + esc(c.niveauLabel) : "") + "</span>" + bearbeiten + "</div>"
+    + "<div class=\"lernansicht\">"
+    + "<div><div class=\"player-buehne\">" + buehne + "</div>"
+    + "<div class=\"titelzeile\"><h1>" + esc(c.titel) + "</h1></div>"
+    + "<p class=\"meta-line\">" + esc(felder) + " · " + esc(themen) + " · " + esc(tool) + "</p>"
+    + "<p>" + mitBegriffen(c.teaser || "") + "</p></div>"
+    + "<aside>"
+    + "<section class=\"lern-karte naechstes\"><h2>Als Nächstes</h2>" + naechstesHtml + "</section>"
+    + "<section class=\"lern-karte\"><h2>Weitere Infos</h2>"
+    + "<div class=\"lern-tabs\" role=\"tablist\">"
+    + "<button type=\"button\" role=\"tab\" id=\"tab-transkript\" data-lern-tab=\"transkript\" aria-selected=\"true\" aria-controls=\"panel-transkript\">Transkript</button>"
+    + "<button type=\"button\" role=\"tab\" id=\"tab-kapitel\" data-lern-tab=\"kapitel\" aria-selected=\"false\" aria-controls=\"panel-kapitel\">Kapitel</button>"
+    + "<button type=\"button\" role=\"tab\" id=\"tab-notizen\" data-lern-tab=\"notizen\" aria-selected=\"false\" aria-controls=\"panel-notizen\">Notizen</button>"
+    + "</div>"
+    + "<div id=\"panel-transkript\" role=\"tabpanel\" aria-labelledby=\"tab-transkript\"><p>" + mitBegriffen(c.text || c.teaser || "") + "</p></div>"
+    + "<div id=\"panel-kapitel\" role=\"tabpanel\" aria-labelledby=\"tab-kapitel\" hidden>" + kapitel + "</div>"
+    + "<div id=\"panel-notizen\" role=\"tabpanel\" aria-labelledby=\"tab-notizen\" hidden><label class=\"field\"><span>Ihre Notiz bleibt in diesem Browser</span><textarea id=\"lern-notiz\" rows=\"5\">" + esc(notiz) + "</textarea></label></div>"
+    + "</section></aside></div>"
+    + "<div class=\"lern-fuss\"><span>Fortschritt</span><div class=\"lern-fortschritt\" aria-hidden=\"true\"><span style=\"width:" + prozent + "%\"></span></div><strong>" + prozent + " %</strong>" + weiter + "</div>"
     + moderationKasten(c)
     + editRechtKasten(c)
     + lauf
     + "<div class=\"button-row\"><button type=\"button\" class=\"btn-line\" data-action=\"zum-kommentar\">Zum Kommentar</button></div>"
     + kommentarBlock(c);
+  root.querySelectorAll("[data-lern-tab]").forEach(function (knopf) {
+    knopf.addEventListener("click", function () {
+      root.querySelectorAll("[data-lern-tab]").forEach(function (anderer) {
+        var an = anderer === knopf;
+        anderer.setAttribute("aria-selected", an ? "true" : "false");
+        var panel = document.getElementById(anderer.getAttribute("aria-controls"));
+        if (panel) panel.hidden = !an;
+      });
+    });
+  });
+  var notizFeld = root.querySelector("#lern-notiz");
+  if (notizFeld) {
+    notizFeld.addEventListener("input", function () {
+      state.notizen = state.notizen || {};
+      state.notizen[c.id] = notizFeld.value;
+      sichern();
+    });
+  }
 }
 
 function renderSummary() {
@@ -1114,12 +1229,25 @@ function schrittFeld(i, s) {
 
 function anlageArt(c) {
   if (c) {
-    if (c.impuls || c.formatKey === "impuls") return "impuls";
-    if (c.formatKey === "live" && c.medien !== "iframe" && c.medien !== "poltube" && c.medien !== "h5p") return "live";
-    return "inhalt";
+    if (istFaq(c)) return "faq";
+    if (istImpuls(c)) return "impuls";
+    if (istLiveSession(c)) return "live";
+    if (istBeitrag(c)) return "beitrag";
+    if (istBasismodul(c)) return "basis";
+    if (istAnwendungsmodul(c)) return "anwendung";
+    return "basis";
   }
-  if (editorVorgabe === "impuls" || editorVorgabe === "live") return editorVorgabe;
-  return "inhalt";
+  if (["basis", "anwendung", "beitrag", "impuls", "faq"].indexOf(editorVorgabe) >= 0) return editorVorgabe;
+  return "basis";
+}
+
+function heuteIso() {
+  var d = new Date();
+  var monat = String(d.getMonth() + 1);
+  var tag = String(d.getDate());
+  if (monat.length < 2) monat = "0" + monat;
+  if (tag.length < 2) tag = "0" + tag;
+  return d.getFullYear() + "-" + monat + "-" + tag;
 }
 
 function renderEditor(root) {
@@ -1127,194 +1255,157 @@ function renderEditor(root) {
   root = root || document.getElementById("view-editor");
   if (!root) return;
   var art = anlageArt(c);
-  var v = c || { titel: "", niveau: "basis", felder: [], werkzeugKey: "sprachmodell", dauerMin: "", ergebnis: "", lernziel: "", praxis: { rolle: "", taetigkeit: "", nutzen: "", grenze: "" }, glossarOk: false, glossar: [], medien: "text", iframe: "", text: "", dateiname: "", schritte: [], liveDatum: "", liveZeit: "" };
+  var v = c || { titel: "", niveau: "basis", felder: [], medien: "text", text: "", iframe: "", dateiname: "", liveDatum: "", liveZeit: "" };
   editorVorgabe = "";
   if (v.medien === "poltube") v.medien = "iframe";
-  if (art === "impuls" || art === "live") v.medien = "text";
   if (v.medien !== "h5p" && v.medien !== "iframe") v.medien = "text";
-  var p = v.praxis || { rolle: "", taetigkeit: "", nutzen: "", grenze: "" };
-  function sel(name, wert, opts) {
-    return "<label class=\"field\"><span>" + name + "</span><select name=\"" + wert + "\">" + opts.map(function (o) {
-      return "<option value=\"" + o[0] + "\"" + (String(v[wert] || "") === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
-    }).join("") + "</select></label>";
-  }
-  var ueberschrift = art === "impuls"
-    ? (c ? "Impuls bearbeiten" : "Neuen Impuls erstellen")
-    : art === "live"
-      ? (c ? "Live-Session bearbeiten" : "Neue Live-Session starten")
-      : (c ? "Inhalt bearbeiten" : "Neuen Inhalt anlegen");
-  var einleitung = art === "impuls"
-    ? "Ein Impuls ist Ihre Erfahrung aus dem Alltag, als Text. Nach der Freigabe sehen ihn die anderen unter Impulse. Bei Ihnen bleibt er unter Meine Inhalte."
-    : art === "live"
-      ? "Sie legen Thema und Termin an. Nach der Freigabe bleibt der Termin unter Meine Inhalte. Unter Live-Sessions stehen die Termine, an denen andere teilnehmen können."
-      : "Eine Form genügt. Text schreiben Sie hier, H5P ist eine Datei, Video nur die Adresse eines iFrames. Nach der Freigabe liegt die Lektion unter Lektionen.";
-  var medienBlock = art === "inhalt"
-    ? "<fieldset class=\"niveaus\"><legend>Was legen Sie an?</legend>"
-      + "<label><input type=\"radio\" name=\"medien\" value=\"text\"" + (v.medien === "text" ? " checked" : "") + "><strong>Strukturierter Text</strong><span>Für Begriffe, Regeln und kurze Abläufe. Sie schreiben den Text in das Feld darunter.</span></label>"
-      + "<label><input type=\"radio\" name=\"medien\" value=\"h5p\"" + (v.medien === "h5p" ? " checked" : "") + "><strong>H5P-Datei</strong><span>Sie wählen eine Datei. Der Prototyp merkt sich den Namen und führt die Datei nicht aus.</span></label>"
-      + "<label><input type=\"radio\" name=\"medien\" value=\"iframe\"" + (v.medien === "iframe" ? " checked" : "") + "><strong>Video als iFrame</strong><span>Sie setzen die Adresse ein. Eine Videodatei liegt nicht in der Werkstatt.</span></label>"
-      + "</fieldset>"
-      + "<div id=\"medien-text\"><label class=\"field\"><span>Text</span><textarea name=\"text\" rows=\"8\">" + esc(v.text || "") + "</textarea></label></div>"
-      + "<div id=\"medien-h5p\"><label class=\"field\"><span>H5P-Datei</span><input name=\"datei\" type=\"file\" accept=\".h5p,application/zip\"><span class=\"hint\">Es bleibt der Dateiname. Eine laufende H5P-Aufgabe entsteht hier nicht.</span></label><p id=\"dateiname\" class=\"meta-line\" data-datei=\"" + esc(v.dateiname || "") + "\">" + esc(v.dateiname || "Noch keine Datei gewählt.") + "</p></div>"
-      + "<div id=\"medien-video\"><label class=\"field\"><span>Adresse des iFrames</span><input name=\"iframe\" type=\"url\" value=\"" + esc(v.iframe || "") + "\" placeholder=\"https://…\"><span class=\"hint\">Das ist die einzige Video-Form.</span></label></div>"
-    : art === "impuls"
-      ? "<input type=\"hidden\" name=\"medien\" value=\"text\"><label class=\"field\"><span>Ihr Beitrag</span><textarea name=\"text\" rows=\"8\" placeholder=\"Was haben Sie gemacht, was ist misslungen, was machen Sie beim nächsten Mal anders?\">" + esc(v.text || "") + "</textarea></label>"
-      : "<input type=\"hidden\" name=\"medien\" value=\"text\"><div class=\"field-row\">"
-        + "<label class=\"field\"><span>Datum</span><input name=\"liveDatum\" type=\"date\" value=\"" + esc(v.liveDatum || "") + "\"></label>"
-        + "<label class=\"field\"><span>Uhrzeit</span><input name=\"liveZeit\" type=\"time\" value=\"" + esc(v.liveZeit || "") + "\"></label></div>"
-        + "<label class=\"field\"><span>Worum es geht</span><textarea name=\"text\" rows=\"5\">" + esc(v.text || "") + "</textarea></label>";
-  var praxisBlock = art === "live" ? ""
-    : "<h2>Praxisbeispiel</h2><p class=\"meta-line\">Vier Angaben, sonst gibt es keine Freigabe: Rolle, Tätigkeit, Nutzen und Grenze.</p>"
-      + "<label class=\"field\"><span>Rolle</span><input name=\"rolle\" value=\"" + esc(p.rolle || "") + "\"></label>"
-      + "<label class=\"field\"><span>Tätigkeit</span><input name=\"taetigkeit\" value=\"" + esc(p.taetigkeit || "") + "\"></label>"
-      + "<label class=\"field\"><span>Nutzen</span><input name=\"nutzen\" value=\"" + esc(p.nutzen || "") + "\"></label>"
-      + "<label class=\"field\"><span>Grenze</span><input name=\"grenze\" value=\"" + esc(p.grenze || "") + "\"></label>";
-  var schrittBlock = art === "live" ? ""
-    : "<h2>Ein Schritt mit sichtbarem Ergebnis</h2><p class=\"meta-line\">Was kann jemand in wenigen Minuten selbst sehen?</p><div id=\"schritt-liste\">"
-      + ((v.schritte && v.schritte.length) ? v.schritte : [{ t: "", d: "" }]).map(function (s, i) { return schrittFeld(i, s); }).join("")
-      + "</div><button type=\"button\" class=\"btn-line\" data-action=\"schritt-hinzu\">Weiteren Schritt</button>";
-  var glossarBlock = art === "live" ? ""
-    : "<h2>Begriffe</h2><label class=\"checkline\"><input type=\"checkbox\" name=\"glossarOk\"" + (v.glossarOk ? " checked" : "") + "> Alle Fachbegriffe und Anglizismen sind erklärt</label>"
-      + "<label class=\"field\"><span>Begriffe, kommagetrennt</span><input name=\"glossar\" value=\"" + esc((v.glossar || []).join(", ")) + "\"></label>";
-  var pruefHinweis = art === "live"
-    ? "<h2>Bevor Sie zur Prüfung geben</h2><ul class=\"summary-list\"><li>Genau eine Stufe und mindestens ein Anwendungsfeld.</li><li>Dauer und das Ergebnis, das vor Beginn sichtbar ist.</li><li>Datum und Uhrzeit.</li></ul>"
-    : "<h2>Bevor Sie zur Prüfung geben</h2><ul class=\"summary-list\"><li>Genau eine Stufe und mindestens ein Anwendungsfeld.</li><li>Neue Einheiten höchstens 10 Minuten, dazu das Ergebnis vor Beginn.</li><li>Praxisbeispiel mit Rolle, Tätigkeit, Nutzen und Grenze.</li><li>Fachbegriffe als erklärt gekennzeichnet.</li><li>Ein Schritt, dessen Ergebnis sichtbar ist.</li></ul>";
+  var themaAktiv = c ? themaSchluessel(c) : [];
+  var toolAktiv = c ? toolSchluessel(c) : "";
+  var arten = [["basis", "Basismodul"], ["anwendung", "Anwendungsmodul"], ["beitrag", "Beitrag"], ["impuls", "Praxisimpuls"], ["faq", "FAQ-Eintrag"]];
+  if (art === "live") arten.push(["live", "Live-Session"]);
+  var ueberschrift = c ? "Inhalt bearbeiten" : "Inhalt anlegen";
+  var liveFelder = art === "live"
+    ? "<div class=\"field-row\"><label class=\"field\"><span>Datum</span><input name=\"liveDatum\" type=\"date\" value=\"" + esc(v.liveDatum || "") + "\"></label><label class=\"field\"><span>Uhrzeit</span><input name=\"liveZeit\" type=\"time\" value=\"" + esc(v.liveZeit || "") + "\"></label></div>"
+    : "";
   root.innerHTML = krumenHtml(ueberschrift)
-    + "<p class=\"eyebrow\">Dieselbe Prüfung für jeden Weg</p><h1>" + ueberschrift + "</h1>"
-    + "<p>" + einleitung + "</p>"
+    + "<h1>" + ueberschrift + "</h1>"
+    + "<p>Dieselbe Maske für Basismodul, Anwendungsmodul, Beitrag, Praxisimpuls und FAQ-Eintrag. H5P und iFrame sind eine Lernaktivität, keine eigene Art.</p>"
     + "<form id=\"editor-form\" class=\"form-card\">"
-    + "<input type=\"hidden\" name=\"art\" value=\"" + art + "\">"
+    + "<fieldset class=\"niveaus\"><legend>Was legen Sie an?</legend>"
+    + arten.map(function (o) {
+      return "<label><input type=\"radio\" name=\"anlage\" value=\"" + o[0] + "\"" + (art === o[0] ? " checked" : "") + "><strong>" + o[1] + "</strong></label>";
+    }).join("") + "</fieldset>"
     + "<label class=\"field\"><span>Titel</span><input name=\"titel\" required value=\"" + esc(v.titel || "") + "\"></label>"
-    + medienBlock
-    + "<h2>Einordnung</h2>"
+    + "<fieldset class=\"niveaus\"><legend>Lernaktivität hinzufügen</legend>"
+    + "<label><input type=\"radio\" name=\"medien\" value=\"text\"" + (v.medien === "text" ? " checked" : "") + "><strong>Keine zusätzliche Lernaktivität</strong><span>Der Text unten ist der Inhalt.</span></label>"
+    + "<label><input type=\"radio\" name=\"medien\" value=\"h5p\"" + (v.medien === "h5p" ? " checked" : "") + "><strong>H5P</strong><span>Der Prototyp merkt sich den Dateinamen und führt die Datei nicht aus.</span></label>"
+    + "<label><input type=\"radio\" name=\"medien\" value=\"iframe\"" + (v.medien === "iframe" ? " checked" : "") + "><strong>iFrame</strong><span>Sie setzen die Adresse ein. Eine Videodatei liegt nicht in der Werkstatt.</span></label>"
+    + "</fieldset>"
+    + "<div id=\"medien-h5p\"><label class=\"field\"><span>H5P-Datei</span><input name=\"datei\" type=\"file\" accept=\".h5p,application/zip\"></label><p id=\"dateiname\" class=\"meta-line\" data-datei=\"" + esc(v.dateiname || "") + "\">" + esc(v.dateiname || "Noch keine Datei gewählt.") + "</p></div>"
+    + "<div id=\"medien-video\"><label class=\"field\"><span>Adresse des iFrames</span><input name=\"iframe\" type=\"url\" value=\"" + esc(v.iframe || "") + "\" placeholder=\"https://…\"></label></div>"
+    + "<label class=\"field\"><span>Text</span><textarea name=\"text\" rows=\"8\">" + esc(v.text || "") + "</textarea></label>"
+    + liveFelder
     + "<fieldset class=\"niveaus\"><legend>Niveaustufe — genau eine</legend>"
     + ["basis", "aufbau", "spezial"].map(function (n) {
       var label = n === "basis" ? "Basis" : n === "aufbau" ? "Aufbau" : "Spezial";
-      var hilfe = n === "basis" ? "Ohne Vorwissen verständlich. Entspricht der Stufe Anfänger." : n === "aufbau" ? "Für Menschen, die KI bereits nutzen. Entspricht Fortgeschritten." : "Vertieft ein Einsatzfeld, bleibt aber frei wählbar. Entspricht Experte. Keine Zugangssperre.";
-      return "<label><input type=\"radio\" name=\"niveau\" value=\"" + n + "\"" + (v.niveau === n ? " checked" : "") + "><strong>" + label + "</strong><span>" + hilfe + "</span></label>";
+      return "<label><input type=\"radio\" name=\"niveau\" value=\"" + n + "\"" + ((v.niveau || "basis") === n ? " checked" : "") + "><strong>" + label + "</strong></label>";
     }).join("") + "</fieldset>"
     + "<fieldset class=\"field\"><legend>Anwendungsfeld</legend>"
     + ["Ermittlung", "Führung", "Verwaltung"].map(function (f) {
       return "<label class=\"checkline\"><input type=\"checkbox\" name=\"feld\" value=\"" + f + "\"" + ((v.felder || []).indexOf(f) >= 0 ? " checked" : "") + "> " + f + "</label>";
     }).join("") + "</fieldset>"
-    + sel("Werkzeug", "werkzeugKey", [["sprachmodell", "Sprachmodell"], ["transkription", "Transkription"], ["auswertung", "Auswertung"], ["keins", "Keins"]])
-    + "<label class=\"field\"><span>Dauer in Minuten</span><input name=\"dauerMin\" type=\"number\" min=\"1\" max=\"60\" value=\"" + esc(v.dauerMin || "") + "\"><span class=\"hint\">Richtwert für neue Einheiten: höchstens 10 Minuten.</span></label>"
-    + "<label class=\"field\"><span>Ergebnis, das vor Beginn sichtbar ist</span><input name=\"ergebnis\" value=\"" + esc(v.ergebnis || "") + "\"></label>"
-    + "<label class=\"field\"><span>Lernziel, freiwillig</span><input name=\"lernziel\" value=\"" + esc(v.lernziel || "") + "\"></label>"
-    + praxisBlock
-    + schrittBlock
-    + glossarBlock
-    + pruefHinweis
+    + "<fieldset class=\"field\"><legend>Thema</legend>"
+    + Object.keys(THEMA_LABEL).map(function (key) {
+      return "<label class=\"checkline\"><input type=\"checkbox\" name=\"thema\" value=\"" + key + "\"" + (themaAktiv.indexOf(key) >= 0 ? " checked" : "") + "> " + THEMA_LABEL[key] + "</label>";
+    }).join("") + "</fieldset>"
+    + "<label class=\"field\"><span>KI-Tool</span><select name=\"kiTool\"><option value=\"\">Keins</option>"
+    + Object.keys(TOOL_LABEL).map(function (key) {
+      return "<option value=\"" + key + "\"" + (toolAktiv === key ? " selected" : "") + ">" + TOOL_LABEL[key] + "</option>";
+    }).join("") + "</select></label>"
+    + "<label class=\"checkline\"><input type=\"checkbox\" name=\"einwilligung\"" + (v.einwilligung ? " checked" : "") + "> Einwilligung</label>"
+    + "<label class=\"field\"><span>Ersteller</span><input value=\"Henning Beckmann\" readonly></label>"
+    + "<label class=\"field\"><span>Letzte Änderung</span><input value=\"" + esc(datum(v.geaendert || heuteIso())) + "\" readonly></label>"
+    + "<label class=\"checkline\"><input type=\"checkbox\" name=\"erlaubnis\"" + (v.erlaubnis ? " checked" : "") + "> Erlaubnis</label>"
     + "<div class=\"button-row\"><button class=\"btn-line\" type=\"submit\" name=\"ziel\" value=\"entwurf\">Entwurf speichern</button><button class=\"btn-solid\" type=\"submit\" name=\"ziel\" value=\"review\">Zur Prüfung geben</button></div>"
     + "</form>";
   function zeigeMedien() {
-    var gewaehlt = root.querySelector("[name=medien]:checked") || root.querySelector("[name=medien]");
+    var gewaehlt = root.querySelector("[name=medien]:checked");
     var wert = gewaehlt ? gewaehlt.value : "text";
-    var text = root.querySelector("#medien-text");
     var h5p = root.querySelector("#medien-h5p");
     var video = root.querySelector("#medien-video");
-    if (text) text.hidden = wert !== "text";
     if (h5p) h5p.hidden = wert !== "h5p";
     if (video) video.hidden = wert !== "iframe";
   }
-  root.querySelectorAll("[name=medien]").forEach(function (el) {
-    el.addEventListener("change", zeigeMedien);
-  });
+  root.querySelectorAll("[name=medien]").forEach(function (el) { el.addEventListener("change", zeigeMedien); });
   zeigeMedien();
 }
 
 function leseEditor(form, ziel) {
   var data = new FormData(form);
   var alt = editorId ? byId(editorId) : null;
-  var art = String(data.get("art") || "inhalt");
+  var art = String(data.get("anlage") || "basis");
   var felder = data.getAll("feld");
   var id = editorId || ("eigen-" + Date.now());
   var medien = String(data.get("medien") || "text");
-  if (medien === "poltube") medien = "iframe";
-  var formatKey = "artikel";
+  if (medien === "poltube" || medien === "text") {
+    if (medien === "poltube") medien = "iframe";
+  }
+  var formatKey = "lernmodul";
   var format = "Strukturierter Text";
   var impuls = false;
-  var anwendungsbezogen = true;
+  var beitrag = false;
+  var grundlagen = false;
   if (art === "impuls") {
-    formatKey = "impuls";
-    format = "Impuls";
-    impuls = true;
-    medien = "text";
+    formatKey = "impuls"; format = "Praxisimpuls"; impuls = true; medien = "text";
+  } else if (art === "beitrag") {
+    formatKey = "beitrag"; format = "Beitrag"; beitrag = true;
+  } else if (art === "faq") {
+    formatKey = "faq"; format = "FAQ-Eintrag"; medien = "text";
   } else if (art === "live") {
-    formatKey = "live";
-    format = "Live-Session";
-    medien = "text";
-    anwendungsbezogen = false;
-  } else if (medien === "h5p") {
-    formatKey = "lernmodul";
-    format = "H5P";
-  } else if (medien === "iframe") {
-    formatKey = "video";
-    format = "Video";
-  } else if (alt && (alt.formatKey === "lernmodul" || alt.formatKey === "artikel")) {
-    formatKey = alt.formatKey;
-    format = alt.format || "Strukturierter Text";
+    formatKey = "live"; format = "Live-Session"; medien = "text";
+  } else if (art === "basis") {
+    grundlagen = true;
   }
-  var werkzeugKey = data.get("werkzeugKey") || "sprachmodell";
-  var werkzeug = { sprachmodell: "Sprachmodell", transkription: "Transkription", auswertung: "Auswertung", keins: "Keins" }[werkzeugKey] || "Sprachmodell";
-  var titelSchritte = data.getAll("schrittTitel");
-  var textSchritte = data.getAll("schrittText");
-  var schritte = [];
-  for (var i = 0; i < titelSchritte.length; i++) {
-    var st = String(titelSchritte[i] || "").trim();
-    var sd = String(textSchritte[i] || "").trim();
-    if (st || sd) schritte.push({ t: st, d: sd });
+  if (art !== "impuls" && art !== "faq" && art !== "live") {
+    if (medien === "h5p") format = "H5P";
+    else if (medien === "iframe") { formatKey = art === "beitrag" ? "beitrag" : "video"; format = "Video"; }
   }
+  var kiTool = String(data.get("kiTool") || "");
+  var thema = data.getAll("thema");
   var text = String(data.get("text") || "").trim();
-  var ergebnis = String(data.get("ergebnis") || "").trim();
   var obj = {
     id: id,
     titel: String(data.get("titel") || "").trim(),
-    teaser: (text || ergebnis || "Eigener Entwurf").slice(0, 180),
+    teaser: (text || "Eigener Entwurf").slice(0, 180),
     format: format,
     formatKey: formatKey,
+    modul: art,
     impuls: impuls,
-    niveau: data.get("niveau") || "",
-    dauerMin: Number(data.get("dauerMin") || 0),
-    ergebnis: ergebnis,
-    lernziel: String(data.get("lernziel") || "").trim(),
+    beitrag: beitrag,
+    grundlagen: grundlagen,
+    niveau: data.get("niveau") || "basis",
+    dauerMin: (alt && alt.dauerMin) || 0,
+    ergebnis: (alt && alt.ergebnis) || "",
+    lernziel: (alt && alt.lernziel) || "",
     felder: felder,
-    werkzeug: werkzeug,
-    werkzeugKey: werkzeugKey,
-    thema: (alt && alt.thema) || ["grundlagen"],
+    werkzeug: TOOL_LABEL[kiTool] || "Keins",
+    werkzeugKey: kiTool,
+    kiTool: kiTool,
+    thema: thema,
+    themaKey: thema,
     ziel: felder.map(function (f) { return f === "Ermittlung" ? "ermittlung" : f === "Führung" ? "fuehrung" : "verwaltung"; }),
     medien: medien,
-    anwendungsbezogen: anwendungsbezogen,
-    praxis: {
-      rolle: String(data.get("rolle") || "").trim(),
-      taetigkeit: String(data.get("taetigkeit") || "").trim(),
-      nutzen: String(data.get("nutzen") || "").trim(),
-      grenze: String(data.get("grenze") || "").trim()
-    },
-    glossarOk: data.get("glossarOk") === "on",
-    glossar: String(data.get("glossar") || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean),
+    anwendungsbezogen: art !== "basis",
+    praxis: (alt && alt.praxis) || null,
+    glossarOk: true,
+    glossar: (alt && alt.glossar) || [],
     text: text,
     iframe: String(data.get("iframe") || "").trim(),
-    liveDatum: String(data.get("liveDatum") || "").trim(),
-    liveZeit: String(data.get("liveZeit") || "").trim(),
+    liveDatum: String(data.get("liveDatum") || (alt && alt.liveDatum) || "").trim(),
+    liveZeit: String(data.get("liveZeit") || (alt && alt.liveZeit) || "").trim(),
     dateiname: (function () {
       var anzeige = document.getElementById("dateiname");
       if (anzeige && anzeige.dataset.datei) return anzeige.dataset.datei;
       return (alt && alt.dateiname) || "";
     })(),
-    schritte: schritte.length ? schritte : ((alt && alt.schritte) || []),
-    kern: (alt && alt.kern && alt.kern.length) ? alt.kern : ["Entwurf aus der Rolle Teilnehmende mit Erstellen."],
+    schritte: (alt && alt.schritte) || [],
+    kern: (alt && alt.kern && alt.kern.length) ? alt.kern : ["Entwurf von Henning Beckmann."],
     fehler: alt ? alt.fehler : null,
     verwandt: (alt && alt.verwandt) || [],
-    autor: (alt && alt.autor) || "Henning Beckmann",
-    autorRolle: (alt && alt.autorRolle) || "creator",
+    autor: "Henning Beckmann",
+    autorId: "hb",
+    autorRolle: "creator",
+    einwilligung: data.get("einwilligung") === "on",
+    erlaubnis: data.get("erlaubnis") === "on",
+    geaendert: heuteIso(),
     status: ziel,
     fassung: (alt && alt.fassung) || "1",
     geprueft: (alt && ziel !== "review" && alt.geprueft) || "",
-    kommentare: (alt && alt.kommentare) || []
+    kommentare: (alt && alt.kommentare) || [],
+    h5p: alt ? alt.h5p : null
   };
-  if (obj.medien === "h5p") {
-    obj.h5p = (alt && alt.h5p) || {
+  if (obj.medien === "h5p" && !obj.h5p) {
+    obj.h5p = {
       frage: "Haben Sie das Ergebnis gegen die Quelle gehalten?",
       optionen: [
         { t: "Ja. Der Prüfschritt gehört zum Ergebnis.", ok: true },
@@ -1363,7 +1454,7 @@ function kachelMarkup(c) {
   var farbe = "t" + ((String(c.titel || "").length % 6) + 1);
   var n = kommentareVon(c).length;
   var label = n === 1 ? "1 Kommentar" : n + " Kommentare";
-  var thema = (c.thema || []).join(" ");
+  var thema = themaSchluessel(c).join(" ");
   var ziel = (c.ziel || []).join(" ");
   var geliked = state.feedback[c.id] === "up";
   var art = meinArt(c);
@@ -1372,7 +1463,7 @@ function kachelMarkup(c) {
     if (stand === "abgeschlossen") art = "Abgeschlossen";
     else if (stand === "begonnen") art = "Begonnen";
   }
-  return "<article class=\"tile " + farbe + "\" tabindex=\"0\" data-id=\"" + esc(c.id) + "\" data-werkzeug=\"" + esc(c.werkzeugKey || "") + "\" data-thema=\"" + esc(thema) + "\" data-format=\"" + esc(c.formatKey || "") + "\" data-niveau=\"" + esc(c.niveau || "") + "\" data-zielgruppe=\"" + esc(ziel) + "\">"
+  return "<article class=\"tile " + farbe + "\" tabindex=\"0\" data-id=\"" + esc(c.id) + "\" data-werkzeug=\"" + esc(toolSchluessel(c)) + "\" data-thema=\"" + esc(thema) + "\" data-format=\"" + esc(c.formatKey || "") + "\" data-niveau=\"" + esc(c.niveau || "") + "\" data-zielgruppe=\"" + esc(ziel) + "\">"
     + (istEigen(c) ? stiftKnopf(c.id, false) : "")
     + "<div class=\"thumb\"><span class=\"fmt\">" + esc(c.format || "Inhalt") + " · " + esc(c.dauer) + "</span></div>"
     + "<div class=\"tile-body\"><div class=\"badges\"><span class=\"lvl " + esc(c.niveau || "basis") + "\">" + esc(c.niveauLabel) + "</span>" + (art ? "<span class=\"st " + esc(c.status) + "\">" + esc(art) + "</span>" : "") + "</div>"
@@ -1485,7 +1576,7 @@ function liveTermine() {
     }
     liste.push({
       id: c.id, tag: tag, monat: c.liveZeit || monat, titel: c.titel, text: c.teaser || "",
-      thema: (c.thema || []).join(" "), niveau: c.niveau || "", zielgruppe: (c.ziel || []).join(" "), werkzeug: c.werkzeugKey || ""
+      thema: themaSchluessel(c).join(" "), niveau: c.niveau || "", zielgruppe: (c.ziel || []).join(" "), werkzeug: toolSchluessel(c)
     });
   });
   return liste;
@@ -1495,7 +1586,7 @@ function liveKarte(s, dabei) {
   var aktion = dabei
     ? "<span class=\"st veroeffentlicht\">Teilgenommen</span>"
     : "<button class=\"btn-solid\" type=\"button\" data-action=\"live-teilnehmen\" data-id=\"" + esc(s.id) + "\">Teilnehmen</button>";
-  return "<div class=\"live\" data-thema=\"" + esc(s.thema || "") + "\" data-niveau=\"" + esc(s.niveau || "") + "\" data-zielgruppe=\"" + esc(s.zielgruppe || "") + "\" data-werkzeug=\"" + esc(s.werkzeug || "") + "\" data-format=\"live\"><div class=\"live-date\"><div class=\"d\">" + esc(s.tag) + "</div><div class=\"m\">" + esc(s.monat) + "</div></div><div class=\"live-info\"><span class=\"tag\"><span class=\"dot\"></span>Live-Session</span><h3>" + esc(s.titel) + "</h3><p>" + esc(s.text) + "</p></div>" + aktion + "</div>";
+  return "<div class=\"live\" data-thema=\"" + esc(mapThemaString(s.thema || "")) + "\" data-niveau=\"" + esc(s.niveau || "") + "\" data-zielgruppe=\"" + esc(s.zielgruppe || "") + "\" data-werkzeug=\"" + esc(mapToolString(s.werkzeug || "")) + "\" data-format=\"live\"><div class=\"live-date\"><div class=\"d\">" + esc(s.tag) + "</div><div class=\"m\">" + esc(s.monat) + "</div></div><div class=\"live-info\"><span class=\"tag\"><span class=\"dot\"></span>Live-Session</span><h3>" + esc(s.titel) + "</h3><p>" + esc(s.text) + "</p></div>" + aktion + "</div>";
 }
 
 function renderLive() {
@@ -1518,7 +1609,7 @@ function communityKarte(c) {
   var knopf = dabei
     ? "<button type=\"button\" class=\"btn-line\" data-action=\"community-mit\" data-id=\"" + esc(c.id) + "\">Nicht mehr mitwirken</button>"
     : "<button type=\"button\" class=\"btn-line\" data-action=\"community-mit\" data-id=\"" + esc(c.id) + "\">Mitwirken</button>";
-  return "<div class=\"thread\" tabindex=\"0\" role=\"button\" data-action=\"community-lesen\" data-thema=\"" + esc(c.thema || "") + "\" data-niveau=\"\" data-zielgruppe=\"" + esc(c.zielgruppe || "") + "\" data-werkzeug=\"" + esc(c.werkzeug || "") + "\" data-format=\"community\"><div class=\"c-av " + esc(c.farbe) + "\">" + esc(c.kuerzel) + "</div><div><h3>" + esc(c.titel) + "</h3><div class=\"t-meta\"><span>" + esc(c.meta) + "</span></div>" + knopf + "</div></div>";
+  return "<div class=\"thread\" tabindex=\"0\" role=\"button\" data-action=\"community-lesen\" data-thema=\"" + esc(mapThemaString(c.thema || "")) + "\" data-niveau=\"\" data-zielgruppe=\"" + esc(c.zielgruppe || "") + "\" data-werkzeug=\"" + esc(mapToolString(c.werkzeug || "")) + "\" data-format=\"community\"><div class=\"c-av " + esc(c.farbe) + "\">" + esc(c.kuerzel) + "</div><div><h3>" + esc(c.titel) + "</h3><div class=\"t-meta\"><span>" + esc(c.meta) + "</span></div>" + knopf + "</div></div>";
 }
 
 function renderCommunity() {
@@ -1575,7 +1666,7 @@ function renderRedaktion() {
   var root = document.getElementById("view-redaktion");
   var daten = modSammeln();
   root.innerHTML = "<button type=\"button\" class=\"backlink\" data-view-jump=\"home\">Zurück</button>"
-    + "<h1>Moderation</h1>"
+    + "<h1>Redaktion</h1>"
     + "<p>Dieselben Inhalte wie für alle anderen. Eine Kachel öffnet genau diesen Bereich.</p>"
     + "<div class=\"hub-grid\">"
     + modKachel("mod-freigabe", daten.wartend.length, "Zur Freigabe", "Inhalte, die auf eine Entscheidung warten. Freigabe schaltet sie sichtbar.")
@@ -1645,7 +1736,7 @@ function renderAdmin() {
   var root = document.getElementById("view-admin");
   root.innerHTML = "<p class=\"eyebrow\">Administration</p><h1>Rollen, Rechte, Betrieb</h1>"
     + "<p>Konzeptanzeige für die Umsetzungsstelle. Keine echte Betriebsschnittstelle und keine personenbezogene Verwaltung.</p>"
-    + "<nav class=\"wegweiser\" aria-label=\"Zurück in die Arbeit\"><button type=\"button\" data-view-jump=\"inhalte\">Zu den Lektionen</button><button type=\"button\" data-view-jump=\"redaktion\">Zur Moderation</button></nav>"
+    + "<nav class=\"wegweiser\" aria-label=\"Zurück in die Arbeit\"><button type=\"button\" data-view-jump=\"inhalte\">Zu den Basismodulen</button><button type=\"button\" data-view-jump=\"redaktion\">Zur Redaktion</button></nav>"
     + "<h2>Rollen</h2>"
     + "<div class=\"list\">"
     + rolleZeile("Teilnehmende mit Erstellen", "Lernen und Inhalte anlegen, H5P als Datei, Video als iFrame, Text als Texteingabe", true)
@@ -1702,11 +1793,9 @@ function kachel(c) {
   art.className = "tile t2";
   art.dataset.id = c.id;
   art.dataset.injected = "1";
-  art.dataset.thema = (c.thema || []).join(" ");
+  schreibeFilterDaten(art, c);
   art.dataset.format = c.formatKey || "lernmodul";
   art.dataset.niveau = c.niveau || "";
-  art.dataset.zielgruppe = (c.ziel || []).join(" ");
-  art.dataset.werkzeug = c.werkzeugKey || "";
   art.tabIndex = 0;
   var n = kommentareVon(c).length;
   var label = n === 1 ? "1 Kommentar" : n + " Kommentare";
@@ -1740,16 +1829,18 @@ function setzePfad(name) {
   sucheSeite.lektion = "";
   var feldSuche = document.getElementById("suche-inhalte");
   if (feldSuche) feldSuche.value = "";
-  ["thema", "format", "niveau", "zielgruppe", "werkzeug"].forEach(function (g) { setzeFilter(g, "alle", "lektion"); });
+  ["thema", "zielgruppe", "werkzeug"].forEach(function (g) { setzeFilter(g, "alle", "lektion"); });
   if (name === "anfang") {
-    setzeFilter("niveau", "basis");
-    setzeFilter("thema", "grundlagen");
+    setzeFilter("thema", "methodik", "lektion");
     bump("null");
-    hinweis("Einstiegspfad ohne Vorwissen: Grundlagen auf Stufe Basis. Die Stufe beschreibt den Inhalt, nicht Sie.");
+    hinweis("Einstieg ohne Vorwissen: Basismodule, Thema Methodik.");
+    showView("inhalte", { leise: true });
+    return;
   } else if (name === "bereits") {
-    setzeFilter("niveau", "aufbau");
     bump("bereits");
-    hinweis("Einstiegspfad mit Vorkenntnis: Inhalte der Stufe Aufbau.");
+    hinweis("Sie nutzen KI bereits: die Anwendungsmodule.");
+    showView("anwendung", { leise: true });
+    return;
   } else {
     bump("frage");
     hinweis("Konkrete Frage: Suche oder FAQ.");
@@ -1758,7 +1849,6 @@ function setzePfad(name) {
     if (suche2) suche2.focus();
     return;
   }
-  showView("inhalte", { leise: true });
 }
 
 function hinweis(text) {
@@ -1769,27 +1859,46 @@ function hinweis(text) {
 }
 
 var FILTER_WERTE = {
-  thema: ["Thema", [["grundlagen", "Grundlagen"], ["recht", "Recht"], ["ethik", "Ethik"], ["einsatzfelder", "Einsatzfelder"]]],
-  format: ["Format", [["video", "Video"], ["artikel", "Artikel"], ["lernmodul", "Lernmodul"], ["live", "Aufzeichnung"]]],
-  niveau: ["Niveau", [["basis", "Basis"], ["aufbau", "Aufbau"], ["spezial", "Spezial"]]],
-  zielgruppe: ["Zielgruppe", [["ermittlung", "Ermittlung"], ["fuehrung", "Führung"], ["verwaltung", "Verwaltung"]]],
-  werkzeug: ["Werkzeug", [["sprachmodell", "Sprachmodell"], ["transkription", "Transkription"], ["auswertung", "Auswertung"], ["keins", "Ohne Werkzeug"]]]
+  thema: ["Thema", [["methodik", "Methodik"], ["recht-ethik", "Recht/Ethik"], ["daten", "Daten"], ["generative-ki", "Generative KI"], ["automatisierung", "Automatisierung"], ["vibe-coding", "Vibe-Coding"], ["uebersetzung", "Übersetzung/Transkription"]]],
+  zielgruppe: ["Anwendungsfeld", [["ermittlung", "Ermittlung"], ["fuehrung", "Führung"], ["verwaltung", "Verwaltung"]]],
+  werkzeug: ["KI-Tool", [["anychat", "AnyChat"], ["lingua", "Lingua"], ["translate", "Translate"], ["visualchat", "VisualChat"]]]
 };
 var FILTER_GRUPPEN = {
-  lektion: ["thema", "format", "niveau", "zielgruppe", "werkzeug"],
-  impuls: ["thema", "niveau", "zielgruppe", "werkzeug"],
-  live: ["thema", "niveau", "zielgruppe", "werkzeug"],
+  lektion: ["thema", "zielgruppe", "werkzeug"],
+  anwendung: ["thema", "zielgruppe", "werkzeug"],
+  beitrag: ["thema", "zielgruppe", "werkzeug"],
+  impuls: ["thema", "zielgruppe", "werkzeug"],
+  live: ["thema", "zielgruppe", "werkzeug"],
   community: ["thema", "zielgruppe", "werkzeug"]
 };
-var SUCH_FELD = { lektion: "suche-inhalte", impuls: "suche-impuls", live: "suche-live", community: "suche-community" };
+var SUCH_FELD = {
+  lektion: "suche-inhalte",
+  anwendung: "suche-anwendung",
+  beitrag: "suche-beitrag",
+  impuls: "suche-impuls",
+  live: "suche-live",
+  community: "suche-community"
+};
 
 function filterBereichHtml(scope) {
   var texte = {
+    anwendung: {
+      aria: "Suche in den verfügbaren Anwendungsmodulen",
+      placeholder: "Anwendungsmodul suchen, z. B. Prompt, Transkription …",
+      filter: "Verfügbare Anwendungsmodule filtern",
+      lead: "Suche und Filter gelten nur für die verfügbaren Anwendungsmodule."
+    },
+    beitrag: {
+      aria: "Suche in den verfügbaren Beiträgen",
+      placeholder: "Beitrag suchen …",
+      filter: "Verfügbare Beiträge filtern",
+      lead: "Suche und Filter gelten nur für die verfügbaren Beiträge."
+    },
     impuls: {
-      aria: "Suche in den verfügbaren Impulsen",
-      placeholder: "Impuls suchen, z. B. Auswertung, Skepsis, Bericht …",
-      filter: "Verfügbare Impulse filtern",
-      lead: "Suche und Filter gelten nur für die verfügbaren Impulse."
+      aria: "Suche in den verfügbaren Praxisimpulsen",
+      placeholder: "Praxisimpuls suchen, z. B. Auswertung, Skepsis, Bericht …",
+      filter: "Verfügbare Praxisimpulse filtern",
+      lead: "Suche und Filter gelten nur für die verfügbaren Praxisimpulse."
     },
     live: {
       aria: "Suche in den verfügbaren Live-Sessions",
@@ -1862,8 +1971,10 @@ function syncAlleChips(scope) {
 
 function filterStatusText(scope, sichtbar, gesamt, anzahl, q) {
   var namen = {
-    lektion: { eine: "Lektion", keine: "Keine Lektion", alle: "Lektionen", fall: "Lektionen" },
-    impuls: { eine: "Impuls", keine: "Kein Impuls", alle: "Impulse", fall: "Impulsen" },
+    lektion: { eine: "Basismodul", keine: "Kein Basismodul", alle: "Basismodule", fall: "Basismodulen" },
+    anwendung: { eine: "Anwendungsmodul", keine: "Kein Anwendungsmodul", alle: "Anwendungsmodule", fall: "Anwendungsmodulen" },
+    beitrag: { eine: "Beitrag", keine: "Kein Beitrag", alle: "Beiträge", fall: "Beiträgen" },
+    impuls: { eine: "Praxisimpuls", keine: "Kein Praxisimpuls", alle: "Praxisimpulse", fall: "Praxisimpulsen" },
     live: { eine: "Live-Session", keine: "Keine Live-Session", alle: "Live-Sessions", fall: "Live-Sessions" },
     community: { eine: "Community", keine: "Keine Community", alle: "Communitys", fall: "Communitys" }
   }[scope];
@@ -1888,10 +1999,7 @@ function setzeFilterStatus(scope, sichtbar, gesamt, anzahl, q) {
 }
 
 function schreibeImpulsDaten(li, c) {
-  li.dataset.thema = (c.thema || []).join(" ");
-  li.dataset.niveau = c.niveau || "";
-  li.dataset.zielgruppe = (c.ziel || []).join(" ");
-  li.dataset.werkzeug = c.werkzeugKey || "";
+  schreibeFilterDaten(li, c);
   li.dataset.format = c.formatKey || "";
   li.dataset.suchtext = ((c.titel || "") + " " + (c.teaser || "")).toLowerCase();
 }
@@ -1926,7 +2034,8 @@ function filtereLektionen() {
   var sichtbar = 0;
   kacheln.forEach(function (k) {
     var inhalt = byId(k.dataset.id);
-    var verfuegbar = !!(inhalt && istLektion(inhalt) && !istEigen(inhalt) && !fortschrittVon(inhalt));
+    if (inhalt) schreibeFilterDaten(k, inhalt);
+    var verfuegbar = !!(inhalt && istBasismodul(inhalt) && !istEigen(inhalt) && !fortschrittVon(inhalt));
     var treffer = verfuegbar && passtKarte(k, "lektion", info.auswahl);
     if (treffer && q && k.textContent.toLowerCase().indexOf(q) === -1) treffer = false;
     k.hidden = !treffer;
@@ -1960,7 +2069,7 @@ function filtereImpulse() {
   var leer = document.getElementById("impuls-filter-leer");
   if (leer) {
     leer.hidden = sichtbar > 0;
-    leer.textContent = gesamt === 0 ? "Zurzeit kein weiterer Impuls." : "Kein Impuls entspricht dieser Auswahl.";
+    leer.textContent = gesamt === 0 ? "Zurzeit kein weiterer Praxisimpuls." : "Kein Praxisimpuls entspricht dieser Auswahl.";
   }
 }
 
@@ -1988,8 +2097,37 @@ function filtereBereichKarten(selektor, scope, leerId, filterLeerId) {
   if (filterLeer) filterLeer.hidden = !(karten.length > 0 && sichtbar === 0);
 }
 
+function filtereModul(scope, pred, gridId, leerId) {
+  var grid = document.getElementById(gridId);
+  if (!grid) return;
+  var q = (sucheSeite[scope] || "").trim().toLowerCase();
+  var info = aktiveFilter(scope);
+  var liste = alle().filter(function (c) {
+    return pred(c) && c.status === "veroeffentlicht" && !istEigen(c) && !fortschrittVon(c);
+  });
+  var sichtbar = 0;
+  grid.innerHTML = "";
+  liste.forEach(function (c) {
+    var wrap = document.createElement("div");
+    wrap.innerHTML = kachelMarkup(c);
+    var k = wrap.firstElementChild;
+    if (!k) return;
+    schreibeFilterDaten(k, c);
+    var treffer = passtKarte(k, scope, info.auswahl);
+    if (treffer && q && k.textContent.toLowerCase().indexOf(q) === -1) treffer = false;
+    k.hidden = !treffer;
+    if (treffer) sichtbar++;
+    grid.appendChild(k);
+  });
+  setzeFilterStatus(scope, sichtbar, liste.length, info.anzahl, q);
+  var leer = document.getElementById(leerId);
+  if (leer) leer.hidden = sichtbar > 0;
+}
+
 function filtern() {
   filtereLektionen();
+  filtereModul("anwendung", istAnwendungsmodul, "anwendung-grid", "anwendung-leer");
+  filtereModul("beitrag", istBeitrag, "beitrag-grid", "beitrag-leer");
   filtereImpulse();
   renderLive();
   renderCommunity();
@@ -2028,14 +2166,16 @@ function renderSuche() {
   var q = roh.toLowerCase();
   if (frage) {
     frage.textContent = q
-      ? "Ergebnisse für „" + roh + "“. Geprüft werden Lektionen, Impulse, Live-Sessions, Communitys und die häufigen Fragen."
-      : "Die Suche geht über Lektionen, Impulse, Live-Sessions, Communitys und die häufigen Fragen.";
+      ? "Ergebnisse für „" + roh + "“. Geprüft werden Basismodule, Anwendungsmodule, Praxisimpulse, Beiträge, Live-Sessions, Communitys und die häufigen Fragen."
+      : "Die Suche geht über Basismodule, Anwendungsmodule, Praxisimpulse, Beiträge, Live-Sessions, Communitys und die häufigen Fragen.";
   }
   if (!q) {
     box.innerHTML = "<p>Bitte geben Sie einen Suchbegriff ein.</p>";
     return;
   }
   var lektionen = [];
+  var anwendung = [];
+  var beitraege = [];
   var impulse = [];
   var sessions = [];
   var sessionIds = {};
@@ -2045,7 +2185,9 @@ function renderSuche() {
     if (hay.indexOf(q) === -1) return;
     if (istImpuls(c)) impulse.push(c);
     else if (istLiveSession(c)) { sessions.push(c); sessionIds[c.id] = true; }
-    else if (istLektion(c)) lektionen.push(c);
+    else if (istBeitrag(c)) beitraege.push(c);
+    else if (istBasismodul(c)) lektionen.push(c);
+    else if (istAnwendungsmodul(c)) anwendung.push(c);
   });
   var fest = LIVE_FEST.filter(function (s) {
     return !sessionIds[s.id] && (s.titel + " " + s.text).toLowerCase().indexOf(q) >= 0;
@@ -2064,8 +2206,10 @@ function renderSuche() {
     }).join("");
   }
   var gruppen = [];
-  if (lektionen.length) gruppen.push(["Lektionen", inhaltButtons(lektionen, "Lektion")]);
-  if (impulse.length) gruppen.push(["Impulse", inhaltButtons(impulse, "Impuls")]);
+  if (lektionen.length) gruppen.push(["Basismodule", inhaltButtons(lektionen, "Basismodul")]);
+  if (anwendung.length) gruppen.push(["Anwendungsmodule", inhaltButtons(anwendung, "Anwendungsmodul")]);
+  if (impulse.length) gruppen.push(["Praxisimpulse", inhaltButtons(impulse, "Praxisimpuls")]);
+  if (beitraege.length) gruppen.push(["Beitrag", inhaltButtons(beitraege, "Beitrag")]);
   var liveHtml = inhaltButtons(sessions, "Live-Session") + fest.map(function (s) {
     return suchZeile("Live-Session", s.titel, "data-view-jump=\"live\" data-herkunft=\"live\"");
   }).join("");
@@ -2101,7 +2245,7 @@ function faqOeffnen(item) {
 }
 
 function initFilter() {
-  ["impuls", "live", "community"].forEach(function (scope) {
+  ["anwendung", "beitrag", "impuls", "live", "community"].forEach(function (scope) {
     var slot = document.getElementById("filter-slot-" + scope);
     if (slot && !slot.firstChild) slot.innerHTML = filterBereichHtml(scope);
   });
@@ -2357,6 +2501,8 @@ function init() {
     ["suche", "suche-btn", "global"],
     ["suche-kopf", "suche-kopf-btn", "global"],
     ["suche-inhalte", "suche-inhalte-btn", "lektion"],
+    ["suche-anwendung", "suche-anwendung-btn", "anwendung"],
+    ["suche-beitrag", "suche-beitrag-btn", "beitrag"],
     ["suche-impuls", "suche-impuls-btn", "impuls"],
     ["suche-live", "suche-live-btn", "live"],
     ["suche-community", "suche-community-btn", "community"]
@@ -2503,8 +2649,8 @@ function init() {
       sichern();
       if (window.filtern) window.filtern();
       renderPlayer();
-      var fertigName = istImpuls(byId(aktuell)) ? "Abgeschlossene Impulse" : "Abgeschlossene Lektionen";
-      var begonnenName = istImpuls(byId(aktuell)) ? "Begonnene Impulse" : "Begonnene Lektionen";
+      var fertigName = istImpuls(byId(aktuell)) ? "Abgeschlossene Praxisimpulse" : "Abgeschlossene Basismodule";
+      var begonnenName = istImpuls(byId(aktuell)) ? "Begonnene Praxisimpulse" : "Begonnene Basismodule";
       toast(state.fortschritt[aktuell] === "abgeschlossen" ? "Liegt jetzt unter " + fertigName + "." : "Liegt wieder unter " + begonnenName + ".");
     }
     if (action === "live-teilnehmen") {
