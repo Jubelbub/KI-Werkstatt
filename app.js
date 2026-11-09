@@ -438,7 +438,7 @@ function inhalt(c) {
 
 function leerZustand() {
   return {
-    rolle: "teilnehmende",
+    rolle: "teilnehmer",
     einfach: false,
     behoerde: "LAFP NRW",
     feedback: {},
@@ -450,7 +450,11 @@ function leerZustand() {
     override: {},
     eigene: [],
     prominent: "berichte",
-    moderationsrechte: { hb: true, jw: true, th: true, rd: false, al: false },
+    ernennungen: {
+      creator: { hb: true, jw: false, th: false, rd: false, al: false },
+      redaktion: { hb: true, jw: true, th: true, rd: false, al: false },
+      admin: { hb: true, jw: false, th: false, rd: false, al: false }
+    },
     extra: { start: 0, null: 0, bereits: 0, frage: 0, inhalte: {} },
     fortschritt: {},
     editRechte: {},
@@ -464,13 +468,21 @@ function leerZustand() {
 
 function laden() {
   var basis = leerZustand();
+  var altMod = null;
   try {
     var roh = JSON.parse(localStorage.getItem(STORE) || "{}");
+    altMod = roh.moderationsrechte || null;
     Object.keys(basis).forEach(function (k) {
       if (roh[k] !== undefined) basis[k] = roh[k];
     });
   } catch (e) { /* Prototyp bleibt mit dem Ausgangsstand nutzbar. */ }
-  if (basis.rolle === "beschaeftigte" || basis.rolle === "creator") basis.rolle = "teilnehmende";
+  if (basis.rolle === "teilnehmende") basis.rolle = "creator";
+  if (basis.rolle === "beschaeftigte") basis.rolle = "teilnehmer";
+  if (["teilnehmer", "creator", "redaktion", "admin"].indexOf(basis.rolle) < 0) basis.rolle = "teilnehmer";
+  if (!basis.ernennungen || !basis.ernennungen.creator || !basis.ernennungen.redaktion || !basis.ernennungen.admin) {
+    basis.ernennungen = leerZustand().ernennungen;
+    if (altMod) basis.ernennungen.redaktion = altMod;
+  }
   return basis;
 }
 
@@ -596,19 +608,37 @@ function mitBegriffen(text) {
 }
 
 function rolleLabel(r) {
-  return { teilnehmende: "Content Creator", redaktion: "Redaktion", admin: "Administration" }[r] || "Content Creator";
+  return { teilnehmer: "Teilnehmer", creator: "Content Creator", redaktion: "Redaktion", admin: "Administration" }[r] || "Teilnehmer";
 }
 
 function rolleHinweis(r) {
   return {
-    teilnehmende: "Content Creator: Sie lernen und können Inhalte anlegen.",
-    redaktion: "Redaktion: Sie sehen Beiträge, die auf eine Entscheidung warten.",
-    admin: "Administration: Sie sehen zusätzlich den Betrieb."
+    teilnehmer: "Teilnehmer: Sie lesen und nutzen die Inhalte. Anlegen ist nicht dabei.",
+    creator: "Content Creator: Sie legen Inhalte an und pflegen Meine Inhalte.",
+    redaktion: "Redaktion: Sie geben frei und legen ebenfalls an.",
+    admin: "Administration: Sie ernennen Rollen und sehen den Betrieb."
   }[r] || "";
 }
 
-function darfBearbeiten() {
-  return state.rolle === "teilnehmende" || state.rolle === "redaktion" || state.rolle === "admin";
+function hatErnennung(art, id) {
+  var rechte = (state.ernennungen && state.ernennungen[art]) || {};
+  return !!rechte[id || "hb"];
+}
+
+function darfVerwalten() {
+  return state.rolle === "admin" && hatErnennung("admin");
+}
+
+function darfFreigeben() {
+  if (darfVerwalten()) return true;
+  return state.rolle === "redaktion" && hatErnennung("redaktion");
+}
+
+function kannAnlegen() {
+  if (state.rolle === "creator") return hatErnennung("creator");
+  if (state.rolle === "redaktion") return hatErnennung("redaktion");
+  if (state.rolle === "admin") return hatErnennung("admin");
+  return false;
 }
 
 var PERSONEN = [
@@ -619,15 +649,6 @@ var PERSONEN = [
   { id: "al", name: "A. Lindner", stelle: "KPB Gütersloh" }
 ];
 
-function moderationsrecht(id) {
-  var rechte = state.moderationsrechte || {};
-  return !!rechte[id];
-}
-
-function darfFreigeben() {
-  if (state.rolle === "admin") return true;
-  return state.rolle === "redaktion" && moderationsrecht("hb");
-}
 
 var TEILNAHME_START = { sprachmodelle: 1, halluzinationen: 1 };
 
@@ -770,8 +791,8 @@ function showView(name, opt) {
   if (name === "editor") { detailModus = "bearbeiten"; name = "player"; }
   if (name === "review") { detailModus = "lesen"; name = "player"; }
   if ((name === "redaktion" || name === "mod-freigabe" || name === "mod-kommentare" || name === "mod-pruefung" || name === "statistik") && !darfFreigeben()) name = "home";
-  if ((name === "player" && detailModus === "bearbeiten" || name === "meine" || name === "leitfaden") && state.rolle !== "teilnehmende") name = "dashboard";
-  if (name === "admin" && state.rolle !== "admin") name = "home";
+  if ((name === "player" && detailModus === "bearbeiten" || name === "meine" || name === "leitfaden") && !kannAnlegen()) name = "dashboard";
+  if (name === "admin" && !darfVerwalten()) name = "dashboard";
   document.body.classList.toggle("sso", name === "sso");
   document.querySelectorAll(".view").forEach(function (v) {
     v.hidden = v.id !== "view-" + name;
@@ -845,7 +866,7 @@ function renderHub() {
   var box = document.getElementById("hub-kacheln");
   if (!box) return;
   var kacheln = [];
-  if (state.rolle === "teilnehmende") kacheln.push(["meine", "", "Meine Inhalte", "Nur, was Sie erstellt haben oder bearbeiten dürfen."]);
+  if (kannAnlegen()) kacheln.push(["meine", "", "Meine Inhalte", "Anlegen und das, was Sie bearbeiten dürfen."]);
   kacheln.push(
     ["inhalte", "", "Basismodule", "Grundlagenkanon, begonnen und abgeschlossen."],
     ["anwendung", "", "Anwendungsmodule", "Anwendungsbezogene Einheiten."],
@@ -856,7 +877,7 @@ function renderHub() {
     ["faq", "", "Häufige Fragen", "Verlässliche Antworten zum Einstieg."]
   );
   if (darfFreigeben()) kacheln.push(["redaktion", "", "Redaktion", "Freigaben und gemeldete Kommentare."]);
-  if (state.rolle === "admin") kacheln.push(["admin", "", "Administration", "Rollen, Anbindung und Betrieb."]);
+  if (darfVerwalten()) kacheln.push(["admin", "", "Administration", "Ernennungen, Anbindung und Betrieb."]);
   box.innerHTML = kacheln.map(hubKachel).join("");
 }
 
@@ -864,7 +885,7 @@ function renderNav() {
   var nav = document.querySelector("header nav");
   if (!nav) return;
   var links = "";
-  if (state.rolle === "teilnehmende") links += "<a href=\"#meine-inhalte\" data-nav=\"meine\" data-view=\"meine\">Meine Inhalte</a>";
+  if (kannAnlegen()) links += "<a href=\"#meine-inhalte\" data-nav=\"meine\" data-view=\"meine\">Meine Inhalte</a>";
   links += "<a href=\"#basismodule\" data-nav=\"inhalte\" data-view=\"inhalte\">Basismodule</a>" +
     "<a href=\"#anwendungsmodule\" data-nav=\"anwendung\" data-view=\"anwendung\">Anwendungsmodule</a>" +
     "<a href=\"#praxisimpulse\" data-nav=\"impulse\" data-view=\"impulse\">Praxisimpulse</a>" +
@@ -876,7 +897,8 @@ function renderNav() {
     "<button type=\"button\" class=\"nav-drop-btn\" id=\"nav-inhalte-btn\" data-nav-toggle aria-expanded=\"false\" aria-controls=\"nav-inhalte-sub\">Inhalte</button>" +
     "<div class=\"nav-sub\" id=\"nav-inhalte-sub\" hidden>" + links + "</div></div>";
   if (darfFreigeben()) html += "<a href=\"#redaktion\" data-nav=\"redaktion\" data-view=\"redaktion\">Redaktion</a>";
-  if (state.rolle === "admin") html += "<a href=\"#admin\" data-nav=\"admin\" data-view=\"admin\">Administration</a>";
+  if (darfVerwalten()) html += "<a href=\"#admin\" data-nav=\"admin\" data-view=\"admin\">Administration</a>";
+  wendeAnlage();
   html += "<a href=\"#faq\" data-nav=\"faq\" data-view=\"faq\">FAQ</a>";
   nav.innerHTML = html;
 }
@@ -1066,8 +1088,15 @@ function kommentarBlock(c) {
     + "<form class=\"comment-form\" id=\"kommentar-form\"><label class=\"field\"><span>Rückfrage unter Ihrem Namen</span><textarea name=\"text\" required rows=\"3\" placeholder=\"Was ist unklar geblieben?\"></textarea></label><button class=\"btn-solid\" type=\"submit\">Kommentar senden</button></form></div>";
 }
 
+function wendeAnlage() {
+  var anbieten = document.getElementById("impuls-anbieten");
+  if (anbieten) anbieten.hidden = !kannAnlegen();
+  var block = document.querySelector("#view-meine .anlegen");
+  if (block) block.hidden = !kannAnlegen();
+}
+
 function editRechtKasten(c) {
-  if (!istUrheber(c)) return "";
+  if (!kannAnlegen() || !istUrheber(c)) return "";
   var zeilen = PERSONEN.filter(function (p) { return p.id !== "hb"; }).map(function (p) {
     var rechte = (state.editRechte && state.editRechte[c.id]) || {};
     var an = !!rechte[p.id];
@@ -1120,7 +1149,7 @@ function renderPlayer() {
     }).join("")
     : "<p>Kein weiterer Inhalt ist verknüpft.</p>";
   var status = c.status !== "veroeffentlicht" ? "<span class=\"st " + esc(c.status) + "\">" + esc(statusLabel(c.status)) + "</span>" : "";
-  var bearbeiten = (state.rolle === "teilnehmende" && kannBearbeitenInhalt(c)) ? stiftKnopf(c.id, true) : "";
+  var bearbeiten = (kannAnlegen() && kannBearbeitenInhalt(c)) ? stiftKnopf(c.id, true) : "";
   var lauf = "";
   if (c.status === "veroeffentlicht" && !kannBearbeitenInhalt(c)) {
     lauf = stand === "abgeschlossen"
@@ -1464,7 +1493,7 @@ function kachelMarkup(c) {
     else if (stand === "begonnen") art = "Begonnen";
   }
   return "<article class=\"tile " + farbe + "\" tabindex=\"0\" data-id=\"" + esc(c.id) + "\" data-werkzeug=\"" + esc(toolSchluessel(c)) + "\" data-thema=\"" + esc(thema) + "\" data-format=\"" + esc(c.formatKey || "") + "\" data-niveau=\"" + esc(c.niveau || "") + "\" data-zielgruppe=\"" + esc(ziel) + "\">"
-    + (istEigen(c) ? stiftKnopf(c.id, false) : "")
+    + (kannAnlegen() && istEigen(c) ? stiftKnopf(c.id, false) : "")
     + "<div class=\"thumb\"><span class=\"fmt\">" + esc(c.format || "Inhalt") + " · " + esc(c.dauer) + "</span></div>"
     + "<div class=\"tile-body\"><div class=\"badges\"><span class=\"lvl " + esc(c.niveau || "basis") + "\">" + esc(c.niveauLabel) + "</span>" + (art ? "<span class=\"st " + esc(c.status) + "\">" + esc(art) + "</span>" : "") + "</div>"
     + "<h3>" + esc(c.titel) + "</h3><p>" + esc(c.teaser || "") + "</p>"
@@ -1732,29 +1761,35 @@ function renderStatistik() {
     + "<div class=\"listrow head\"><div>Inhalt</div><div>Aufrufe</div><div>Feedback + / −</div></div>" + zeilen;
 }
 
+function ernennungsListe(art, titel, text) {
+  var zeilen = PERSONEN.map(function (p) {
+    var an = hatErnennung(art, p.id);
+    var sperre = art === "admin" && p.id === "hb";
+    return "<div class=\"listrow\"><div><strong>" + esc(p.name) + "</strong><div class=\"meta-line\">" + esc(p.stelle) + (p.sitzung ? " · Konto dieser Sitzung" : "") + "</div></div>"
+      + "<div>" + (an ? titel : "Teilnehmer") + "</div>"
+      + "<button type=\"button\" class=\"btn-line\" data-action=\"ernennung\" data-art=\"" + art + "\" data-person=\"" + esc(p.id) + "\" aria-pressed=\"" + (an ? "true" : "false") + "\"" + (sperre ? " disabled" : "") + ">" + (sperre ? "Sitzung behält Administration" : an ? "Ernennung entziehen" : "Ernennen") + "</button></div>";
+  }).join("");
+  return "<h2 id=\"ernennung-" + art + "\">" + titel + "</h2><p>" + text + "</p><div class=\"list\">" + zeilen + "</div>";
+}
+
 function renderAdmin() {
   var root = document.getElementById("view-admin");
-  root.innerHTML = "<p class=\"eyebrow\">Administration</p><h1>Rollen, Rechte, Betrieb</h1>"
-    + "<p>Konzeptanzeige für die Umsetzungsstelle. Keine echte Betriebsschnittstelle und keine personenbezogene Verwaltung.</p>"
+  root.innerHTML = "<p class=\"eyebrow\">Administration</p><h1>Personen und Ernennungen</h1>"
+    + "<p>Die Basis ist Teilnehmer: lesen und nutzen. Ernennen können Sie zu Content Creator, Redaktion und Administration. Konten kommen aus dem Identity-Management. Hier entsteht kein neues Konto.</p>"
     + "<nav class=\"wegweiser\" aria-label=\"Zurück in die Arbeit\"><button type=\"button\" data-view-jump=\"inhalte\">Zu den Basismodulen</button><button type=\"button\" data-view-jump=\"redaktion\">Zur Redaktion</button></nav>"
     + "<h2>Rollen</h2>"
     + "<div class=\"list\">"
-    + rolleZeile("Teilnehmende mit Erstellen", "Lernen und Inhalte anlegen, H5P als Datei, Video als iFrame, Text als Texteingabe", true)
-    + rolleZeile("Moderation", "Review, Freigabe, Veröffentlichung, Einstiegsseite, Aufrufzahlen", true)
-    + rolleZeile("Administration", "Rollen, Integrationen, Betrieb", true)
+    + rolleZeile("Teilnehmer", "Lesen und nutzen. Kein Anlegen, keine Meine Inhalte.", true)
+    + rolleZeile("Content Creator", "Meine Inhalte und Anlegen, einschließlich Stift.", true)
+    + rolleZeile("Redaktion", "Freigabe und Redaktionsbereich. Legt ebenfalls an.", true)
+    + rolleZeile("Administration", "Ernennungen, Integrationen, Betrieb. Legt frei und an.", true)
     + rolleZeile("Gegenzeichnende Stelle", "Erlaubnisantworten vor Veröffentlichung", true)
     + rolleZeile("Forenmoderation", "Vorgesehen. Foren folgen in der späteren Ausbaustufe.", false)
     + "</div>"
-    + "<p class=\"hint\">Konten kommen aus dem Identity-Management. Hier vergeben Sie nur das Moderationsrecht, kein neues Konto.</p>"
-    + "<h2 id=\"moderationsrechte\">Moderationsrechte</h2>"
-    + "<p>Wer dieses Recht hat, sieht die Freigaben, die gemeldeten Kommentare und die Prüfdaten. Wer es nicht hat, bleibt bei den Inhalten.</p>"
-    + "<div class=\"list\">" + PERSONEN.map(function (p) {
-      var an = moderationsrecht(p.id);
-      return "<div class=\"listrow\"><div><strong>" + esc(p.name) + "</strong><div class=\"meta-line\">" + esc(p.stelle) + (p.sitzung ? " · Konto dieser Sitzung" : "") + "</div></div>"
-        + "<div>" + (an ? "Moderationsrecht" : "kein Moderationsrecht") + "</div>"
-        + "<button type=\"button\" class=\"btn-line\" data-action=\"mod-recht\" data-person=\"" + esc(p.id) + "\" aria-pressed=\"" + (an ? "true" : "false") + "\">" + (an ? "Recht entziehen" : "Recht geben") + "</button></div>";
-    }).join("") + "</div>"
-    + "<p class=\"hint\">Henning Beckmann ist das Konto dieser Sitzung. Ohne sein Recht verschwindet Moderation aus der Leiste, sobald die Rolle Moderation gewählt ist. Administration behält den Zugang.</p>"
+    + ernennungsListe("creator", "Content Creator", "Ohne diese Ernennung bleibt die Person beim Lesen, auch wenn der Umschalter auf Content Creator steht.")
+    + ernennungsListe("redaktion", "Redaktion", "Die Redaktion gibt frei und sieht Freigaben, gemeldete Kommentare und Prüfdaten. Sie legt außerdem an.")
+    + ernennungsListe("admin", "Administration", "Administration ernennt die drei Rollen und sieht Anbindung und Betrieb. Das Konto dieser Sitzung behält sie, sonst ließe sich die Liste nicht wieder öffnen.")
+    + "<p class=\"hint\">Henning Beckmann ist das Konto dieser Sitzung. Fehlt seine Ernennung, verschwindet der zugehörige Bereich aus Leiste und Dashboard, sobald diese Rolle gewählt ist.</p>"
     + "<h2 id=\"integrationen\">Integrationen</h2>"
     + "<div class=\"rowlist\">"
     + "<div class=\"rowitem\"><strong>ADFS</strong><span>Anmeldung über das Behördenkonto. Im Prototyp ohne echtes Verzeichnis.</span></div>"
@@ -2428,11 +2463,15 @@ function init() {
       renderHub();
       renderProfilKnopf();
       pmenu.hidden = true;
-      var ziel = { teilnehmende: "home", redaktion: "redaktion", admin: "admin" }[state.rolle] || "home";
+      var ziel = "dashboard";
+      if (state.rolle === "creator" && kannAnlegen()) ziel = "meine";
+      if (state.rolle === "redaktion" && darfFreigeben()) ziel = "redaktion";
+      if (state.rolle === "admin" && darfVerwalten()) ziel = "admin";
+      var ohneErnennung = (state.rolle === "creator" && !kannAnlegen()) || (state.rolle === "redaktion" && !darfFreigeben()) || (state.rolle === "admin" && !darfVerwalten());
       showView(ziel);
       if (window.filtern) window.filtern();
       else renderEigene();
-      toast(rolleHinweis(state.rolle));
+      toast(ohneErnennung ? "Für Henning Beckmann liegt die Ernennung " + rolleLabel(state.rolle) + " nicht vor." : rolleHinweis(state.rolle));
     });
   });
 
@@ -2616,6 +2655,7 @@ function init() {
       }
     }
     if (action === "neu") {
+      if (!kannAnlegen()) { toast("Anlegen können Content Creator, Redaktion und Administration."); return; }
       editorId = null;
       editorVorgabe = act.dataset.art || "inhalt";
       detailModus = "bearbeiten";
@@ -2631,6 +2671,7 @@ function init() {
       }
     }
     if (action === "bearbeiten") {
+      if (!kannAnlegen()) { toast("Bearbeiten können Content Creator, Redaktion und Administration."); return; }
       var zielInhalt = byId(act.dataset.id);
       if (!kannBearbeitenInhalt(zielInhalt)) {
         toast("Nur die erstellende Person oder jemand mit Edit-Recht kann das bearbeiten.");
@@ -2698,15 +2739,22 @@ function init() {
         try { sprung.scrollIntoView({ block: "start" }); } catch (err) { /* Prototyp bleibt bedienbar. */ }
       }
     }
-    if (action === "mod-recht") {
+    if (action === "ernennung") {
+      var art = act.dataset.art;
       var person = act.dataset.person;
-      state.moderationsrechte = state.moderationsrechte || {};
-      state.moderationsrechte[person] = !moderationsrecht(person);
+      if (!darfVerwalten() || !state.ernennungen[art] || !person) return;
+      if (art === "admin" && person === "hb") {
+        toast("Die Administration dieses Kontos bleibt, sonst ist die Ernennung nicht mehr erreichbar.");
+        return;
+      }
+      state.ernennungen[art][person] = !hatErnennung(art, person);
       sichern();
       renderAdmin();
-      if (person === "hb") renderNav();
+      renderNav();
+      renderHub();
+      if (person === "hb" && ((art === "creator" && state.rolle === "creator" && !kannAnlegen()) || (art === "redaktion" && state.rolle === "redaktion" && !darfFreigeben()))) showView("dashboard");
       var wer = PERSONEN.filter(function (p) { return p.id === person; })[0];
-      toast((wer ? wer.name : "Die Person") + (state.moderationsrechte[person] ? " hat das Moderationsrecht." : " hat kein Moderationsrecht mehr."));
+      toast((wer ? wer.name : "Die Person") + (hatErnennung(art, person) ? " ist jetzt " + rolleLabel(art) + "." : " ist wieder Teilnehmer."));
     }
     if (action === "stichprobe") {
       state.stichprobe.halluzinationen = true;
@@ -2867,9 +2915,9 @@ function init() {
   document.getElementById("impuls-anbieten").addEventListener("click", function () {
     dialog({
       titel: "Impuls anbieten",
-      html: "<p>Es braucht Erfahrung aus dem Alltag, keinen Expertenstatus. Auch ein misslungener Versuch ist ein Beitrag. Anlegen können alle Teilnehmenden. Die Moderation entscheidet über die Veröffentlichung.</p>",
+      html: "<p>Es braucht Erfahrung aus dem Alltag, keinen Expertenstatus. Auch ein misslungener Versuch ist ein Beitrag. Anlegen können Content Creator, Redaktion und Administration. Die Redaktion entscheidet über die Veröffentlichung.</p>",
       aktionen: [
-        { label: "Impuls anlegen", fn: function () { editorId = null; editorVorgabe = "impuls"; detailModus = "bearbeiten"; herkunftSetzen("impulse"); showView("player"); } },
+        { label: "Impuls anlegen", fn: function () { if (!kannAnlegen()) { toast("Anlegen können Content Creator, Redaktion und Administration."); return; } editorId = null; editorVorgabe = "impuls"; detailModus = "bearbeiten"; herkunftSetzen("impulse"); showView("player"); } },
         { label: "Schließen", zweite: true }
       ]
     });
